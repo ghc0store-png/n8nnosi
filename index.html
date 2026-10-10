@@ -126,7 +126,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .step .n{width:30px;height:30px;border-radius:50%;background:var(--accsoft);color:var(--acc);display:grid;place-items:center;font-weight:700;flex:none}
 .sk{border-radius:var(--r);height:96px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:sk 1.3s infinite}
 @keyframes sk{to{background-position:-200% 0}}
-.fade{animation:in .28s ease both}@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade{animation:in .28s ease both}.still .fade,.still.fade{animation:none}@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:600;font-size:13.5px;box-shadow:var(--shadow);z-index:60;max-width:calc(100vw - 32px);animation:in .25s both}
 @media(min-width:900px){.toast{bottom:28px}}
 .modal{position:fixed;inset:0;background:rgba(5,8,18,.55);backdrop-filter:blur(6px);display:grid;align-items:end;justify-items:center;z-index:50;animation:fadein .2s both}
@@ -228,6 +228,8 @@ const I = {
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"]];
 
+/*anti-kedip*/ const _last = new WeakMap();
+function setHtml(el, html) { if (!el) return false; if (_last.get(el) === html) return false; _last.set(el, html); el.innerHTML = html; return true; }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function wib(iso) { if (!iso) return "-"; const d = new Date(iso); if (isNaN(d)) return "-"; return d.toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
 function ago(iso, now) { const d = new Date(iso); if (isNaN(d)) return ""; const s = Math.max(0, Math.round((now - d) / 1000)); if (s < 60) return s + " dtk lalu"; if (s < 3600) return Math.round(s / 60) + " mnt lalu"; if (s < 86400) return Math.round(s / 3600) + " jam lalu"; return Math.round(s / 86400) + " hari lalu"; }
@@ -256,7 +258,7 @@ $("#outS").onclick = showLogin;
 $("#themeS").onclick = () => { const r = document.documentElement, d = r.dataset.theme === "dark" || (!r.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches); r.dataset.theme = d ? "light" : "dark"; try { localStorage.setItem("theme", r.dataset.theme); } catch (e) {} };
 try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 
-function go(t) { tab = t; chatBuilt = false; clBuilt = false; render(); window.scrollTo({ top: 0 }); }
+function go(t) { tab = t; try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {} chatBuilt = false; clBuilt = false; render(); window.scrollTo({ top: 0 }); }
 window.go = go;
 
 /* ---------- modal konfirmasi ---------- */
@@ -295,19 +297,19 @@ function clView() {
   return `<div class="top"><div><h1>Claude</h1><p>Minta Claude memeriksa n8n atau sistem Anda. Mode hanya baca: Claude menganalisis dan memberi usulan, tidak mengubah apa pun.</p></div></div>
   <div class="card item"><textarea id="clbox" rows="4" maxlength="4000" placeholder="Contoh: Cek kenapa workflow INVOICE OTOMATIS (WA) eror kemarin dan beri usulan perbaikan" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line,#8884);background:transparent;color:inherit;resize:vertical"></textarea>
   <div class="row" style="margin-top:8px"><button class="btn pri" id="clsend" onclick="clSend()">${ic("send")}Kirim ke Claude</button></div></div>
-  <div id="cljobs" class="grid" style="margin-top:12px"></div>`;
+  <div id="cljobs" class="grid still" style="margin-top:12px"></div>`;
 }
 function clPaint() {
   const el = $("#cljobs"); if (!el) return;
-  if (!clJobs.length) { el.innerHTML = '<div class="card"><div class="mut" style="padding:12px">Belum ada tugas.</div></div>'; return; }
-  el.innerHTML = clJobs.map((j) => {
+  if (!clJobs.length) { setHtml(el, '<div class="card"><div class="mut" style="padding:12px">Belum ada tugas.</div></div>'); return; }
+  setHtml(el, clJobs.map((j) => {
     const [t, c] = clSt[j.status] || [j.status, "mut"];
     const jalan = j.status === "menunggu" || j.status === "menganalisis";
     const bisaHapus = ["selesai", "gagal", "dihentikan"].includes(j.status);
     return `<div class="card item fade"><div class="h"><div><div class="nm">${esc(j.prompt).slice(0, 160)}</div><div class="mut">#${j.id} • ${wib(new Date(j.created).toISOString())}</div></div><span class="pill ${c}">${t}</span></div>
     ${j.output ? `<pre style="white-space:pre-wrap;word-break:break-word;font:13px/1.5 inherit;margin:10px 0 0;max-height:420px;overflow:auto">${esc(j.output)}</pre>` : ""}
     <div class="row" style="margin-top:8px">${jalan ? `<button class="btn" onclick="clAct(${j.id},'stop')">Hentikan</button>` : ""}${bisaHapus ? `<button class="btn" onclick="clAct(${j.id},'hapus')">Hapus</button>` : ""}</div></div>`;
-  }).join("");
+  }).join(""));
 }
 async function clLoad() { try { const r = await api("/api/claude"); clJobs = r.jobs || []; clPaint(); } catch (e) {} }
 function clStart() { clLoad(); clearInterval(clTimer); clTimer = setInterval(() => { if (tab !== "cl") { clearInterval(clTimer); return; } clLoad(); }, 4000); }
@@ -473,13 +475,13 @@ const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 
 function chrome() {
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
-  $("#sidenav").innerHTML = TABS.map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join("");
-  $("#tabbar").innerHTML = TABS.map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join("");
+  setHtml($("#sidenav"), TABS.map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
+  setHtml($("#tabbar"), TABS.map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
   const online = S && !netOff && S.now - S.agentSeen < 45000;
   const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Laptop online" : "Laptop offline") : "memuat";
   const on = $("#offnote");
   on.hidden = !S || online;
-  on.innerHTML = netOff ? ic("alert") + `<div><b>Tidak ada koneksi internet.</b><br>Menampilkan data terakhir yang tersimpan. Akan menyambung sendiri begitu koneksi kembali.</div>` : S && !online ? ic("alert") + `<div><b>Laptop tidak terhubung.</b><br>${S.agentSeen ? "Terakhir terlihat " + wib(S.agentSeen) + ". " : ""}Data di bawah adalah data terakhir, dan perintah baru berjalan setelah laptop online.</div>` : "";
+  setHtml(on, netOff ? ic("alert") + `<div><b>Tidak ada koneksi internet.</b><br>Menampilkan data terakhir yang tersimpan. Akan menyambung sendiri begitu koneksi kembali.</div>` : S && !online ? ic("alert") + `<div><b>Laptop tidak terhubung.</b><br>${S.agentSeen ? "Terakhir terlihat " + wib(S.agentSeen) + ". " : ""}Data di bawah adalah data terakhir, dan perintah baru berjalan setelah laptop online.</div>` : "");
 }
 
 function ovView() {
@@ -563,8 +565,8 @@ function paintChat(force) {
   const proses = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
   const needOk = ob.length && ob[ob.length - 1].kind === "text" && /SETUJU/.test(ob[ob.length - 1].text || "") && !echo.length;
   const rev = items.slice().reverse().slice(0, 25);
-  box.innerHTML = (proses ? '<div class="card item"><div class="mut">Sedang diproses…</div></div>' : "") +
-    (rev.map((o, i) => hasilHtml(o, needOk && i === (proses ? 0 : 0) && o === ob[ob.length - 1])).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Pilih Slip Gaji atau Invoice di atas.")}</div>`);
+  setHtml(box, (proses ? '<div class="card item"><div class="mut">Sedang diproses…</div></div>' : "") +
+    (rev.map((o, i) => hasilHtml(o, needOk && i === (proses ? 0 : 0) && o === ob[ob.length - 1])).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Pilih Slip Gaji atau Invoice di atas.")}</div>`));
 }
 function rqView() {
   return `<div class="top"><div><h1>Permintaan</h1><p>Pilih jenis dokumen yang dibutuhkan</p></div><button class="btn" onclick="hapusChat()">Hapus riwayat</button></div>
@@ -572,7 +574,7 @@ function rqView() {
     <div class="card item fade click" onclick="formSlip()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan</div></div></div></div></div>
     <div class="card item fade click" onclick="formInv()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi</div></div></div></div></div>
   </div>
-  <div class="sec"><h3>Hasil dan konfirmasi</h3></div><div id="hasil" class="grid"></div>`;
+  <div class="sec"><h3>Hasil dan konfirmasi</h3></div><div id="hasil" class="grid still"></div>`;
 }
 
 function render() {
@@ -590,7 +592,8 @@ function render() {
   clBuilt = false;
   const act = document.activeElement;
   if (act && /^(INPUT|TEXTAREA)$/.test(act.tagName)) return;
-  $("#view").innerHTML = { ov: ovView, wf: wfView, er: erView, hi: hiView }[tab]();
+  const v = $("#view"); const baru = setHtml(v, { ov: ovView, wf: wfView, er: erView, hi: hiView }[tab]());
+  if (baru && v.dataset.tab === tab) v.classList.add("still"); v.dataset.tab = tab;
 }
 function wireBox() {
   const b = $("#cbox"); if (!b) return;
