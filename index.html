@@ -567,7 +567,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -605,7 +605,8 @@ function paintChat() {
 }
 function rqView() {
   if (rqSub === "bpjs") return bpjsView();
-  if (rqSub === "bb") return bbView();
+  if (rqSub === "bb") return bbMenuView();
+  if (rqSub === "bbtk" || rqSub === "bbkes") return bbView();
   if (!rqSub) {
     const { items } = chatItems(); const jn = jenisPesan(items);
     const cnt = (k) => items.filter((o, i) => jn[i] === k && o.kind === "file").length;
@@ -622,18 +623,25 @@ function rqView() {
 }
 window.bukaSub = async (k) => {
   rqSub = k; chatBuilt = false; render();
-  if (k === "bpjs" || k === "bb") { window.scrollTo({ top: 0 }); return; }
+  if (k !== "slip" && k !== "inv") { window.scrollTo({ top: 0 }); return; }
   window._inline = $("#formbox");
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bb" ? "bpjs" : ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "bb" ? "bpjs" : ""; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 function bpjsView() {
   return `<div class="top"><div><h1>BPJS</h1><p>Pilih menu BPJS yang dibutuhkan</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="grid two">
-    <div class="card item fade click" onclick="bukaSub('bb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar</div><div class="mut">Unggah PDF bulk KES atau TK, dipisah per lokasi</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('bb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS</div><div class="mut">Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh</div></div></div></div></div>
+  </div>`;
+}
+function bbMenuView() {
+  return `<div class="top"><div><h1>Bukti Bayar BPJS</h1><p>Pilih jenis BPJS</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="grid two">
+    <div class="card item fade click" onclick="bukaSub('bbtk')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS TK</div><div class="mut">BPJS Ketenagakerjaan</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('bbkes')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS KES</div><div class="mut">BPJS Kesehatan</div></div></div></div></div>
   </div>`;
 }
 let bbJenis = "kes", bbBulan = "", bbQ = "", bbData = null, bbFiles = [], bbPick = null, bbTimer = null, bbLoaded = "", bbBusy = false, bbMonSig = "";
@@ -642,8 +650,7 @@ const bbSt = { mengunggah: ["Mengunggah…", "wa"], menunggu: ["Menunggu laptop"
 const bbAktif = () => { const j = bbData && bbData.jobs[0]; return !!j && ["mengunggah", "menunggu", "diproses"].includes(j.status) && bbData.now - j.updated < 20 * 60e3; };
 
 function bbView() {
-  return `<div class="top"><div><h1>Bukti Bayar BPJS</h1><p>Unggah PDF bulk dari BPJS. Sistem memisahkannya menjadi satu PDF per lokasi, lalu menyimpannya di Google Drive dan di halaman ini.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
-  <div class="chips" id="bbj"></div>
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Unggah PDF bulk dari BPJS. Sistem memisahkannya menjadi satu PDF per lokasi, lalu menyimpannya di Google Drive dan di halaman ini.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="card item fade"><div class="nm">Unggah PDF bulk</div>
     <div class="bbdrop" id="bbdrop" tabindex="0" role="button" aria-label="Pilih berkas PDF">${ic("doc")}<b id="bbt">Tarik PDF ke sini atau ketuk untuk memilih</b><small id="bbs">PDF Bill Payment dari BPJS, maksimal sekitar 17 MB</small></div>
     <input type="file" id="bbfile" accept="application/pdf,.pdf" hidden>
@@ -652,10 +659,8 @@ function bbView() {
   <div class="sec"><h3>Berkas per lokasi</h3></div>
   <div class="card fade" id="bbfiles"></div>`;
 }
-function bbChips() {
-  setHtml($("#bbj"), [["kes", "BPJS Kesehatan"], ["tk", "BPJS Ketenagakerjaan"]].map(([k, n]) => `<button class="chip ${bbJenis === k ? "on" : ""}" onclick="bbPilih('${k}')">${n}</button>`).join(""));
-}
 function bbInit() {
+  bbJenis = rqSub === "bbtk" ? "tk" : "kes";
   bbData = null; bbFiles = []; bbBulan = ""; bbLoaded = ""; bbPick = null; bbMonSig = ""; bbQ = "";
   const d = $("#bbdrop"), f = $("#bbfile"); if (!d || !f) return;
   d.onclick = () => f.click();
@@ -665,11 +670,10 @@ function bbInit() {
   d.ondragleave = () => d.classList.remove("on");
   d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); bbSet(e.dataTransfer.files[0]); };
   $("#bbgo").onclick = bbKirim;
-  bbChips(); bbLoad();
+  bbLoad();
   clearInterval(bbTimer);
-  bbTimer = setInterval(() => { if (tab !== "rq" || rqSub !== "bb") return clearInterval(bbTimer); if (!document.hidden) bbLoad(); }, 4000);
+  bbTimer = setInterval(() => { if (tab !== "rq" || (rqSub !== "bbtk" && rqSub !== "bbkes")) return clearInterval(bbTimer); if (!document.hidden) bbLoad(); }, 4000);
 }
-window.bbPilih = (j) => { bbJenis = j; bbBulan = ""; bbQ = ""; bbFiles = []; bbLoaded = ""; bbMonSig = ""; bbData = null; $("#bbfiles").innerHTML = ""; $("#bbjob").innerHTML = ""; _last.delete($("#bbjob")); bbChips(); bbLoad(); };
 function bbSet(f) {
   if (!f) return;
   if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") return toast("Berkas harus PDF");
@@ -749,9 +753,12 @@ async function bbGet(id) {
 }
 function bbSave(blob, nama) { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = nama; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); }
 window.bbLihat = async (id) => {
-  const w = window.open("", "_blank");
-  try { const g = await bbGet(id); const u = URL.createObjectURL(g.blob); if (w) w.location.href = u; else bbSave(g.blob, g.nama); }
-  catch (e) { if (w) w.close(); toast("Gagal membuka berkas"); }
+  try {
+    const g = await bbGet(id), u = URL.createObjectURL(g.blob), l = $("#layer");
+    l.innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:920px;width:min(96vw,920px)"><h4>${esc(g.nama)}</h4><iframe src="${u}" title="Pratinjau ${esc(g.nama)}" style="width:100%;height:68vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe><div class="row" style="margin-top:10px"><a class="btn" href="${u}" target="_blank" rel="noopener">Buka di tab baru</a><button class="btn ok" id="bbdl">Unduh</button><button class="btn" id="mn">Tutup</button></div></div></div>`;
+    const close = () => { l.innerHTML = ""; setTimeout(() => URL.revokeObjectURL(u), 1000); };
+    $("#mn").onclick = close; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") close(); }; $("#bbdl").onclick = () => bbSave(g.blob, g.nama);
+  } catch (e) { toast("Gagal membuka berkas"); }
 };
 window.bbUnduh = async (id) => { try { const g = await bbGet(id); bbSave(g.blob, g.nama); } catch (e) { toast("Gagal mengunduh berkas"); } };
 const bbJSZip = () => window.JSZip ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload = ok; s.onerror = () => no(new Error("JSZip")); document.head.appendChild(s); });
@@ -774,7 +781,7 @@ function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bb") bbInit(); }
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); }
     paintChat(); return;
   }
   chatBuilt = false;
