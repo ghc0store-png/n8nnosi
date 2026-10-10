@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0b0f1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kontrol RAYMP">
+<title>Pusat Kontrol RAYMP</title>
+<style>
+:root{
+  --bg:#f3f4fb;--bg2:#e9ebf8;--surface:#ffffff;--surface2:#f7f8fd;--glass:rgba(255,255,255,.72);
+  --tx:#141827;--mut:#6a7089;--line:rgba(20,24,39,.09);--shadow:0 1px 2px rgba(20,24,39,.05),0 10px 30px -12px rgba(60,64,140,.22);
+  --acc:#5b5bf0;--acc2:#8b5cf6;--accsoft:rgba(91,91,240,.12);
+  --ok:#0f9d6b;--oksoft:rgba(15,157,107,.13);--er:#e5484d;--ersoft:rgba(229,72,77,.12);--wa:#d98a06;--wasoft:rgba(217,138,6,.14);
+  --r:18px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#080b14;--bg2:#0d1222;--surface:#121829;--surface2:#171e33;--glass:rgba(18,24,41,.74);
+  --tx:#eef0fa;--mut:#8f97b5;--line:rgba(255,255,255,.08);--shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.65);
+  --acc:#7c7cff;--acc2:#a78bfa;--accsoft:rgba(124,124,255,.16);
+  --ok:#3ddc97;--oksoft:rgba(61,220,151,.14);--er:#ff7a80;--ersoft:rgba(255,122,128,.14);--wa:#ffc15a;--wasoft:rgba(255,193,90,.14)}}
+:root[data-theme=dark]{
+  --bg:#080b14;--bg2:#0d1222;--surface:#121829;--surface2:#171e33;--glass:rgba(18,24,41,.74);
+  --tx:#eef0fa;--mut:#8f97b5;--line:rgba(255,255,255,.08);--shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.65);
+  --acc:#7c7cff;--acc2:#a78bfa;--accsoft:rgba(124,124,255,.16);
+  --ok:#3ddc97;--oksoft:rgba(61,220,151,.14);--er:#ff7a80;--ersoft:rgba(255,122,128,.14);--wa:#ffc15a;--wasoft:rgba(255,193,90,.14)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{color-scheme:light dark}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+body{margin:0;color:var(--tx);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:radial-gradient(900px 500px at 8% -10%,var(--accsoft),transparent 60%),radial-gradient(700px 480px at 100% 0,rgba(139,92,246,.10),transparent 55%),var(--bg);
+  background-attachment:fixed;min-height:100vh;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+svg{width:1.15em;height:1.15em;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:1fr;min-height:100vh}
+.side{display:none}
+main{padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));max-width:1080px;width:100%;margin:0 auto}
+@media(min-width:900px){
+  .shell{grid-template-columns:240px 1fr}
+  .side{display:flex;flex-direction:column;gap:6px;padding:22px 16px;position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(18px)}
+  main{padding:26px 32px 48px}
+  .tabbar{display:none!important}
+}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 18px;font-weight:700;letter-spacing:-.01em}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;box-shadow:0 8px 20px -6px var(--acc)}
+.logo svg{width:20px;height:20px;stroke-width:2.2}
+.brand small{display:block;font-weight:500;color:var(--mut);font-size:11.5px;margin-top:-2px}
+.nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;border:0;background:none;color:var(--mut);font:inherit;font-weight:600;cursor:pointer;text-align:left;width:100%;transition:.15s}
+.nav:hover{background:var(--accsoft);color:var(--tx)}
+.nav.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 8px 18px -8px var(--acc)}
+.nav .cnt{margin-left:auto;font-size:11.5px;padding:1px 8px;border-radius:99px;background:var(--er);color:#fff}
+.sidefoot{margin-top:auto;display:grid;gap:8px}
+
+.tabbar{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;
+  background:var(--glass);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid var(--line);border-radius:22px;padding:6px;box-shadow:var(--shadow);z-index:20}
+.tabbar button{flex:1;display:grid;justify-items:center;gap:2px;padding:7px 2px;border:0;background:none;color:var(--mut);font:inherit;font-size:10.5px;font-weight:600;border-radius:16px;cursor:pointer;position:relative}
+.tabbar button svg{width:21px;height:21px}
+.tabbar button.on{color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.tabbar .dotc{position:absolute;top:3px;right:calc(50% - 20px);min-width:16px;height:16px;border-radius:9px;background:var(--er);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+
+/* ---------- komponen ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.top h1{margin:0;font-size:24px;letter-spacing:-.02em}
+.top p{margin:2px 0 0;color:var(--mut);font-size:13.5px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px;background:var(--accsoft);color:var(--acc);white-space:nowrap}
+.pill.ok{background:var(--oksoft);color:var(--ok)}.pill.er{background:var(--ersoft);color:var(--er)}.pill.wa{background:var(--wasoft);color:var(--wa)}.pill.mut{background:var(--surface2);color:var(--mut)}
+.live{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 2s infinite}
+.pill.er .live,.pill.mut .live{animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 55%,transparent)}70%,100%{box-shadow:0 0 0 8px transparent}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:22px;color:#fff;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#c026d3 120%);box-shadow:0 22px 44px -22px #6d28d9;margin-bottom:14px}
+.hero.bad{background:linear-gradient(135deg,#be123c,#e11d48 55%,#f97316 130%);box-shadow:0 22px 44px -22px #e11d48}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero h2{margin:0;font-size:22px;letter-spacing:-.02em;position:relative}.hero p{margin:6px 0 0;opacity:.88;font-size:14px;position:relative;max-width:46ch}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{padding:14px 16px}.stat .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;margin-bottom:10px;background:var(--accsoft);color:var(--acc)}
+.stat.ok .ic{background:var(--oksoft);color:var(--ok)}.stat.er .ic{background:var(--ersoft);color:var(--er)}.stat.wa .ic{background:var(--wasoft);color:var(--wa)}
+.stat b{font-size:28px;line-height:1;letter-spacing:-.03em;display:block}.stat span{color:var(--mut);font-size:12.5px}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:20px 2px 10px}.sec h3{margin:0;font-size:15px}
+.grid{display:grid;gap:12px}
+@media(min-width:760px){.grid.two{grid-template-columns:1fr 1fr}}
+.item{display:grid;gap:10px}
+.item .h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.nm{font-weight:650;letter-spacing:-.01em;word-break:break-word}.mut{color:var(--mut);font-size:12.5px;word-break:break-word}
+.err{background:var(--ersoft);color:var(--er);border-radius:12px;padding:10px 12px;font-size:13px;word-break:break-word}
+.err b{display:inline-flex;align-items:center;gap:5px;margin-bottom:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--surface2);color:var(--tx);padding:9px 15px;border-radius:12px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;transition:.15s}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:none}
+.btn.pri{border:0;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 10px 20px -10px var(--acc)}
+.btn.ok{border:0;color:#fff;background:linear-gradient(135deg,#0f9d6b,#16c784)}.btn.dg{color:var(--er);background:var(--ersoft);border-color:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.full{width:100%;padding:13px}
+.sw{position:relative;width:46px;height:28px;border-radius:99px;border:0;background:var(--line);cursor:pointer;transition:.2s;flex:none;padding:0}
+.sw:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:.2s}
+.sw.on{background:linear-gradient(135deg,#0f9d6b,#16c784)}.sw.on:after{left:21px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--mut);padding:7px 14px;border-radius:99px;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.chip.on{background:var(--tx);color:var(--bg);border-color:transparent}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
+.seg button{border:0;background:none;color:var(--mut);padding:10px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer;display:flex;gap:7px;align-items:center;justify-content:center}
+.seg button.on{background:var(--surface);color:var(--tx);box-shadow:var(--shadow)}
+label{display:grid;gap:6px;font-size:12.5px;font-weight:600;color:var(--mut)}
+input,textarea,select{font:inherit;font-size:15px;color:var(--tx);background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 13px;width:100%;outline:none;transition:.15s}
+input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--accsoft)}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 fill=%27none%27 stroke=%27%238a93a6%27 stroke-width=%272%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;text-overflow:ellipsis}
+.form{display:grid;gap:13px}.two-in{display:grid;gap:13px}@media(min-width:620px){.two-in{grid-template-columns:1fr 1fr}}
+.empty{text-align:center;color:var(--mut);padding:38px 10px}
+.empty svg{width:34px;height:34px;opacity:.5;margin-bottom:8px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:74px}
+.bars i{flex:1;border-radius:4px 4px 2px 2px;min-height:3px;background:linear-gradient(180deg,var(--acc),var(--acc2));opacity:.85}
+.bars i.e{background:var(--er)}
+.legend{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-top:6px}
+.banner{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:12px 14px;background:var(--wasoft);color:var(--wa);font-size:13.5px;margin-bottom:14px}
+.banner svg{margin-top:2px}
+.step{display:flex;gap:12px;align-items:center}
+.step .n{width:30px;height:30px;border-radius:50%;background:var(--accsoft);color:var(--acc);display:grid;place-items:center;font-weight:700;flex:none}
+.sk{border-radius:var(--r);height:96px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:sk 1.3s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.fade{animation:in .28s ease both}@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:600;font-size:13.5px;box-shadow:var(--shadow);z-index:60;max-width:calc(100vw - 32px);animation:in .25s both}
+@media(min-width:900px){.toast{bottom:28px}}
+.modal{position:fixed;inset:0;background:rgba(5,8,18,.55);backdrop-filter:blur(6px);display:grid;align-items:end;justify-items:center;z-index:50;animation:fadein .2s both}
+@keyframes fadein{from{opacity:0}}
+.sheet{background:var(--surface);width:100%;max-width:440px;border-radius:26px 26px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));animation:up .28s cubic-bezier(.2,.9,.3,1) both}
+@media(min-width:620px){.modal{align-items:center}.sheet{border-radius:26px;padding-bottom:22px}}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.sheet.big{max-width:560px;max-height:88vh;overflow:auto}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:6px 12px;font-size:13.5px;margin:0 0 14px}.kv>span:nth-child(odd){color:var(--mut)}.kv b{word-break:break-word}
+.path{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.path i{font-style:normal;font-size:12px;padding:4px 9px;border-radius:99px;background:var(--surface2);color:var(--mut)}.path i.bad{background:var(--ersoft);color:var(--er);font-weight:700}
+.code{background:var(--surface2);border-radius:12px;padding:10px 12px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0 0 14px;max-height:140px;overflow:auto}
+.sheet h5{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.click{cursor:pointer}.click:active{transform:scale(.99)}
+.who{font-size:12.5px;color:var(--mut);margin-top:2px}.who b{color:var(--tx)}
+.sheet h4{margin:0 0 6px;font-size:18px;letter-spacing:-.01em}.sheet p{margin:0 0 18px;color:var(--mut)}.sheet .row{justify-content:flex-end}
+
+/* ---------- login ---------- */
+.lg{min-height:100vh;display:grid;place-items:center;padding:20px}
+.lgc{width:100%;max-width:380px;text-align:center}
+.lgc .logo{width:62px;height:62px;border-radius:20px;margin:0 auto 18px}.lgc .logo svg{width:30px;height:30px}
+.lgc h1{margin:0 0 6px;font-size:26px;letter-spacing:-.02em}.lgc p{margin:0 0 22px;color:var(--mut)}
+.lgc .card{display:grid;gap:12px;text-align:left;padding:20px}
+.chatwrap{display:flex;flex-direction:column;min-height:calc(100vh - 150px)}
+.msgs{flex:1;display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
+.msg{display:flex;gap:9px;max-width:92%}.msg.me{align-self:flex-end;flex-direction:column;align-items:flex-end}
+.msg .av{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;flex:none}
+.msg .av svg{width:16px;height:16px}.msg .col{min-width:0}
+.bub{padding:11px 14px;border-radius:18px;font-size:14.5px;line-height:1.5;word-break:break-word;background:var(--surface);border:1px solid var(--line);border-top-left-radius:6px;box-shadow:var(--shadow)}
+.msg.me .bub{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:0;border-radius:18px;border-top-right-radius:6px}
+.bub.file{display:flex;gap:10px;align-items:center;border-color:var(--ok)}.fic{width:36px;height:36px;border-radius:11px;background:var(--oksoft);color:var(--ok);display:grid;place-items:center;flex:none}
+.ts{font-size:11px;color:var(--mut);margin:3px 4px 0}
+.typing{display:flex;gap:5px;padding:14px 16px}.typing i{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:bn 1.2s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bn{0%,60%,100%{transform:none;opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+.composer{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,var(--bg) 22%);padding-top:14px;z-index:5}
+@media(min-width:900px){.composer{bottom:0}}
+.composer .chips{margin:0 0 8px}.chip.ok{background:var(--ok);color:#fff;border-color:transparent}.chip.dg{background:var(--er);color:#fff;border-color:transparent}
+.cin{display:flex;gap:8px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:6px 6px 6px 16px;box-shadow:var(--shadow)}
+.cin textarea{border:0;background:none;resize:none;padding:9px 0;max-height:140px;box-shadow:none!important;border-radius:0}
+.cin textarea:focus{box-shadow:none}
+.send{width:42px;height:42px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.send svg{width:19px;height:19px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login" class="lg" hidden>
+  <div class="lgc fade">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+    <h1>Pusat Kontrol RAYMP</h1>
+    <p>Pantau dan kendalikan semua workflow dari satu tempat.</p>
+    <div class="card">
+      <label>Password<input id="pw" type="password" placeholder="Masukkan password" autocomplete="current-password"></label>
+      <button class="btn pri full" id="go">Masuk</button>
+      <div id="lerr" class="err" hidden></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APLIKASI ============ -->
+<div id="app" class="shell" hidden>
+  <aside class="side">
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div><div>Pusat Kontrol<small>PT Ray Mitra Perkasa</small></div></div>
+    <div id="sidenav"></div>
+    <div class="sidefoot">
+      <span id="agentS" class="pill mut"><i class="live"></i><span>memuat</span></span>
+      <button class="btn" id="themeS">Ganti tema</button>
+      <button class="btn" id="outS">Keluar</button>
+    </div>
+  </aside>
+  <main>
+    <div id="offnote" class="banner" hidden></div>
+    <div id="view"><div class="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
+  </main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<div id="layer"></div>
+
+<script>
+const API = "https://n8nkontrol.sentraless.workers.dev";
+const $ = (s) => document.querySelector(s);
+let tab = "ov", S = null, token = "", filter = "all", botMode = "slip", lastInv = null, busy = false;
+try { token = localStorage.getItem("tok") || ""; } catch (e) {}
+
+const I = {
+  home: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
+  flow: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/>',
+  alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v5"/><path d="M12 18v.01"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  send: '<path d="m21 3-9.5 9.5"/><path d="M21 3 14.5 21l-3-8.5L3 9.5z"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  check: '<path d="m5 12 5 5L20 7"/>', retry: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>',
+  money: '<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/>',
+  ai: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+};
+const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
+const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Chat Bot", "chat"], ["hi", "Riwayat", "clock"]];
+
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function wib(iso) { if (!iso) return "-"; const d = new Date(iso); if (isNaN(d)) return "-"; return d.toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+function ago(iso, now) { const d = new Date(iso); if (isNaN(d)) return ""; const s = Math.max(0, Math.round((now - d) / 1000)); if (s < 60) return s + " dtk lalu"; if (s < 3600) return Math.round(s / 60) + " mnt lalu"; if (s < 86400) return Math.round(s / 3600) + " jam lalu"; return Math.round(s / 86400) + " hari lalu"; }
+function toast(t) { const e = document.createElement("div"); e.className = "toast"; e.textContent = t; document.body.appendChild(e); setTimeout(() => e.remove(), 2800); }
+
+async function api(path, body) {
+  const r = await fetch(API + path, { method: body ? "POST" : "GET", headers: { Authorization: "Bearer " + token, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) { showLogin(); throw new Error("login"); }
+  return r.json();
+}
+function showLogin() { try { localStorage.removeItem("tok"); } catch (e) {} token = ""; $("#app").hidden = true; $("#login").hidden = false; }
+function enter() { $("#login").hidden = true; $("#app").hidden = false; load(); }
+
+$("#go").onclick = async () => {
+  $("#go").disabled = true;
+  try {
+    const r = await fetch(API + "/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: $("#pw").value }) });
+    const d = await r.json();
+    if (d.ok) { token = d.token; try { localStorage.setItem("tok", token); } catch (e) {} enter(); }
+    else { $("#lerr").hidden = false; $("#lerr").textContent = d.error || "Gagal masuk"; }
+  } catch (e) { $("#lerr").hidden = false; $("#lerr").textContent = "Tidak bisa menghubungi server."; }
+  $("#go").disabled = false;
+};
+$("#pw").onkeydown = (e) => { if (e.key === "Enter") $("#go").click(); };
+$("#outS").onclick = showLogin;
+$("#themeS").onclick = () => { const r = document.documentElement, d = r.dataset.theme === "dark" || (!r.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches); r.dataset.theme = d ? "light" : "dark"; try { localStorage.setItem("theme", r.dataset.theme); } catch (e) {} };
+try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+
+function go(t) { tab = t; chatBuilt = false; render(); window.scrollTo({ top: 0 }); }
+window.go = go;
+
+/* ---------- modal konfirmasi ---------- */
+function ask(title, text, okText, danger, fn) {
+  const l = $("#layer");
+  l.innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>${esc(title)}</h4><p>${esc(text)}</p><div class="row"><button class="btn" id="mn">Batal</button><button class="btn ${danger ? "dg" : "pri"}" id="my">${esc(okText)}</button></div></div></div>`;
+  const close = () => (l.innerHTML = "");
+  $("#mn").onclick = close; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") close(); };
+  $("#my").onclick = async () => { close(); await fn(); };
+}
+async function send(body, okMsg) {
+  try { const r = await api("/api/command", body); if (r.error) { toast(r.error); return false; } toast(okMsg || "Perintah dikirim"); load(); return true; }
+  catch (e) { toast("Gagal mengirim"); return false; }
+}
+window.toggleWf = (id, name, active) => ask(active ? "Nonaktifkan workflow?" : "Aktifkan workflow?", name, active ? "Nonaktifkan" : "Aktifkan", active, () => send({ type: active ? "deactivate" : "activate", target: id, label: name }, active ? "Menonaktifkan…" : "Mengaktifkan…"));
+window.retryEx = (id, name) => ask("Coba ulang eksekusi?", name + " #" + id, "Coba ulang", false, () => send({ type: "retry", target: id, label: name + " #" + id }, "Mengulang eksekusi…"));
+window.fixEx = (id, name) => ask("Perbaiki otomatis?", "Sistem mendiagnosa penyebab eror, memperbaiki yang aman (misalnya menyambungkan ulang WhatsApp), lalu mencoba ulang. " + name + " #" + id, "Perbaiki", false, async () => {
+  try {
+    toast("Memperbaiki… tunggu sebentar");
+    const r = await api("/api/command", { type: "perbaiki", target: id, label: "Perbaiki " + name + " #" + id });
+    if (r.error) return toast(r.error);
+    let c = null;
+    for (let i = 0; i < 40; i++) { await new Promise((z) => setTimeout(z, 3000)); await load(); c = (S.commands || []).find((x) => x.id === r.id); if (c && c.status !== "menunggu") break; }
+    const l = $("#layer"); const good = c && c.status === "selesai";
+    l.innerHTML = '<div class="modal" id="mdl"><div class="sheet"><h4>' + (good ? "Berhasil diperbaiki" : c && c.status === "gagal" ? "Belum berhasil" : "Masih diproses") + "</h4><p>" + esc(c ? c.result || "-" : "Laptop belum merespons. Hasil akan muncul di tab Riwayat.") + '</p><div class="row"><button class="btn pri" id="mn">Tutup</button></div></div></div>';
+    $("#mn").onclick = () => (l.innerHTML = ""); $("#mdl").onclick = (ev) => { if (ev.target.id === "mdl") l.innerHTML = ""; };
+  } catch (e) { toast("Gagal menghubungi server"); }
+});
+window.aiSoon = () => toast("Perbaikan oleh AI segera hadir");
+
+/* ---------- chat dengan bot ---------- */
+let echo = [], chatBuilt = false;
+async function chatSend(text, via) {
+  text = String(text || "").trim();
+  if (!text) return;
+  const body = via || { type: "chat", data: { text } };
+  echo.push({ text: via ? via.echoText || text : text, t: Date.now() });
+  paintChat(true);
+  try {
+    const r = await api("/api/command", body);
+    if (r.error) { toast(r.error); echo.pop(); paintChat(); return; }
+    setTimeout(load, 1500);
+  } catch (e) { toast("Gagal mengirim"); echo.pop(); paintChat(); }
+}
+window.quick = (t) => chatSend(t);
+window.sendBox = () => { const b = $("#cbox"); const t = b.value; b.value = ""; b.style.height = "auto"; chatSend(t); };
+let PIL = null;
+async function getPil() {
+  if (PIL) return PIL;
+  try { PIL = await api("/api/pilihan"); try { localStorage.setItem("pil", JSON.stringify(PIL)); } catch (e) {} }
+  catch (e) { try { PIL = JSON.parse(localStorage.getItem("pil") || "null"); } catch (x) { PIL = null; } }
+  return PIL;
+}
+const optHtml = (a, sel, ph) => (ph ? `<option value="">${esc(ph)}</option>` : "") + (a || []).map((x) => `<option value="${esc(x)}"${x === sel ? " selected" : ""}>${esc(x)}</option>`).join("");
+const NAMA_BLN = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+window.formSlip = async () => {
+  toast("Memuat daftar lokasi…");
+  const P = await getPil();
+  const now = new Date(), cur = NAMA_BLN[now.getMonth()] + " " + now.getFullYear();
+  let ls = {}; try { ls = JSON.parse(localStorage.getItem("last_slip") || "{}"); } catch (e) {}
+  const slip = (P && P.slip) || {}, lokasi = Object.keys(slip).sort();
+  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — pastikan laptop online"); return; }
+  const bulanOf = (l) => ((slip[l] && slip[l].periode) || []).map((p) => p.toUpperCase()).reverse();
+  const namaOf = (l, b) => {
+    const o = slip[l]; if (!o) return ["SEMUA"];
+    const key = Object.keys(o.bln || {}).find((k) => k.toUpperCase() === String(b || "").toUpperCase());
+    return ["SEMUA"].concat(key ? o.bln[key] : o.bln ? [] : o.nama || []);
+  };
+  const l0 = slip[ls.lokasi] ? ls.lokasi : "", b0 = l0 ? (bulanOf(l0).includes(ls.bulan) ? ls.bulan : bulanOf(l0).includes(cur) ? cur : bulanOf(l0)[0]) : "";
+  sheet("Minta slip gaji", `<div class="form"><label>Lokasi / client<select id="f_lokasi">${optHtml(lokasi, l0, "Pilih lokasi…")}</select></label>
+    <label>Nama karyawan (sesuai bulan)<select id="f_nama">${optHtml(l0 ? namaOf(l0, b0) : [], ls.nama, "Pilih lokasi dulu")}</select></label>
+    <label>Bulan (sesuai Rekap Gaji)<select id="f_bulan">${optHtml(l0 ? bulanOf(l0) : [], b0, "Pilih lokasi dulu")}</select></label></div>`, "Kirim ke bot", () => {
+    const d = { nama: $("#f_nama").value, bulan: $("#f_bulan").value, lokasi: $("#f_lokasi").value };
+    if (!d.nama || !d.bulan || !d.lokasi) { toast("Pilih lokasi, nama, dan bulan"); return false; }
+    try { localStorage.setItem("last_slip", JSON.stringify(d)); } catch (e) {}
+    chatSend("", { type: "slip", data: d, echoText: "Minta slip gaji\nNama: " + d.nama + "\nBulan: " + d.bulan + "\nLokasi: " + d.lokasi });
+    return true;
+  });
+  $("#f_lokasi").onchange = () => {
+    const l = $("#f_lokasi").value, b = bulanOf(l);
+    const bp = b.includes(cur) ? cur : b[0];
+    $("#f_bulan").innerHTML = optHtml(b, bp, l ? "" : "Pilih lokasi dulu");
+    $("#f_nama").innerHTML = optHtml(l ? namaOf(l, bp) : [], "SEMUA", l ? "" : "Pilih lokasi dulu");
+  };
+  $("#f_bulan").onchange = () => {
+    const prev = $("#f_nama").value;
+    const n = namaOf($("#f_lokasi").value, $("#f_bulan").value);
+    $("#f_nama").innerHTML = optHtml(n, n.includes(prev) ? prev : "SEMUA");
+  };
+};
+window.formInv = async () => {
+  toast("Memuat daftar lokasi…");
+  const P = await getPil();
+  const lokasi = (P && P.invoice) || [];
+  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — pastikan laptop online"); return; }
+  const now = new Date(), BL = NAMA_BLN.map((b) => b[0] + b.slice(1).toLowerCase());
+  const per = [];
+  for (let i = -11; i <= 1; i++) { const d = new Date(now.getFullYear(), now.getMonth() + i, 1); per.push(BL[d.getMonth()] + " " + d.getFullYear()); }
+  const curP = BL[now.getMonth()] + " " + now.getFullYear();
+  sheet("Buat invoice dan kwitansi", `<div class="form"><label>Lokasi / client<select id="i_lokasi">${optHtml(lokasi, "", "Pilih lokasi…")}</select></label>
+    <label>Tanggal pengiriman<input id="i_tgl" value="${now.getDate()} ${BL[now.getMonth()]} ${now.getFullYear()}"></label>
+    <label>Periode<select id="i_per">${optHtml(per.slice().reverse(), curP)}</select></label>
+    <label>Nominal<input id="i_nom" inputmode="numeric" placeholder="Angka, atau FLAT untuk nominal terakhir lokasi ini"></label></div>`, "Kirim ke bot", () => {
+    const d = { lokasi: $("#i_lokasi").value, tanggal: $("#i_tgl").value, periode: $("#i_per").value, nominal: $("#i_nom").value };
+    if (!d.lokasi.trim() || !d.tanggal.trim() || !d.periode.trim() || !d.nominal.trim()) { toast("Lengkapi semua kolom"); return false; }
+    chatSend("", { type: "invoice", data: d, echoText: "Buat invoice\nLokasi: " + d.lokasi + "\nTanggal Pengiriman: " + d.tanggal + "\nPeriode: " + d.periode + "\nNominal: " + d.nominal });
+    return true;
+  });
+};
+function sheet(title, inner, okText, fn) {
+  const l = $("#layer");
+  l.innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>${esc(title)}</h4>${inner}<div class="row" style="margin-top:16px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="my">${esc(okText)}</button></div></div></div>`;
+  const close = () => (l.innerHTML = "");
+  $("#mn").onclick = close; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") close(); };
+  $("#my").onclick = () => { if (fn() !== false) close(); };
+}
+window.clearEcho = () => { echo = []; };
+
+/* ---------- daftar pilihan (lokasi, nama, periode) ---------- */
+window.hapusChat = () => ask("Hapus semua percakapan?", "Pesan dan file hasil di chat ini akan dihapus dari website. Data di WhatsApp dan n8n tidak berubah.", "Hapus", true, async () => { try { await api("/api/chat/clear", {}); echo = []; toast("Percakapan dihapus"); load(); } catch (e) { toast("Gagal menghapus"); } });
+
+window.dl = async (id, name) => {
+  try {
+    toast("Menyiapkan file…");
+    const r = await fetch(API + "/api/file?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) return toast("File tidak ditemukan");
+    const u = URL.createObjectURL(await r.blob());
+    const a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 15000);
+  } catch (e) { toast("Gagal mengunduh"); }
+};
+
+/* ---------- render ---------- */
+const isBad = (e) => e.status === "error" || e.status === "crashed";
+const TRANSIENT = /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|timed out|ECONNREFUSED|503|502|429/i;
+function resolvedBy(e) {
+  const ex = S.executions;
+  if (ex.some((x) => String(x.retry_of) === String(e.id) && x.status === "success")) return "dicoba ulang, berhasil";
+  const t = new Date(e.started), later = (x) => x.wf_id === e.wf_id && new Date(x.started) > t;
+  if (TRANSIENT.test(e.err_msg || "")) {
+    if (ex.some((x) => later(x) && x.status === "success")) return "pulih otomatis";
+    if (S.now - t > 3e5 && !ex.some((x) => later(x) && isBad(x))) return "pulih otomatis, tidak berulang";
+  }
+  // percobaan ulang yang gagal/rusak, padahal eksekusi asalnya sudah berhasil diulang
+  if (e.retry_of && ex.some((x) => String(x.retry_of) === String(e.retry_of) && x.status === "success" && new Date(x.started) > t)) return "sudah diperbaiki lewat percobaan ulang berikutnya";
+  // eror dari pemicu terjadwal/hasil ulang: kalau eksekusi berikutnya sukses, berarti sudah normal
+  if (/^(trigger|cron|retry|manual)$/.test(e.mode) && ex.some((x) => later(x) && x.status === "success")) return "workflow sudah berjalan normal lagi";
+  return "";
+}
+const infoOf = (e) => { try { return e.info ? JSON.parse(e.info) : null; } catch (x) { return null; } };
+const fmtNum = (n) => { n = String(n || ""); return /^62d{8,}$/.test(n) ? "+62 " + n.slice(2).replace(/(d{3,4})(d{3,4})(d*)/, "$1-$2-$3").replace(/-$/, "") : n; };
+function whoLine(e) {
+  const i = infoOf(e);
+  if (i && i.who) return i.who.web ? "Pengguna: <b>Website kontrol</b>" : "Pengguna: <b>" + esc(i.who.name || "Tanpa nama") + "</b> • " + esc(fmtNum(i.who.number));
+  if (e.mode === "trigger" || e.mode === "cron") return "Pemicu: <b>terjadwal otomatis</b> (bukan dari pengguna)";
+  return "";
+}
+window.errDetail = (id) => {
+  const e = S.executions.find((x) => String(x.id) === String(id)); if (!e) return;
+  const i = infoOf(e) || {}, w = i.who, fixed = resolvedBy(e);
+  const rows = [["Workflow", esc(e.wf_name)], ["Eksekusi", "#" + esc(e.id) + " • " + esc(e.mode)], ["Waktu", wib(e.started)], ["Status", fixed ? "Teratasi (" + esc(fixed) + ")" : "Eror"]];
+  if (w) rows.push(["Pengguna", w.web ? "Website kontrol (chat web)" : esc(w.name || "Tanpa nama")], ["Nomor", w.web ? "-" : esc(fmtNum(w.number))]);
+  else rows.push(["Pengguna", e.mode === "trigger" || e.mode === "cron" ? "Tidak ada — dijalankan terjadwal/otomatis" : "Tidak terekam di data eksekusi"]);
+  if (i.text) rows.push(["Pesan masuk", esc(i.text)]);
+  if (i.req) { const r = i.req, t = [r.lokasi && "Lokasi: " + r.lokasi, r.nama && "Nama: " + r.nama, r.bulan && "Bulan: " + r.bulan, r.periode && "Periode: " + r.periode, r.tanggal && "Tgl kirim: " + r.tanggal, r.nominal && "Nominal: " + r.nominal].filter(Boolean); if (t.length) rows.push(["Permintaan", t.map(esc).join("<br>")]); }
+  const path = (i.path || []).map((p) => '<i class="' + (p.bad ? "bad" : "") + '">' + esc(p.n) + "</i>").join("");
+  const l = $("#layer");
+  l.innerHTML = '<div class="modal" id="mdl"><div class="sheet big"><h4>Detail eror #' + esc(e.id) + "</h4><p>" + esc(e.wf_name) + "</p>" +
+    '<h5>Di mana eror terjadi</h5><div class="err" style="margin-bottom:14px"><b>' + ic("alert") + esc(e.err_node || "Node tidak diketahui") + (i.type ? " <span class=\"mut\">(" + esc(i.type) + ")</span>" : "") + "</b><br>" + esc(e.err_msg || "Pesan eror belum terbaca") + (i.desc && i.desc !== e.err_msg ? "<br>" + esc(i.desc) : "") + "</div>" +
+    '<h5>Siapa & kapan</h5><div class="kv">' + rows.map((r) => "<span>" + r[0] + "</span><b>" + r[1] + "</b>").join("") + "</div>" +
+    (path ? '<h5>Jalur node sebelum eror' + (i.total > (i.path || []).length ? " (" + i.total + " node)" : "") + "</h5><div class=\"path\">" + path + "</div>" : "") +
+    (i.stack ? '<h5>Jejak teknis</h5><div class="code">' + esc(i.stack) + "</div>" : "") +
+    '<div class="row" style="margin-top:6px">' + (fixed ? "" : "<button class=\"btn\" id=\"dFix\">" + ic("ai") + "Perbaiki otomatis</button><button class=\"btn pri\" id=\"dRetry\">" + ic("retry") + "Coba ulang</button>") + '<button class="btn" id="mn">Tutup</button></div></div></div>';
+  const close = () => (l.innerHTML = "");
+  $("#mn").onclick = close; $("#mdl").onclick = (ev) => { if (ev.target.id === "mdl") close(); };
+  const fb = $("#dFix"); if (fb) fb.onclick = () => { close(); fixEx(e.id, e.wf_name); };
+  const rb = $("#dRetry"); if (rb) rb.onclick = () => { close(); retryEx(e.id, e.wf_name); };
+};
+const openErrs = () => S.executions.filter((e) => isBad(e) && !resolvedBy(e));
+const stPill = (s) => s === "success" ? '<span class="pill ok">Sukses</span>' : s === "error" || s === "crashed" ? '<span class="pill er">Eror</span>' : s === "waiting" ? '<span class="pill wa">Menunggu</span>' : s === "running" || s === "new" ? '<span class="pill wa">Berjalan</span>' : `<span class="pill mut">${esc(s)}</span>`;
+const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
+
+function chrome() {
+  const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
+  $("#sidenav").innerHTML = TABS.map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join("");
+  $("#tabbar").innerHTML = TABS.map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join("");
+  const online = S && !netOff && S.now - S.agentSeen < 45000;
+  const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Laptop online" : "Laptop offline") : "memuat";
+  const on = $("#offnote");
+  on.hidden = !S || online;
+  on.innerHTML = netOff ? ic("alert") + `<div><b>Tidak ada koneksi internet.</b><br>Menampilkan data terakhir yang tersimpan. Akan menyambung sendiri begitu koneksi kembali.</div>` : S && !online ? ic("alert") + `<div><b>Laptop tidak terhubung.</b><br>${S.agentSeen ? "Terakhir terlihat " + wib(S.agentSeen) + ". " : ""}Data di bawah adalah data terakhir, dan perintah baru berjalan setelah laptop online.</div>` : "";
+}
+
+function ovView() {
+  const now = S.now, ex = S.executions;
+  const d24 = ex.filter((e) => now - new Date(e.started) < 864e5);
+  const errs = d24.filter((e) => isBad(e) && !resolvedBy(e));
+  const act = S.workflows.filter((w) => w.active).length;
+  const online = now - S.agentSeen < 45000;
+  const bad = errs.length > 0 || !online;
+  const hrs = Array.from({ length: 24 }, () => ({ t: 0, e: 0 }));
+  d24.forEach((e) => { const h = 23 - Math.min(23, Math.floor((now - new Date(e.started)) / 36e5)); hrs[h].t++; if (e.status === "error" || e.status === "crashed") hrs[h].e++; });
+  const mx = Math.max(1, ...hrs.map((h) => h.t));
+  const recent = ex.slice(0, 6).map((e) => `<div class="row" style="justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><div><div class="nm">${esc(e.wf_name)}</div><div class="mut">${ago(e.started, now)} • #${esc(e.id)}</div></div>${stPill(e.status)}</div>`).join("");
+  return `<div class="top"><div><h1>Ringkasan</h1><p>Kondisi seluruh workflow saat ini</p></div></div>
+  <div class="hero ${bad ? "bad" : ""} fade"><h2>${!online ? "Laptop sedang offline" : errs.length ? errs.length + " eror perlu perhatian" : "Semua sistem berjalan normal"}</h2>
+  <p>${!online ? "Workflow tidak bisa dipantau sampai laptop kembali online." : errs.length ? "Buka tab Eror untuk melihat penyebab dan mencoba ulang." : `${act} workflow aktif dan ${d24.filter((e) => e.status === "success").length} eksekusi sukses dalam 24 jam terakhir.`}</p></div>
+  <div class="stats">
+    <div class="card stat fade"><div class="ic">${ic("flow")}</div><b>${act}<small style="font-size:15px;color:var(--mut)">/${S.workflows.length}</small></b><span>Workflow aktif</span></div>
+    <div class="card stat ok fade"><div class="ic">${ic("check")}</div><b>${d24.filter((e) => e.status === "success").length}</b><span>Sukses 24 jam</span></div>
+    <div class="card stat er fade"><div class="ic">${ic("alert")}</div><b>${errs.length}</b><span>Eror 24 jam</span></div>
+    <div class="card stat wa fade"><div class="ic">${ic("clock")}</div><b>${S.commands.filter((c) => c.status === "menunggu").length}</b><span>Perintah menunggu</span></div>
+  </div>
+  <div class="card fade"><div class="row" style="justify-content:space-between;margin-bottom:12px"><b>Aktivitas 24 jam</b><span class="mut">${d24.length} eksekusi</span></div>
+    <div class="bars">${hrs.map((h) => `<i class="${h.e ? "e" : ""}" style="height:${Math.max(4, (h.t / mx) * 100)}%" title="${h.t} eksekusi"></i>`).join("")}</div><div class="legend"><span>24 jam lalu</span><span>sekarang</span></div></div>
+  <div class="sec"><h3>Terbaru</h3><button class="btn" onclick="go('hi')">Lihat semua</button></div>
+  <div class="card fade" style="padding-top:6px;padding-bottom:6px">${recent || empty("clock", "Belum ada aktivitas")}</div>`;
+}
+
+function wfView() {
+  const last = {}; S.executions.forEach((e) => { if (!last[e.wf_id]) last[e.wf_id] = e; });
+  const cards = S.workflows.map((w) => { const l = last[w.id]; return `<div class="card item fade"><div class="h"><div><div class="nm">${esc(w.name)}</div><div class="mut">${w.nodes} node • ${esc(w.id)}</div></div>
+    <button class="sw ${w.active ? "on" : ""}" aria-label="${w.active ? "Nonaktifkan" : "Aktifkan"}" onclick="toggleWf('${esc(w.id)}','${esc(w.name).replace(/'/g, "")}',${w.active})"></button></div>
+    <div class="row" style="justify-content:space-between"><span class="mut">${l ? "Terakhir " + ago(l.started, S.now) : "Belum pernah jalan"}</span>${l ? stPill(l.status) : ""}</div></div>`; }).join("");
+  return `<div class="top"><div><h1>Workflow</h1><p>${S.workflows.filter((w) => w.active).length} aktif dari ${S.workflows.length}</p></div></div><div class="grid two">${cards || empty("flow", "Belum ada data")}</div>`;
+}
+
+function erView() {
+  const all = S.executions.filter(isBad);
+  const open = all.filter((e) => !resolvedBy(e)), done = all.filter((e) => resolvedBy(e));
+  const card = (e, fixed) => `<div class="card item fade click" onclick="errDetail('${esc(e.id)}')" ${fixed ? 'style="opacity:.78"' : ""}><div class="h"><div><div class="nm">${esc(e.wf_name)}</div><div class="mut">#${esc(e.id)} • ${wib(e.started)} • ${esc(e.mode)}</div></div>${fixed ? '<span class="pill ok">Teratasi</span>' : stPill(e.status)}</div>
+  <div class="err"><b>${ic("alert")}${esc(e.err_node || "Node tidak diketahui")}</b><br>${esc(e.err_msg || "Pesan eror belum terbaca")}</div>
+  <div class="who">${whoLine(e)}</div><div class="mut" style="font-size:12px">Ketuk untuk detail lengkap</div>
+  ${fixed ? `<div class="mut">${esc(fixed)}</div>` : `<div class="row"><button class="btn pri" onclick="event.stopPropagation();retryEx('${esc(e.id)}','${esc(e.wf_name).replace(/'/g, "")}')">${ic("retry")}Coba ulang</button><button class="btn" onclick="event.stopPropagation();fixEx('${esc(e.id)}','${esc(e.wf_name).replace(/'/g, "")}')">${ic("ai")}Perbaiki otomatis</button></div>`}</div>`;
+  return `<div class="top"><div><h1>Eror</h1><p>${open.length ? open.length + " perlu perhatian" : "Tidak ada eror yang perlu ditangani"}</p></div></div>
+  ${open.length ? `<div class="banner" style="background:var(--accsoft);color:var(--acc)">${ic("ai")}<div><b>Tombol Perbaiki otomatis</b> mendiagnosa penyebab, menyambungkan ulang WhatsApp bila terputus, lalu mencoba ulang. Ketuk kartu untuk detail.</div></div>` : ""}
+  <div class="grid">${open.map((e) => card(e, "")).join("") || `<div class="card">${empty("check", "Semua workflow berjalan tanpa eror")}</div>`}</div>
+  ${done.length ? `<div class="sec"><h3>Sudah teratasi (${done.length})</h3></div><div class="grid">${done.slice(0, 15).map((e) => card(e, resolvedBy(e))).join("")}</div>` : ""}`;
+}
+
+function hiView() {
+  const list = S.executions.filter((e) => filter === "all" || (filter === "ok" ? e.status === "success" : e.status === "error" || e.status === "crashed"));
+  return `<div class="top"><div><h1>Riwayat</h1><p>200 eksekusi terakhir</p></div></div>
+  <div class="chips">${[["all", "Semua"], ["ok", "Sukses"], ["bad", "Eror"]].map(([k, n]) => `<button class="chip ${filter === k ? "on" : ""}" onclick="filter='${k}';render()">${n}</button>`).join("")}</div>
+  <div class="card" style="padding-top:4px;padding-bottom:4px">${list.slice(0, 80).map((e) => `<div class="row ${isBad(e) ? "click" : ""}" ${isBad(e) ? `onclick="errDetail('${esc(e.id)}')"` : ""} style="justify-content:space-between;padding:12px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(e.wf_name)}</div><div class="mut">${wib(e.started)} • #${esc(e.id)} • ${esc(e.mode)}</div>${e.err_msg ? `<div class="mut" style="color:var(--er)">${esc(e.err_msg)}</div>` : ""}${isBad(e) && whoLine(e) ? `<div class="who">${whoLine(e)}</div>` : ""}</div>${stPill(e.status)}</div>`).join("") || empty("clock", "Tidak ada data")}</div>`;
+}
+
+function bubbleHtml(o) {
+  const fmt = (t) => esc(t).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+  const kb = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  if (o.kind === "user") return `<div class="msg me"><div class="bub">${fmt(o.text)}</div><div class="ts">${wib(o.created)}</div></div>`;
+  if (o.kind === "file") return `<div class="msg bot"><div class="av">${ic("ai")}</div><div class="col"><div class="bub file"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(o.filename || "Dokumen")}</div><div class="mut">${esc(o.caption || "")} ${kb(o.size || 0)}</div></div></div><button class="btn ok" style="margin-top:6px" onclick="dl(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Unduh PDF</button><div class="ts">${wib(o.created)}</div></div></div>`;
+  return `<div class="msg bot"><div class="av">${ic("ai")}</div><div class="col"><div class="bub">${fmt(o.text)}</div><div class="ts">${wib(o.created)}</div></div></div>`;
+}
+function chatItems() {
+  const ob = (S.outbox || []).slice(0, 40).reverse();
+  // buang echo yang sudah tercatat server
+  echo = echo.filter((e) => Date.now() - e.t < 25000 && !ob.some((o) => o.kind === "user" && o.created >= e.t - 8000 && o.text.trim() === e.text.trim()));
+  return { ob, items: ob.concat(echo.map((e) => ({ kind: "user", text: e.text, created: e.t, id: "echo" }))) };
+}
+function paintChat(force) {
+  const box = $("#msgs"); if (!box || !S) return;
+  const { ob, items } = chatItems();
+  const near = window.innerHeight + window.scrollY >= document.body.scrollHeight - 160;
+  const last = items[items.length - 1];
+  const typing = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
+  const needOk = ob.length && ob[ob.length - 1].kind === "text" && /SETUJU/.test(ob[ob.length - 1].text || "") && !echo.length;
+  box.innerHTML = (items.length ? items.map(bubbleHtml).join("") : `<div class="empty">${ic("ai")}<div>Mulai percakapan. Pilih salah satu tombol di bawah atau ketik pesan seperti di WhatsApp.</div></div>`) +
+    (typing ? '<div class="msg bot"><div class="av">' + ic("ai") + '</div><div class="col"><div class="bub typing"><i></i><i></i><i></i></div></div></div>' : "");
+  $("#qk").innerHTML = (needOk ? '<button class="chip ok" onclick="quick(\'SETUJU\')">SETUJU</button><button class="chip dg" onclick="quick(\'BATAL\')">BATAL</button>' : "") +
+    '<button class="chip" onclick="formSlip()">Slip gaji</button><button class="chip" onclick="formInv()">Invoice</button><button class="chip" onclick="quick(\'/help\')">Bantuan</button><button class="chip" onclick="quick(\'/slip\')">Mode slip</button><button class="chip" onclick="quick(\'/invoice\')">Mode invoice</button>';
+  if (force || near || items.length !== paintChat.n) window.scrollTo({ top: document.body.scrollHeight, behavior: force ? "smooth" : "auto" });
+  paintChat.n = items.length;
+}
+function rqView() {
+  return `<div class="chatwrap"><div class="top"><div><h1>Chat Bot</h1><p>Percakapan di sini tidak dikirim ke WhatsApp</p></div><button class="btn" onclick="hapusChat()">Hapus chat</button></div>
+  <div id="msgs" class="msgs"></div>
+  <div class="composer"><div id="qk" class="chips"></div>
+    <div class="cin"><textarea id="cbox" rows="1" placeholder="Ketik pesan untuk bot…" enterkeyhint="send"></textarea><button class="send" aria-label="Kirim" onclick="sendBox()">${ic("send")}</button></div></div></div>`;
+}
+
+function render() {
+  chrome();
+  if (!S) return;
+  if (tab === "rq") {
+    if (!chatBuilt || !$("#msgs")) { $("#view").innerHTML = rqView(); chatBuilt = true; wireBox(); }
+    paintChat(); return;
+  }
+  chatBuilt = false;
+  const act = document.activeElement;
+  if (act && /^(INPUT|TEXTAREA)$/.test(act.tagName)) return;
+  $("#view").innerHTML = { ov: ovView, wf: wfView, er: erView, hi: hiView }[tab]();
+}
+function wireBox() {
+  const b = $("#cbox"); if (!b) return;
+  b.addEventListener("input", () => { b.style.height = "auto"; b.style.height = Math.min(140, b.scrollHeight) + "px"; });
+  b.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendBox(); } });
+}
+window.render = render;
+
+let netOff = false;
+async function load() {
+  try {
+    S = await api("/api/state"); netOff = false;
+    try { localStorage.setItem("cacheS", JSON.stringify(S)); } catch (e) {}
+    render();
+  } catch (e) {
+    if (String(e.message) === "login") return;
+    netOff = true;
+    if (!S) { try { S = JSON.parse(localStorage.getItem("cacheS") || "null"); } catch (x) {} }
+    render();
+  }
+}
+window.addEventListener("online", load);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+if (token) enter(); else $("#login").hidden = false;
+setInterval(() => { if (token && !document.hidden) load(); }, 10000);
+</script>
+</body>
+</html>
