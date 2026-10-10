@@ -226,7 +226,7 @@ const I = {
   ai: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
-const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Chat Bot", "chat"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"]];
+const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"]];
 
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function wib(iso) { if (!iso) return "-"; const d = new Date(iso); if (isNaN(d)) return "-"; return d.toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
@@ -549,32 +549,37 @@ function chatItems() {
   echo = echo.filter((e) => Date.now() - e.t < 25000 && !ob.some((o) => o.kind === "user" && o.created >= e.t - 8000 && o.text.trim() === e.text.trim()));
   return { ob, items: ob.concat(echo.map((e) => ({ kind: "user", text: e.text, created: e.t, id: "echo" }))) };
 }
+function hasilHtml(o, aksi) {
+  const fmt = (t) => esc(t).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+  const kb = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  if (o.kind === "user") return `<div class="card item fade"><div class="h"><div><div class="nm">Permintaan Anda</div><div class="mut">${esc(o.text).slice(0, 200)}</div></div><span class="pill mut">${wib(o.created)}</span></div></div>`;
+  if (o.kind === "file") return `<div class="card item fade"><div class="h"><div style="display:flex;gap:10px;align-items:center;min-width:0"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(o.filename || "Dokumen")}</div><div class="mut">${esc(o.caption || "")} ${kb(o.size || 0)} • ${wib(o.created)}</div></div></div></div><div class="row" style="margin-top:8px"><button class="btn ok" onclick="dl(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Unduh PDF</button></div></div>`;
+  return `<div class="card item fade"><div class="mut" style="margin-bottom:6px">${wib(o.created)}</div><div>${fmt(o.text)}</div>${aksi ? '<div class="row" style="margin-top:10px"><button class="btn ok" onclick="quick(\'SETUJU\')">SETUJU</button><button class="btn" onclick="quick(\'BATAL\')">BATAL</button></div>' : ""}</div>`;
+}
 function paintChat(force) {
-  const box = $("#msgs"); if (!box || !S) return;
+  const box = $("#hasil"); if (!box || !S) return;
   const { ob, items } = chatItems();
-  const near = window.innerHeight + window.scrollY >= document.body.scrollHeight - 160;
   const last = items[items.length - 1];
-  const typing = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
+  const proses = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
   const needOk = ob.length && ob[ob.length - 1].kind === "text" && /SETUJU/.test(ob[ob.length - 1].text || "") && !echo.length;
-  box.innerHTML = (items.length ? items.map(bubbleHtml).join("") : `<div class="empty">${ic("ai")}<div>Mulai percakapan. Pilih salah satu tombol di bawah atau ketik pesan seperti di WhatsApp.</div></div>`) +
-    (typing ? '<div class="msg bot"><div class="av">' + ic("ai") + '</div><div class="col"><div class="bub typing"><i></i><i></i><i></i></div></div></div>' : "");
-  $("#qk").innerHTML = (needOk ? '<button class="chip ok" onclick="quick(\'SETUJU\')">SETUJU</button><button class="chip dg" onclick="quick(\'BATAL\')">BATAL</button>' : "") +
-    '<button class="chip" onclick="formSlip()">Slip gaji</button><button class="chip" onclick="formInv()">Invoice</button><button class="chip" onclick="quick(\'/help\')">Bantuan</button><button class="chip" onclick="quick(\'/slip\')">Mode slip</button><button class="chip" onclick="quick(\'/invoice\')">Mode invoice</button>';
-  if (force || near || items.length !== paintChat.n) window.scrollTo({ top: document.body.scrollHeight, behavior: force ? "smooth" : "auto" });
-  paintChat.n = items.length;
+  const rev = items.slice().reverse().slice(0, 25);
+  box.innerHTML = (proses ? '<div class="card item"><div class="mut">Sedang diproses…</div></div>' : "") +
+    (rev.map((o, i) => hasilHtml(o, needOk && i === (proses ? 0 : 0) && o === ob[ob.length - 1])).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Pilih Slip Gaji atau Invoice di atas.")}</div>`);
 }
 function rqView() {
-  return `<div class="chatwrap"><div class="top"><div><h1>Chat Bot</h1><p>Percakapan di sini tidak dikirim ke WhatsApp</p></div><button class="btn" onclick="hapusChat()">Hapus chat</button></div>
-  <div id="msgs" class="msgs"></div>
-  <div class="composer"><div id="qk" class="chips"></div>
-    <div class="cin"><textarea id="cbox" rows="1" placeholder="Ketik pesan untuk bot…" enterkeyhint="send"></textarea><button class="send" aria-label="Kirim" onclick="sendBox()">${ic("send")}</button></div></div></div>`;
+  return `<div class="top"><div><h1>Permintaan</h1><p>Pilih jenis dokumen yang dibutuhkan</p></div><button class="btn" onclick="hapusChat()">Hapus riwayat</button></div>
+  <div class="grid two">
+    <div class="card item fade click" onclick="formSlip()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan</div></div></div></div></div>
+    <div class="card item fade click" onclick="formInv()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi</div></div></div></div></div>
+  </div>
+  <div class="sec"><h3>Hasil dan konfirmasi</h3></div><div id="hasil" class="grid"></div>`;
 }
 
 function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt || !$("#msgs")) { $("#view").innerHTML = rqView(); chatBuilt = true; wireBox(); }
+    if (!chatBuilt || !$("#hasil")) { $("#view").innerHTML = rqView(); chatBuilt = true; }
     paintChat(); return;
   }
   chatBuilt = false;
