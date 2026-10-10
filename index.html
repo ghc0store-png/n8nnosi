@@ -258,7 +258,7 @@ $("#outS").onclick = showLogin;
 $("#themeS").onclick = () => { const r = document.documentElement, d = r.dataset.theme === "dark" || (!r.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches); r.dataset.theme = d ? "light" : "dark"; try { localStorage.setItem("theme", r.dataset.theme); } catch (e) {} };
 try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 
-function go(t) { tab = t; try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {} chatBuilt = false; clBuilt = false; render(); window.scrollTo({ top: 0 }); }
+function go(t) { if (t === "rq" && tab === "rq") rqSub = ""; tab = t; try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {} chatBuilt = false; clBuilt = false; render(); window.scrollTo({ top: 0 }); }
 window.go = go;
 
 /* ---------- modal konfirmasi ---------- */
@@ -401,6 +401,12 @@ window.formInv = async () => {
   });
 };
 function sheet(title, inner, okText, fn) {
+  if (window._inline) {
+    const box = window._inline;
+    box.innerHTML = `<div class="card"><h4 style="margin:0 0 10px">${esc(title)}</h4>${inner}<div class="row" style="margin-top:14px"><button class="btn pri" id="my">${esc(okText)}</button></div></div>`;
+    box.querySelector("#my").onclick = () => { fn(); };
+    return;
+  }
   const l = $("#layer");
   l.innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>${esc(title)}</h4>${inner}<div class="row" style="margin-top:16px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="my">${esc(okText)}</button></div></div></div>`;
   const close = () => (l.innerHTML = "");
@@ -551,6 +557,24 @@ function chatItems() {
   echo = echo.filter((e) => Date.now() - e.t < 25000 && !ob.some((o) => o.kind === "user" && o.created >= e.t - 8000 && o.text.trim() === e.text.trim()));
   return { ob, items: ob.concat(echo.map((e) => ({ kind: "user", text: e.text, created: e.t, id: "echo" }))) };
 }
+/*sub-halaman*/
+let rqSub = "";
+const rqNama = { slip: "Slip Gaji", inv: "Invoice" };
+// tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
+function jenisPesan(items) {
+  let cur = "";
+  return items.map((o) => {
+    const t = String(o.text || "") + " " + String(o.filename || "") + " " + String(o.caption || "");
+    let j = "";
+    if (o.kind === "file") j = /invoice|kwitansi/i.test(t) ? "inv" : /slip/i.test(t) ? "slip" : "";
+    else if (/^\s*(Minta slip gaji|Nama:)/i.test(o.text || "")) j = "slip";
+    else if (/^\s*(Buat invoice|Lokasi:)/i.test(o.text || "")) j = "inv";
+    else if (/No\. ?Invoice|No\. ?Kwitansi|Tanggal Pengiriman|Bagian Kerja|Invoice & Kwitansi|Terbilang/i.test(t)) j = "inv";
+    else if (/slip gaji|SLIP GAJI|slip/i.test(t)) j = "slip";
+    if (j) cur = j;
+    return j || cur;
+  });
+}
 function hasilHtml(o, aksi) {
   const fmt = (t) => esc(t).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
   const kb = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
@@ -558,30 +582,46 @@ function hasilHtml(o, aksi) {
   if (o.kind === "file") return `<div class="card item fade"><div class="h"><div style="display:flex;gap:10px;align-items:center;min-width:0"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(o.filename || "Dokumen")}</div><div class="mut">${esc(o.caption || "")} ${kb(o.size || 0)} • ${wib(o.created)}</div></div></div></div><div class="row" style="margin-top:8px"><button class="btn ok" onclick="dl(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Unduh PDF</button></div></div>`;
   return `<div class="card item fade"><div class="mut" style="margin-bottom:6px">${wib(o.created)}</div><div>${fmt(o.text)}</div>${aksi ? '<div class="row" style="margin-top:10px"><button class="btn ok" onclick="quick(\'SETUJU\')">SETUJU</button><button class="btn" onclick="quick(\'BATAL\')">BATAL</button></div>' : ""}</div>`;
 }
-function paintChat(force) {
-  const box = $("#hasil"); if (!box || !S) return;
+function paintChat() {
+  const box = $("#hasil"); if (!box || !S || !rqSub) return;
   const { ob, items } = chatItems();
-  const last = items[items.length - 1];
+  const jenis = jenisPesan(items);
+  const mine = items.filter((_, i) => jenis[i] === rqSub);
+  const last = mine[mine.length - 1];
   const proses = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
-  const needOk = ob.length && ob[ob.length - 1].kind === "text" && /SETUJU/.test(ob[ob.length - 1].text || "") && !echo.length;
-  const rev = items.slice().reverse().slice(0, 25);
+  const lastOb = ob.length ? ob[ob.length - 1] : null;
+  const needOk = lastOb && lastOb.kind === "text" && /SETUJU/.test(lastOb.text || "") && !echo.length && mine.includes(lastOb);
+  const rev = mine.slice().reverse().slice(0, 25);
   setHtml(box, (proses ? '<div class="card item"><div class="mut">Sedang diproses…</div></div>' : "") +
-    (rev.map((o, i) => hasilHtml(o, needOk && i === (proses ? 0 : 0) && o === ob[ob.length - 1])).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Pilih Slip Gaji atau Invoice di atas.")}</div>`));
+    (rev.map((o) => hasilHtml(o, needOk && o === lastOb)).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Isi formulir di atas untuk membuat permintaan.")}</div>`));
 }
 function rqView() {
-  return `<div class="top"><div><h1>Permintaan</h1><p>Pilih jenis dokumen yang dibutuhkan</p></div><button class="btn" onclick="hapusChat()">Hapus riwayat</button></div>
-  <div class="grid two">
-    <div class="card item fade click" onclick="formSlip()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan</div></div></div></div></div>
-    <div class="card item fade click" onclick="formInv()"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi</div></div></div></div></div>
-  </div>
+  if (!rqSub) {
+    const { items } = chatItems(); const jn = jenisPesan(items);
+    const cnt = (k) => items.filter((o, i) => jn[i] === k && o.kind === "file").length;
+    return `<div class="top"><div><h1>Permintaan</h1><p>Pilih jenis dokumen yang dibutuhkan</p></div><button class="btn" onclick="hapusChat()">Hapus riwayat</button></div>
+    <div class="grid two">
+      <div class="card item fade click" onclick="bukaSub('slip')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan • ${cnt("slip")} dokumen</div></div></div></div></div>
+      <div class="card item fade click" onclick="bukaSub('inv')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi • ${cnt("inv")} dokumen</div></div></div></div></div>
+    </div>`;
+  }
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan, lalu hasil dan konfirmasi muncul di bawah</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
+  <div id="formbox"></div>
   <div class="sec"><h3>Hasil dan konfirmasi</h3></div><div id="hasil" class="grid still"></div>`;
 }
+window.bukaSub = async (k) => {
+  rqSub = k; chatBuilt = false; render();
+  window._inline = $("#formbox");
+  try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
+  paintChat();
+};
+window.tutupSub = () => { rqSub = ""; chatBuilt = false; render(); };
 
 function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt || !$("#hasil")) { $("#view").innerHTML = rqView(); chatBuilt = true; }
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; }
     paintChat(); return;
   }
   chatBuilt = false;
