@@ -226,7 +226,7 @@ const I = {
   ai: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
-const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Chat Bot", "chat"], ["hi", "Riwayat", "clock"]];
+const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Chat Bot", "chat"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"]];
 
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function wib(iso) { if (!iso) return "-"; const d = new Date(iso); if (isNaN(d)) return "-"; return d.toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
@@ -256,7 +256,7 @@ $("#outS").onclick = showLogin;
 $("#themeS").onclick = () => { const r = document.documentElement, d = r.dataset.theme === "dark" || (!r.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches); r.dataset.theme = d ? "light" : "dark"; try { localStorage.setItem("theme", r.dataset.theme); } catch (e) {} };
 try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 
-function go(t) { tab = t; chatBuilt = false; render(); window.scrollTo({ top: 0 }); }
+function go(t) { tab = t; chatBuilt = false; clBuilt = false; render(); window.scrollTo({ top: 0 }); }
 window.go = go;
 
 /* ---------- modal konfirmasi ---------- */
@@ -286,6 +286,38 @@ window.fixEx = (id, name) => ask("Perbaiki otomatis?", "Sistem mendiagnosa penye
   } catch (e) { toast("Gagal menghubungi server"); }
 });
 window.aiSoon = () => toast("Perbaikan oleh AI segera hadir");
+
+
+/* ---------- menu Claude (hanya baca) ---------- */
+let clJobs = [], clBuilt = false, clTimer = null;
+const clSt = { menunggu: ["Menunggu", "mut"], menganalisis: ["Menganalisis…", "mut"], stop_diminta: ["Menghentikan…", "mut"], selesai: ["Selesai", "ok"], gagal: ["Gagal", "er"], dihentikan: ["Dihentikan", "mut"] };
+function clView() {
+  return `<div class="top"><div><h1>Claude</h1><p>Minta Claude memeriksa n8n atau sistem Anda. Mode hanya baca: Claude menganalisis dan memberi usulan, tidak mengubah apa pun.</p></div></div>
+  <div class="card item"><textarea id="clbox" rows="4" maxlength="4000" placeholder="Contoh: Cek kenapa workflow INVOICE OTOMATIS (WA) eror kemarin dan beri usulan perbaikan" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line,#8884);background:transparent;color:inherit;resize:vertical"></textarea>
+  <div class="row" style="margin-top:8px"><button class="btn pri" id="clsend" onclick="clSend()">${ic("send")}Kirim ke Claude</button></div></div>
+  <div id="cljobs" class="grid" style="margin-top:12px"></div>`;
+}
+function clPaint() {
+  const el = $("#cljobs"); if (!el) return;
+  if (!clJobs.length) { el.innerHTML = '<div class="card"><div class="mut" style="padding:12px">Belum ada tugas.</div></div>'; return; }
+  el.innerHTML = clJobs.map((j) => {
+    const [t, c] = clSt[j.status] || [j.status, "mut"];
+    const jalan = j.status === "menunggu" || j.status === "menganalisis";
+    const bisaHapus = ["selesai", "gagal", "dihentikan"].includes(j.status);
+    return `<div class="card item fade"><div class="h"><div><div class="nm">${esc(j.prompt).slice(0, 160)}</div><div class="mut">#${j.id} • ${wib(new Date(j.created).toISOString())}</div></div><span class="pill ${c}">${t}</span></div>
+    ${j.output ? `<pre style="white-space:pre-wrap;word-break:break-word;font:13px/1.5 inherit;margin:10px 0 0;max-height:420px;overflow:auto">${esc(j.output)}</pre>` : ""}
+    <div class="row" style="margin-top:8px">${jalan ? `<button class="btn" onclick="clAct(${j.id},'stop')">Hentikan</button>` : ""}${bisaHapus ? `<button class="btn" onclick="clAct(${j.id},'hapus')">Hapus</button>` : ""}</div></div>`;
+  }).join("");
+}
+async function clLoad() { try { const r = await api("/api/claude"); clJobs = r.jobs || []; clPaint(); } catch (e) {} }
+function clStart() { clLoad(); clearInterval(clTimer); clTimer = setInterval(() => { if (tab !== "cl") { clearInterval(clTimer); return; } clLoad(); }, 4000); }
+window.clSend = async () => {
+  const b = $("#clbox"); const prompt = (b.value || "").trim(); if (prompt.length < 3) return toast("Tulis perintahnya dulu");
+  $("#clsend").disabled = true;
+  try { const r = await api("/api/claude", { prompt }); if (r.error) toast(r.error); else { b.value = ""; toast("Terkirim ke Claude"); clLoad(); } } catch (e) { toast("Gagal menghubungi server"); }
+  $("#clsend").disabled = false;
+};
+window.clAct = async (id, action) => { try { const r = await api("/api/claude/act", { id, action }); if (r.error) toast(r.error); clLoad(); } catch (e) { toast("Gagal menghubungi server"); } };
 
 /* ---------- chat dengan bot ---------- */
 let echo = [], chatBuilt = false;
@@ -546,6 +578,11 @@ function render() {
     paintChat(); return;
   }
   chatBuilt = false;
+  if (tab === "cl") {
+    if (!clBuilt || !$("#clbox")) { $("#view").innerHTML = clView(); clBuilt = true; clStart(); }
+    clPaint(); return;
+  }
+  clBuilt = false;
   const act = document.activeElement;
   if (act && /^(INPUT|TEXTAREA)$/.test(act.tagName)) return;
   $("#view").innerHTML = { ov: ovView, wf: wfView, er: erView, hi: hiView }[tab]();
