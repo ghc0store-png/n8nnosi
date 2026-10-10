@@ -169,6 +169,13 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .send{width:42px;height:42px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
 .send svg{width:19px;height:19px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.bbdrop{margin-top:10px;border:1.5px dashed var(--line);border-radius:14px;padding:20px 12px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bbdrop:hover,.bbdrop.on{border-color:var(--acc);background:var(--accsoft)}
+.bbdrop svg{width:26px;height:26px;color:var(--acc)}
+.bbdrop small{color:var(--mut)}
+.bbtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bbtools select,.bbtools input{font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;min-width:0}
+.bbtools input{flex:1 1 160px}
 </style>
 </head>
 <body>
@@ -225,6 +232,7 @@ const I = {
   chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/>',
   ai: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
+I.shield = '<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 const TABS = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"]];
 
@@ -559,7 +567,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -596,6 +604,8 @@ function paintChat() {
     (rev.map((o) => hasilHtml(o, needOk && o === lastOb)).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Isi formulir di atas untuk membuat permintaan.")}</div>`));
 }
 function rqView() {
+  if (rqSub === "bpjs") return bpjsView();
+  if (rqSub === "bb") return bbView();
   if (!rqSub) {
     const { items } = chatItems(); const jn = jenisPesan(items);
     const cnt = (k) => items.filter((o, i) => jn[i] === k && o.kind === "file").length;
@@ -603,6 +613,7 @@ function rqView() {
     <div class="grid two">
       <div class="card item fade click" onclick="bukaSub('slip')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan • ${cnt("slip")} dokumen</div></div></div></div></div>
       <div class="card item fade click" onclick="bukaSub('inv')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi • ${cnt("inv")} dokumen</div></div></div></div></div>
+      <div class="card item fade click" onclick="bukaSub('bpjs')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("shield")}</div><div><div class="nm">BPJS</div><div class="mut">Bukti bayar dan pengolahan BPJS</div></div></div></div></div>
     </div>`;
   }
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan, lalu hasil dan konfirmasi muncul di bawah</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
@@ -611,17 +622,159 @@ function rqView() {
 }
 window.bukaSub = async (k) => {
   rqSub = k; chatBuilt = false; render();
+  if (k === "bpjs" || k === "bb") { window.scrollTo({ top: 0 }); return; }
   window._inline = $("#formbox");
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bb" ? "bpjs" : ""; chatBuilt = false; render(); };
+
+/* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
+function bpjsView() {
+  return `<div class="top"><div><h1>BPJS</h1><p>Pilih menu BPJS yang dibutuhkan</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="grid two">
+    <div class="card item fade click" onclick="bukaSub('bb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar</div><div class="mut">Unggah PDF bulk KES atau TK, dipisah per lokasi</div></div></div></div></div>
+  </div>`;
+}
+let bbJenis = "kes", bbBulan = "", bbQ = "", bbData = null, bbFiles = [], bbPick = null, bbTimer = null, bbLoaded = "", bbBusy = false, bbMonSig = "";
+const kbs = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round((n || 0) / 1024)) + " KB";
+const bbSt = { mengunggah: ["Mengunggah…", "wa"], menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Gagal", "er"] };
+const bbAktif = () => { const j = bbData && bbData.jobs[0]; return !!j && ["mengunggah", "menunggu", "diproses"].includes(j.status) && bbData.now - j.updated < 20 * 60e3; };
+
+function bbView() {
+  return `<div class="top"><div><h1>Bukti Bayar BPJS</h1><p>Unggah PDF bulk dari BPJS. Sistem memisahkannya menjadi satu PDF per lokasi, lalu menyimpannya di Google Drive dan di halaman ini.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="chips" id="bbj"></div>
+  <div class="card item fade"><div class="nm">Unggah PDF bulk</div>
+    <div class="bbdrop" id="bbdrop" tabindex="0" role="button" aria-label="Pilih berkas PDF">${ic("doc")}<b id="bbt">Tarik PDF ke sini atau ketuk untuk memilih</b><small id="bbs">PDF Bill Payment dari BPJS, maksimal sekitar 17 MB</small></div>
+    <input type="file" id="bbfile" accept="application/pdf,.pdf" hidden>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="bbgo" disabled>Proses PDF</button></div></div>
+  <div id="bbjob"></div>
+  <div class="sec"><h3>Berkas per lokasi</h3></div>
+  <div class="card fade" id="bbfiles"></div>`;
+}
+function bbChips() {
+  setHtml($("#bbj"), [["kes", "BPJS Kesehatan"], ["tk", "BPJS Ketenagakerjaan"]].map(([k, n]) => `<button class="chip ${bbJenis === k ? "on" : ""}" onclick="bbPilih('${k}')">${n}</button>`).join(""));
+}
+function bbInit() {
+  bbData = null; bbFiles = []; bbBulan = ""; bbLoaded = ""; bbPick = null; bbMonSig = ""; bbQ = "";
+  const d = $("#bbdrop"), f = $("#bbfile"); if (!d || !f) return;
+  d.onclick = () => f.click();
+  d.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f.click(); } };
+  f.onchange = () => bbSet(f.files[0]);
+  d.ondragover = (e) => { e.preventDefault(); d.classList.add("on"); };
+  d.ondragleave = () => d.classList.remove("on");
+  d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); bbSet(e.dataTransfer.files[0]); };
+  $("#bbgo").onclick = bbKirim;
+  bbChips(); bbLoad();
+  clearInterval(bbTimer);
+  bbTimer = setInterval(() => { if (tab !== "rq" || rqSub !== "bb") return clearInterval(bbTimer); if (!document.hidden) bbLoad(); }, 4000);
+}
+window.bbPilih = (j) => { bbJenis = j; bbBulan = ""; bbQ = ""; bbFiles = []; bbLoaded = ""; bbMonSig = ""; bbData = null; $("#bbfiles").innerHTML = ""; $("#bbjob").innerHTML = ""; _last.delete($("#bbjob")); bbChips(); bbLoad(); };
+function bbSet(f) {
+  if (!f) return;
+  if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") return toast("Berkas harus PDF");
+  if (f.size > 17 * 1048576) return toast("PDF terlalu besar (maksimal sekitar 17 MB)");
+  bbPick = f; $("#bbt").textContent = f.name; $("#bbs").textContent = kbs(f.size) + " • siap diproses sebagai " + (bbJenis === "kes" ? "BPJS Kesehatan" : "BPJS Ketenagakerjaan");
+  $("#bbgo").disabled = bbAktif();
+}
+async function bbKirim() {
+  if (!bbPick || bbAktif()) return;
+  const b = $("#bbgo"); b.disabled = true; b.textContent = "Mengunggah…";
+  try {
+    const dataUrl = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(new Error("baca")); r.readAsDataURL(bbPick); });
+    const r = await api("/api/bukti/upload", { jenis: bbJenis, name: bbPick.name, data: String(dataUrl).split(",")[1] || "" });
+    if (r.error) toast(r.error); else { toast("PDF terkirim, sedang diproses"); bbPick = null; $("#bbt").textContent = "Tarik PDF ke sini atau ketuk untuk memilih"; $("#bbs").textContent = "PDF Bill Payment dari BPJS, maksimal sekitar 17 MB"; $("#bbfile").value = ""; }
+  } catch (e) { if (String(e.message) !== "login") toast("Gagal mengunggah. Periksa koneksi lalu coba lagi."); }
+  b.textContent = "Proses PDF"; await bbLoad();
+}
+async function bbLoad() {
+  if (bbBusy) return; bbBusy = true;
+  const j = bbJenis;
+  try {
+    const r = await api("/api/bukti?jenis=" + j);
+    if (j !== bbJenis || r.error) return;
+    bbData = r;
+    if (!bbBulan || !r.bulan.some((x) => x.bulan === bbBulan)) bbBulan = r.bulan[0] ? r.bulan[0].bulan : "";
+    bbPaintJob(); bbPaintToolbar();
+    const cur = r.bulan.find((x) => x.bulan === bbBulan);
+    const sig = j + "|" + bbBulan + "|" + (cur ? cur.n : 0) + "|" + (r.jobs[0] ? r.jobs[0].updated : 0);
+    if (cur && sig !== bbLoaded) {
+      const f = await api("/api/bukti/files?jenis=" + j + "&bulan=" + encodeURIComponent(bbBulan));
+      if (j === bbJenis && !f.error) { bbFiles = f.files; bbLoaded = sig; }
+    } else if (!cur) { bbFiles = []; bbLoaded = sig; }
+    bbPaintList();
+  } catch (e) {} finally { bbBusy = false; }
+}
+function bbPaintJob() {
+  const box = $("#bbjob"); if (!box || !bbData) return;
+  const go_ = $("#bbgo"); if (go_ && go_.textContent === "Proses PDF") go_.disabled = !bbPick || bbAktif();
+  const j = bbData.jobs[0];
+  if (!j) return setHtml(box, "");
+  const aktif = ["mengunggah", "menunggu", "diproses"].includes(j.status), lama = aktif && bbData.now - j.updated > 20 * 60e3;
+  const [t, c] = bbSt[j.status] || [j.status, "mut"];
+  setHtml(box, `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.filename)}</div><div class="mut">${wib(j.created)} • ${kbs(j.size)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
+    (aktif && !lama ? `<div class="mut">Biasanya selesai dalam 1 sampai 3 menit. Halaman ini diperbarui otomatis.</div>` : "") +
+    (lama ? `<div class="err">Laptop belum memberi kabar lebih dari 20 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
+    (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}">${esc(j.result)}</div>` : "") + `</div>`);
+}
+function bbPaintToolbar() {
+  const box = $("#bbfiles"); if (!box || !bbData) return;
+  const bl = bbData.bulan, sig = bbJenis + "|" + bl.map((x) => x.bulan).join(",");
+  if (sig === bbMonSig && $("#bbmon")) { $("#bbmon").value = bbBulan; return; }
+  bbMonSig = sig;
+  if (!bl.length) { box.innerHTML = empty("doc", "Belum ada berkas. Unggah PDF bulk di atas."); return; }
+  box.innerHTML = `<div class="bbtools"><select id="bbmon" aria-label="Pilih bulan">${bl.map((x) => `<option value="${esc(x.bulan)}">${esc(x.bulan)} (${x.n} lokasi)</option>`).join("")}</select>
+    <input id="bbq" type="search" placeholder="Cari nama lokasi" aria-label="Cari nama lokasi"><button class="btn pri" id="bbzip">Unduh semua (ZIP)</button>
+    <a class="btn" id="bbdrv" target="_blank" rel="noopener" hidden>Buka folder di Drive</a></div><div id="bbl"></div>`;
+  $("#bbmon").value = bbBulan; $("#bbq").value = bbQ;
+  $("#bbmon").onchange = (e) => { bbBulan = e.target.value; bbFiles = []; bbLoaded = ""; bbLoad(); };
+  $("#bbq").oninput = (e) => { bbQ = e.target.value; bbPaintList(); };
+  $("#bbzip").onclick = bbZip;
+}
+function bbPaintList() {
+  const box = $("#bbl"); if (!box || !bbData) return;
+  const q = bbQ.trim().toLowerCase();
+  const rows = bbFiles.filter((f) => !q || f.lokasi.toLowerCase().includes(q) || f.filename.toLowerCase().includes(q));
+  const cur = bbData.bulan.find((x) => x.bulan === bbBulan), a = $("#bbdrv");
+  if (a) { if (cur && cur.folder) { a.href = "https://drive.google.com/drive/folders/" + cur.folder; a.hidden = false; } else a.hidden = true; }
+  setHtml(box, `<div class="mut" style="margin:10px 0 4px">${rows.length} dari ${bbFiles.length} lokasi</div>` +
+    (rows.map((f) => `<div class="row" style="justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><div style="min-width:0;display:flex;gap:10px;align-items:center"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(f.lokasi)}</div><div class="mut">${kbs(f.size)}${f.drive_id ? " • ada di Drive" : ""}</div></div></div><div class="row"><button class="btn" onclick="bbLihat(${f.id})">Lihat</button><button class="btn ok" onclick="bbUnduh(${f.id})">Unduh</button></div></div>`).join("") || `<div class="mut" style="padding:14px 0">Tidak ada lokasi yang cocok.</div>`));
+}
+async function bbGet(id) {
+  const r = await api("/api/bukti/file?id=" + id);
+  if (r.error || !r.data) throw new Error(r.error || "kosong");
+  const bin = atob(r.data), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return { nama: r.nama, blob: new Blob([u8], { type: "application/pdf" }) };
+}
+function bbSave(blob, nama) { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = nama; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); }
+window.bbLihat = async (id) => {
+  const w = window.open("", "_blank");
+  try { const g = await bbGet(id); const u = URL.createObjectURL(g.blob); if (w) w.location.href = u; else bbSave(g.blob, g.nama); }
+  catch (e) { if (w) w.close(); toast("Gagal membuka berkas"); }
+};
+window.bbUnduh = async (id) => { try { const g = await bbGet(id); bbSave(g.blob, g.nama); } catch (e) { toast("Gagal mengunduh berkas"); } };
+const bbJSZip = () => window.JSZip ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload = ok; s.onerror = () => no(new Error("JSZip")); document.head.appendChild(s); });
+async function bbZip() {
+  const b = $("#bbzip"); if (!b || b.disabled || !bbFiles.length) return;
+  b.disabled = true; const t0 = b.textContent, nama = "Bukti-" + bbJenis.toUpperCase() + "-" + bbBulan.replace(/\s+/g, "-") + ".zip";
+  try {
+    await bbJSZip();
+    const zip = new JSZip(), list = bbFiles.slice(), total = list.length; let n = 0;
+    const kerja = async () => { while (list.length) { const f = list.shift(), g = await bbGet(f.id); zip.file(g.nama, g.blob); b.textContent = "Mengambil " + (++n) + " dari " + total; } };
+    await Promise.all([kerja(), kerja(), kerja(), kerja()]);
+    b.textContent = "Menyusun ZIP…";
+    bbSave(await zip.generateAsync({ type: "blob" }), nama);
+    toast("ZIP selesai: " + total + " berkas");
+  } catch (e) { toast("Gagal membuat ZIP. Coba lagi."); }
+  b.disabled = false; b.textContent = t0;
+}
 
 function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; }
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bb") bbInit(); }
     paintChat(); return;
   }
   chatBuilt = false;
