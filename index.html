@@ -1010,7 +1010,7 @@ function bpSumPaint(b) {
   $("#sumst").innerHTML = esc((d.catatan || []).join(" ")) || `${d.tabs.length} tab`;
   if (!d.tabs.length) { $("#sumbd").innerHTML = '<div class="mut" style="padding:8px 0">Tidak ada tab yang bisa ditampilkan.</div>'; return; }
   $("#sumbd").innerHTML = (d.tabs.length > 1 ? `<div class="tabsel">${d.tabs.map((x, i) => `<button class="btn${i === bpSumTab ? " on" : ""}" onclick="bpSumPilih(${i})">${esc(x.nama)}</button>`).join("")}</div>` : "") +
-    bpTabel(t.baris[0] ? t.baris[0].map((_, i) => String.fromCharCode(65 + (i % 26))) : [], t.baris) + `<div class="mut" style="margin-top:6px">${t.baris.length} baris${t.total > t.baris.length ? " dari " + t.total + " (sisanya ada di file asli)" : ""}</div>`;
+    bpTabel(t.baris[0] ? t.baris[0].map((_, i) => String.fromCharCode(65 + ((i + (t.kolomAwal || 0)) % 26))) : [], t.baris) + `<div class="mut" style="margin-top:6px">${t.baris.length} baris${t.total > t.baris.length ? " dari " + t.total + " (sisanya ada di file asli)" : ""}</div>`;
   $("#sumbtn").innerHTML = `<button class="btn ok" id="sumdl">Unduh Excel</button><button class="btn" id="mn">Tutup</button>`;
   $("#sumdl").onclick = () => bpUnduhXlsx(d.tabs.map((x) => ({ nama: x.nama, kolom: [], baris: x.baris })), d.judul || b.nama);
   $("#mn").onclick = () => { $("#layer").innerHTML = ""; bpSum = null; };
