@@ -185,6 +185,22 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .tabsel{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tabsel .btn.on{background:var(--acc);color:#fff}
 .alrt{border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px}.alrt ul{margin:6px 0 0 18px;padding:0}.alrt li{margin:2px 0}
 .alrt.tinggi{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45)}.alrt.sedang{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)}.alrt.oke{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)}
+.tbl tbody tr:nth-child(even){background:var(--surface2)}.tbl tbody tr:hover{background:var(--accsoft)}.tbl tr.tot:hover{background:var(--accsoft)}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}.tbl th.srt{cursor:pointer;user-select:none}.tbl th.srt:hover{color:var(--acc)}
+.fch{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}.fch button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:99px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s,border-color .15s}.fch button:hover{border-color:var(--acc)}.fch button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.lnk{background:none;border:0;color:var(--acc);cursor:pointer;font:inherit;text-decoration:underline;padding:0 0 0 6px}
+details.alrt summary{cursor:pointer;font-weight:600}
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--line) 37%,var(--surface2) 63%);background-size:400% 100%;animation:skelj 1.4s ease infinite;border-radius:10px}@keyframes skelj{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.pjhero{background:linear-gradient(135deg,var(--accsoft),var(--surface) 55%)}
+.pjbar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:14px}.pjbar>div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--ok));border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.pjstep{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.pjno{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--surface2);color:var(--mut);flex:none}
+.pjstep.ok .pjno{background:var(--ok);color:#fff}.pjstep.er .pjno{background:var(--er);color:#fff}.pjstep.wa .pjno{background:var(--wa);color:#fff}
+.pjbody{flex:1 1 200px;min-width:0}.pjact{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.rk{margin-top:4px;font-size:12px}
+.card.click{transition:transform .15s ease,box-shadow .2s ease,border-color .2s ease}.card.click:hover{transform:translateY(-2px);border-color:var(--acc)}
+.stat>div{transition:transform .15s ease,box-shadow .15s ease}.stat>div:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){.skel,.pjbar>div,.card.click,.stat>div{animation:none;transition:none}}
 .stat{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.stat>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:110px}.stat b{display:block;font-size:16px}.stat span{color:var(--mut);font-size:12px}
 </style>
 </head>
@@ -644,16 +660,66 @@ window.bukaSub = async (k) => {
 window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rabM" || rqSub === "rabH" ? "rab" : rqSub === "gajiM" || rqSub === "gajiH" ? "gaji" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
+/* ---------- Pusat BPJS: panduan bulanan + status tiap menu ---------- */
+const PJ = [
+  { k: "gaji", n: "Rekap Gaji", d: "Tarik rekap gaji tiap PIC ke Google Sheets", buka: "gaji" },
+  { k: "kes", n: "Rincian BPJS KES", d: "Tarik tagihan KES per lokasi", buka: "rkes" },
+  { k: "tk", n: "Rincian BPJS TK", d: "Baca PDF F2 ke Google Sheets", buka: "rtk" },
+  { k: "rab", n: "Rekap RAB", d: "Tarik file RAB bulan ini", buka: "rab" },
+  { k: "hasil", n: "Hasil BPJS", d: "Hitung untung/rugi. Butuh langkah 1 sampai 4 selesai", buka: "hasil", butuh: ["gaji", "kes", "tk", "rab"] },
+];
+let pjData = null, pjTok = 0;
+const pjLabel = () => BLN[bpPer.b] + " " + bpPer.t;
 function bpjsView() {
-  return `<div class="top"><div><h1>BPJS</h1><p>Pilih menu BPJS yang dibutuhkan</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  const kartu = (id, ikon, judul, ket, rk) => `<div class="card item fade click" onclick="bukaSub('${id}')"><div class="h"><div style="display:flex;gap:12px;align-items:center;min-width:0"><div class="fic">${ic(ikon)}</div><div style="min-width:0"><div class="nm">${judul}</div><div class="mut">${ket}</div>${rk ? `<div class="rk mut" data-rk="${rk}"></div>` : ""}</div></div></div></div>`;
+  return `<div class="top"><div><h1>Pusat BPJS</h1><p>Ikuti langkah bulanan, pantau statusnya, lalu buka data mentah maupun hasilnya</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="card fade pjhero"><div class="h"><div><div class="nm">Panduan bulanan</div><div class="mut">Status diambil otomatis dari proses yang sudah dijalankan untuk periode ini</div></div>
+      <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
+    <div class="pjbar"><div id="pjfill"></div></div><div class="mut" id="pjtxt" style="margin-top:6px">Memuat status…</div>
+    <div id="pjsteps"><div class="skel" style="height:44px;margin-top:12px"></div><div class="skel" style="height:44px;margin-top:8px"></div><div class="skel" style="height:44px;margin-top:8px"></div></div></div>
+  <div class="sec"><h3>Semua menu</h3></div>
   <div class="grid two">
-    <div class="card item fade click" onclick="bukaSub('bb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS</div><div class="mut">Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh</div></div></div></div></div>
-    <div class="card item fade click" onclick="bukaSub('rb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rincian Bukti Bayar BPJS</div><div class="mut">Tarik rincian tagihan BPJS KES dan TK ke Google Sheets</div></div></div></div></div>
-    <div class="card item fade click" onclick="bukaSub('rab')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rekap RAB BPJS</div><div class="mut">Tarik file RAB per bulan ke REKAP RAB 2026</div></div></div></div></div>
-    <div class="card item fade click" onclick="bukaSub('gaji')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Rekap Gaji BPJS</div><div class="mut">Tarik rekap gaji per bulan ke Google Sheets</div></div></div></div></div>
-    <div class="card item fade click" onclick="bukaSub('hasil')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("check")}</div><div><div class="nm">Hasil BPJS</div><div class="mut">Hitung selisih untung/rugi dari data yang sudah ada</div></div></div></div></div>
+    ${kartu("bb", "doc", "Bukti Bayar BPJS", "Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh", "")}
+    ${kartu("rb", "doc", "Rincian Bukti Bayar BPJS", "KES dan TK: data mentah di Drive dan data rapi di Sheets", "kes,tk")}
+    ${kartu("rab", "doc", "Rekap RAB BPJS", "File RAB mentah dan REKAP RAB 2026", "rab")}
+    ${kartu("gaji", "money", "Rekap Gaji BPJS", "File rekap gaji tiap PIC dan rekap rapi per bulan", "gaji")}
+    ${kartu("hasil", "check", "Hasil BPJS", "Selisih untung/rugi per lokasi", "hasil")}
   </div>`;
 }
+function pjInit() {
+  const b = $("#pjbln"), t = $("#pjth"); if (!b || !t) return;
+  const ganti = () => { if (Number(t.value) >= 2024 && Number(t.value) <= 2040) { bpPerSimpan(b.value, t.value); pjLoad(); } };
+  b.onchange = ganti; t.onchange = ganti;
+  pjLoad();
+}
+async function pjLoad() {
+  const tok = ++pjTok;
+  try {
+    const r = await api("/api/bpjs/ringkas?label=" + encodeURIComponent(pjLabel()));
+    if (tok !== pjTok || r.error || !$("#pjsteps")) return;
+    pjData = r; pjPaint();
+  } catch (e) {}
+}
+const pjSt = (j) => !j ? ["Belum dijalankan", "mut", "○"] : j.status === "selesai" ? ["Selesai • " + wib(j.updated), "ok", "✓"] : j.status === "gagal" ? ["Perlu dicek • " + wib(j.updated), "er", "!"] : ["Sedang diproses", "wa", "…"];
+function pjPaint() {
+  const box = $("#pjsteps"); if (!box || !pjData) return;
+  const per = Object.fromEntries((pjData.periode || []).map((j) => [j.kind, j]));
+  const selesai = (k) => per[k] && per[k].status === "selesai";
+  const jml = PJ.filter((s) => selesai(s.k)).length;
+  const f = $("#pjfill"); if (f) f.style.width = Math.round(jml / PJ.length * 100) + "%";
+  const tx = $("#pjtxt"); if (tx) tx.textContent = jml === PJ.length ? "Semua langkah " + pjLabel() + " sudah selesai." : jml + " dari " + PJ.length + " langkah selesai untuk " + pjLabel() + ".";
+  setHtml(box, PJ.map((s, i) => {
+    const [t, c, ikon] = pjSt(per[s.k]);
+    const terkunci = s.butuh && !s.butuh.every(selesai);
+    return `<div class="pjstep ${c}"><div class="pjno">${c === "mut" ? i + 1 : ikon}</div><div class="pjbody"><div class="nm">${i + 1}. ${s.n}</div><div class="mut">${terkunci && !per[s.k] ? "Menunggu langkah 1 sampai 4 selesai" : s.d}</div></div><div class="pjact"><span class="pill ${c}">${esc(t)}</span><button class="btn${terkunci ? "" : " pri"}" onclick="pjBuka('${s.buka}')">${terkunci ? "Buka" : "Mulai / lihat"}</button></div></div>`;
+  }).join(""));
+  const last = Object.fromEntries((pjData.terakhir || []).map((j) => [j.kind, j]));
+  document.querySelectorAll(".rk[data-rk]").forEach((e) => {
+    const t = e.dataset.rk.split(",").map((k) => { const j = last[k]; if (!j) return null; const [s] = pjSt(j); return (e.dataset.rk.includes(",") ? k.toUpperCase() + ": " : "") + s.replace(/ • .*$/, "") + " " + j.label; }).filter(Boolean);
+    e.textContent = t.length ? "Terakhir: " + t.join(" • ") : "Belum pernah dijalankan";
+  });
+}
+window.pjBuka = (k) => { const b = $("#pjbln"), t = $("#pjth"); if (b && t) bpPerSimpan(b.value, t.value); bukaSub(k); };
 function bbMenuView() {
   return `<div class="top"><div><h1>Bukti Bayar BPJS</h1><p>Pilih jenis BPJS</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="grid two">
@@ -833,23 +899,23 @@ function rdMenuView() {
   </div>`;
 }
 function bpView() {
-  const now = new Date(), th = now.getFullYear(), mode = (BP[rqSub] || {}).mode || "";
+  const th = bpPer.t, mode = (BP[rqSub] || {}).mode || "";
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="card item fade"><div class="nm">Pilih periode</div>
-    <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === now.getMonth() ? " selected" : ""}>${b}</option>`).join("")}${mode ? "" : '<option value="semua">Semua bulan</option>'}</select>
+    <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}${mode ? "" : '<option value="semua">Semua bulan</option>'}</select>
       <input id="bpth" type="number" min="2024" max="2040" value="${th}" aria-label="Tahun" style="flex:0 1 110px">
       ${mode === "mentah" ? "" : '<button class="btn pri" id="bpgo">Jalankan</button>'}</div>
     ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div>
   <div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
-  <div id="bptinjau" class="card fade"><div class="mut">Memuat tinjauan…</div></div>
+  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div>
   ${mode === "mentah" ? "" : '<div class="sec"><h3>Riwayat proses</h3></div><div id="bphasil" class="grid still"></div>'}`;
 }
 function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
   const g = $("#bpgo"); if (g) g.onclick = bpJalan;
-  $("#bpbln").onchange = () => bpTinjau();
-  $("#bpth").onchange = () => bpTinjau();
-  bpPrev = ""; bpRev = null; bpTinjau();
+  const ganti = () => { const b = $("#bpbln").value, t = Number($("#bpth").value); if (b !== "semua" && t >= 2024 && t <= 2040) bpPerSimpan(b, t); bpTinjau(); };
+  $("#bpbln").onchange = ganti; $("#bpth").onchange = ganti;
+  bpSort = null; bpStat = ""; bpPrev = ""; bpRev = null; bpTinjau(); bpCekMuat();
   clearInterval(bpTimer);
   if (!g) return;
   bpLoad();
@@ -937,18 +1003,50 @@ window.bpUnduhRekap = (jenis) => {
   if (jenis === "csv") bpSimpan(new Blob([bpCsv(r.kolom || [], r.baris || [])], { type: "text/csv;charset=utf-8" }), bpNamaBerkas(r.judul) + ".csv");
   else bpUnduhXlsx([{ nama: r.judul, kolom: r.kolom, baris: r.baris }], r.judul);
 };
+/* ---- periode terpilih (diingat di peramban) ---- */
+let bpPer = (() => { try { const j = JSON.parse(localStorage.getItem("bpPer") || "null"); if (j && j.b >= 0 && j.b <= 11 && j.t >= 2024 && j.t <= 2040) return j; } catch (e) {} const n = new Date(); return { b: n.getMonth(), t: n.getFullYear() }; })();
+const bpPerSimpan = (b, t) => { bpPer = { b: Number(b), t: Number(t) }; try { localStorage.setItem("bpPer", JSON.stringify(bpPer)); } catch (e) {} };
 const bpTotal = (b) => b.some((x) => /^(JUMLAH|TOTAL)\b/i.test(String(x).trim()));
-const bpTabel = (kol, bar) => `<div class="tbw"><table class="tbl"><thead><tr>${kol.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${bar.map((b) => `<tr${bpTotal(b) ? ' class="tot"' : ""}>${b.map((c) => `<td title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
-function bpBaris() { const r = bpRev, q = bpQ.trim().toLowerCase(); return !q ? r.baris : r.baris.filter((b) => b.some((c) => String(c).toLowerCase().includes(q))); }
+const bpAngka = (s) => { const t = String(s == null ? "" : s).replace(/[^\d,.-]/g, ""); if (!t) return NaN; const v = /,\d{1,2}$/.test(t) && t.includes(".") ? t.replace(/\./g, "").replace(",", ".") : t.replace(/[.,](?=\d{3}\b)/g, ""); return parseFloat(v); };
+const bpNum = (c) => /^[-+]?(Rp\s*)?[\d.,]+%?$/.test(String(c).trim());
+const bpPillKelas = (v) => /^untung$/i.test(v) ? "ok" : /^rugi$/i.test(v) ? "er" : /belum lengkap/i.test(v) ? "wa" : /^sesuai$/i.test(v) ? "" : "mut";
+let bpSort = null, bpStat = "";
+const bpIdxStatus = () => (bpRev ? bpRev.kolom.findIndex((k) => /^status$/i.test(k)) : -1);
+/* tabel: o = { urut: true, st: indeks kolom status } */
+const bpTabel = (kol, bar, o) => {
+  o = o || {};
+  const head = kol.map((k, i) => o.urut ? `<th class="srt" onclick="bpUrut(${i})" title="Klik untuk mengurutkan">${esc(k)}${bpSort && bpSort.i === i ? (bpSort.dir === 1 ? " ▲" : " ▼") : ""}</th>` : `<th>${esc(k)}</th>`).join("");
+  const body = bar.map((b) => `<tr${bpTotal(b) ? ' class="tot"' : ""}>${b.map((c, i) => (o.st === i && String(c).trim()) ? `<td><span class="pill ${bpPillKelas(String(c).trim())}">${esc(c)}</span></td>` : `<td${bpNum(c) ? ' class="n"' : ""} title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("");
+  return `<div class="tbw"><table class="tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+};
+function bpBaris() {
+  const r = bpRev, q = bpQ.trim().toLowerCase(), iSt = bpIdxStatus();
+  let rows = r.baris;
+  if (q) rows = rows.filter((b) => b.some((c) => String(c).toLowerCase().includes(q)));
+  if (bpStat && iSt >= 0) rows = rows.filter((b) => String(b[iSt]).trim() === bpStat);
+  if (bpSort) { const { i, dir } = bpSort; rows = rows.filter((b) => !bpTotal(b)).slice().sort((a, b) => { const x = bpAngka(a[i]), y = bpAngka(b[i]); return dir * (!isNaN(x) && !isNaN(y) ? x - y : String(a[i]).localeCompare(String(b[i]), "id")); }); }
+  return rows;
+}
+window.bpUrut = (i) => { bpSort = bpSort && bpSort.i === i ? (bpSort.dir === 1 ? { i, dir: -1 } : null) : { i, dir: 1 }; bpPg = 0; bpPaintTb(); };
+window.bpFilterStatus = (v) => { bpStat = bpStat === v ? "" : v; bpPg = 0; bpPaintTb(); };
 function bpPaintTb() {
   const box = $("#bptb"), r = bpRev; if (!box || !r) return;
-  const rows = bpBaris(), hal = Math.max(1, Math.ceil(rows.length / BP_HAL));
+  if (!r.baris.length) return setHtml(box, '<div class="mut" style="padding:6px 0">Belum ada data rekap untuk periode ini.</div>');
+  const rows = bpBaris(), hal = Math.max(1, Math.ceil(rows.length / BP_HAL)), iSt = bpIdxStatus();
   if (bpPg >= hal) bpPg = hal - 1; if (bpPg < 0) bpPg = 0;
   const potong = rows.slice(bpPg * BP_HAL, (bpPg + 1) * BP_HAL);
-  if (!r.baris.length) return setHtml(box, '<div class="mut" style="padding:6px 0">Belum ada data rekap untuk periode ini.</div>');
-  setHtml(box, bpTabel(r.kolom, potong) + `<div class="pager"><div class="mut">${rows.length === r.baris.length ? rows.length + " baris" : rows.length + " dari " + r.baris.length + " baris"} • halaman ${bpPg + 1} dari ${hal}</div><button class="btn" onclick="bpHal(-1)"${bpPg <= 0 ? " disabled" : ""}>Sebelumnya</button><button class="btn" onclick="bpHal(1)"${bpPg >= hal - 1 ? " disabled" : ""}>Berikutnya</button></div>`);
+  let chips = "";
+  if (iSt >= 0) {
+    const cnt = new Map(); r.baris.forEach((b) => { const v = String(b[iSt]).trim(); if (v && !bpTotal(b)) cnt.set(v, (cnt.get(v) || 0) + 1); });
+    chips = `<div class="fch">${[...cnt].map(([v, n]) => `<button class="${bpStat === v ? "on" : ""}" onclick="bpFilterStatus(this.dataset.v)" data-v="${esc(v)}">${esc(v)} (${n})</button>`).join("")}</div>`;
+  }
+  setHtml(box, chips + bpTabel(r.kolom, potong, { urut: true, st: iSt }) + `<div class="pager"><div class="mut">${rows.length === r.baris.length ? rows.length + " baris" : rows.length + " dari " + r.baris.length + " baris"}${bpSort ? " • baris JUMLAH disembunyikan saat diurutkan" : ""} • halaman ${bpPg + 1} dari ${hal}</div><button class="btn" onclick="bpHal(-1)"${bpPg <= 0 ? " disabled" : ""}>Sebelumnya</button><button class="btn" onclick="bpHal(1)"${bpPg >= hal - 1 ? " disabled" : ""}>Berikutnya</button></div>`);
 }
 window.bpHal = (d) => { bpPg += d; bpPaintTb(); };
+/* tanda "sudah dicek, aman" (tersimpan di server) */
+let bpCekSet = new Set();
+async function bpCekMuat() { try { const r = await api("/api/bpjs/cek"); if (r && r.kunci) { bpCekSet = new Set(r.kunci); if (bpRev) bpPaintTinjau(true); } } catch (e) {} }
+window.bpTandai = async (k, aksi) => { try { const r = await api("/api/bpjs/cek", { k, aksi }); if (r.error) return toast(r.error); bpCekSet = new Set(r.kunci); bpPaintTinjau(true); toast(aksi === "tandai" ? "Ditandai aman. Tidak diperingatkan lagi." : "Tanda dibatalkan"); } catch (e) { if (String(e.message) !== "login") toast("Gagal menyimpan tanda"); } };
 let bpSQ = "";
 const bpMode = () => (BP[rqSub] && BP[rqSub].mode) || "";
 function bpPaintSl() {
@@ -959,22 +1057,30 @@ function bpPaintSl() {
   setHtml(box, tampil.map((i) => { const b = all[i]; return `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill ${b.status === "sudah" ? "ok" : "er"}">${b.status === "sudah" ? "Sudah diolah" : "Belum diolah"}</span><button class="btn" onclick="bpBuka(${i},'s')">Lihat / unduh</button></div></div>`; }).join("") +
     (idx.length > tampil.length ? `<div class="mut" style="margin-top:6px">Menampilkan ${tampil.length} dari ${idx.length}. Pakai kotak cari untuk mempersempit.</div>` : "") + (!idx.length ? '<div class="mut" style="padding:6px 0">Tidak ada yang cocok.</div>' : ""));
 }
-function bpPaintTinjau() {
+function bpPaintTinjau(jaga) {
   const box = $("#bptinjau"), r = bpRev; if (!box || !r) return;
-  bpQ = ""; bpPg = 0; bpSQ = "";
+  if (!jaga) { bpQ = ""; bpPg = 0; bpSQ = ""; bpSort = null; bpStat = ""; }
   const mode = bpMode(), sumber = r.sumber || [], belum = r.belum || [];
   const stat = (r.ringkas || []).map((x) => `<div><b>${esc(x.nilai)}</b><span>${esc(x.label)}</span></div>`).join("");
   const nBelum = sumber.length ? sumber.filter((x) => x.status === "belum").length : belum.length;
-  const per = r.peringatan || [];
-  const blokPer = `<div class="nm" style="margin-top:14px">Pemeriksaan otomatis</div>` + (per.length ? per.map((p) => `<div class="alrt ${p.tingkat === "tinggi" ? "tinggi" : "sedang"}"><b>${p.tingkat === "tinggi" ? "Perlu diperbaiki: " : "Perlu dicek: "}${esc(p.judul)}</b><ul>${p.rincian.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("") : '<div class="alrt oke">Tidak ditemukan masalah pada pemeriksaan otomatis (data ganda, jumlah tidak cocok, nama kosong).</div>');
+  /* pemeriksaan otomatis: peringatan aktif, yang sudah ditandai aman, dan yang terbukti otomatis */
+  const flat = (p) => (p.rincian || []).map((x) => (typeof x === "string" ? { t: x } : x));
+  const per = (r.peringatan || []).map((p) => ({ tingkat: p.tingkat, judul: p.judul, aktif: flat(p).filter((x) => !(x.k && bpCekSet.has(x.k))) })).filter((p) => p.aktif.length);
+  const aman = (r.peringatan || []).flatMap(flat).filter((x) => x.k && bpCekSet.has(x.k));
+  const terbukti = r.terverifikasi || [];
+  const li = (x) => `<li>${esc(x.t)}${x.k ? ` <button class="lnk" data-k="${esc(x.k)}" onclick="bpTandai(this.dataset.k,'tandai')">Sudah dicek, aman</button>` : ""}</li>`;
+  const blokPer = `<div class="nm" style="margin-top:14px">Pemeriksaan otomatis</div>` +
+    (per.length ? per.map((p) => `<div class="alrt ${p.tingkat === "tinggi" ? "tinggi" : "sedang"}"><b>${p.tingkat === "tinggi" ? "Perlu diperbaiki: " : "Perlu dicek: "}${esc(p.judul)}</b><ul>${p.aktif.map(li).join("")}</ul></div>`).join("") : '<div class="alrt oke">Tidak ada masalah yang perlu ditindak (data ganda, jumlah tidak cocok, nama kosong).</div>') +
+    (terbukti.length ? `<details class="alrt oke"><summary>Terbukti dua orang berbeda lewat No JKN (${terbukti.length})</summary><ul>${terbukti.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></details>` : "") +
+    (aman.length ? `<details class="alrt oke"><summary>Sudah ditandai aman oleh Anda (${aman.length})</summary><ul>${aman.map((x) => `<li>${esc(x.t)} <button class="lnk" data-k="${esc(x.k)}" onclick="bpTandai(this.dataset.k,'hapus')">Batalkan</button></li>`).join("")}</ul></details>` : "");
   const blokMentah = mode === "hasil" ? "" : `
     <div class="nm" style="margin-top:14px">${esc(r.sumberJudul || "File mentah di Google Drive")} (${sumber.length})${sumber.length ? " • belum diolah: " + nBelum : ""}</div>
     ${sumber.length > 8 ? '<div class="bbtools" style="margin-top:8px"><input id="bpsq" type="search" placeholder="Cari nama file / lokasi" aria-label="Cari nama file"></div>' : ""}
     ${sumber.length ? '<div id="bpsl"></div>' : '<div class="mut" style="padding:8px 0">Belum ada file mentah untuk periode ini di Google Drive.</div>'}
     ${!sumber.length || !mode ? `<div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>${belum.length ? belum.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill er">Belum</span>${b.ref ? `<button class="btn" onclick="bpBuka(${i})">Lihat isi</button>` : ""}</div></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}` : ""}`;
   const blokHasil = mode === "mentah" ? "" : `
-    <div class="h" style="margin-top:16px"><div class="nm">Sudah direkap (${r.totalBaris} baris)</div><div class="row"><button class="btn ok" onclick="bpUnduhRekap('xlsx')"${r.baris.length ? "" : " disabled"}>Unduh Excel</button><button class="btn" onclick="bpUnduhRekap('csv')"${r.baris.length ? "" : " disabled"}>Unduh CSV</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Google Sheets</a>` : ""}</div></div>
-    ${r.baris.length ? '<div class="bbtools" style="margin-top:8px"><input id="bpq" type="search" placeholder="Cari di tabel (lokasi, nama, dll)" aria-label="Cari di tabel"></div>' : ""}
+    <div class="h" style="margin-top:16px"><div class="nm">Data rapi (${r.totalBaris} baris)</div><div class="row"><button class="btn ok" onclick="bpUnduhRekap('xlsx')"${r.baris.length ? "" : " disabled"}>Unduh Excel</button><button class="btn" onclick="bpUnduhRekap('csv')"${r.baris.length ? "" : " disabled"}>Unduh CSV</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Google Sheets</a>` : ""}</div></div>
+    ${r.baris.length ? `<div class="bbtools" style="margin-top:8px"><input id="bpq" type="search" placeholder="Cari di tabel (lokasi, nama, dll)" aria-label="Cari di tabel" value="${esc(bpQ)}"></div>` : ""}
     ${r.dipotong ? '<div class="err" style="margin-top:6px">Data terlalu besar, hanya sebagian baris yang dimuat. Lihat lengkapnya di Google Sheets.</div>' : ""}
     <div id="bptb"></div>`;
   setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button></div></div>
@@ -982,7 +1088,7 @@ function bpPaintTinjau() {
     ${blokPer}
     ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}${blokMentah}${blokHasil}`);
   const q = $("#bpq"); if (q) q.oninput = (e) => { bpQ = e.target.value; bpPg = 0; bpPaintTb(); };
-  const sq = $("#bpsq"); if (sq) sq.oninput = (e) => { bpSQ = e.target.value; bpPaintSl(); };
+  const sq = $("#bpsq"); if (sq) { sq.value = bpSQ; sq.oninput = (e) => { bpSQ = e.target.value; bpPaintSl(); }; }
   bpPaintTb(); bpPaintSl();
 }
 /* pratinjau isi file sumber yang belum direkap */
@@ -1035,7 +1141,7 @@ function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (BP[rqSub]) bpInit(); }
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (BP[rqSub]) bpInit(); else if (rqSub === "bpjs") pjInit(); }
     if (!BP[rqSub]) paintChat(); return;
   }
   chatBuilt = false;
