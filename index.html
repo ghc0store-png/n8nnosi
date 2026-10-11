@@ -181,6 +181,8 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .tbl th,.tbl td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}
 .tbl th{position:sticky;top:0;background:var(--surface);font-weight:600;z-index:1}
 .tbl tr.tot td{font-weight:700;background:var(--accsoft)}
+.pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.pager .mut{flex:1 1 auto}
+.tabsel{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tabsel .btn.on{background:var(--acc);color:#fff}
 .stat{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.stat>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:110px}.stat b{display:block;font-size:16px}.stat span{color:var(--mut);font-size:12px}
 </style>
 </head>
@@ -871,12 +873,6 @@ function bpPaint() {
 }
 
 
-const bpTb = (r) => {
-  const kol = r.kolom || [], bar = r.baris || [];
-  if (!kol.length) return "";
-  const tot = (b) => b.some((x) => String(x).trim().toUpperCase() === "JUMLAH" || /^TOTAL\b/i.test(String(x)));
-  return `<div class="tbw"><table class="tbl"><thead><tr>${kol.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${bar.map((b) => `<tr${tot(b) ? ' class="tot"' : ""}>${b.map((c) => `<td title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
-};
 async function bpTinjau() {
   const box = $("#bptinjau"); if (!box) return;
   const bulan = $("#bpbln").value, tahun = Number($("#bpth").value), tok = ++bpRevTok, k = bpKind;
@@ -898,18 +894,102 @@ async function bpTinjau() {
   } catch (e) { if (String(e.message) !== "login") setHtml(box, '<div class="err">Gagal memuat tinjauan. Periksa koneksi.</div>'); }
 }
 window.bpTinjau = bpTinjau;
+/* ---- tabel rekap penuh, unduh, dan pratinjau file sumber ---- */
+let bpQ = "", bpPg = 0;
+const BP_HAL = 100;
+const bpNamaBerkas = (t) => String(t || "BPJS").replace(/[^\w .()-]+/g, "").replace(/\s+/g, "-").slice(0, 80);
+const bpXLSX = () => window.XLSX ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = ok; sc.onerror = () => no(new Error("XLSX")); document.head.appendChild(sc); });
+function bpSimpan(blob, nama) { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = nama; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 30000); }
+const bpCsv = (kol, bar) => "﻿" + [kol].concat(bar).map((r) => r.map((c) => { const t = String(c == null ? "" : c); return /[",\n\r;]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }).join(",")).join("\r\n");
+async function bpUnduhXlsx(lembar, nama) {
+  try {
+    await bpXLSX();
+    const wb = XLSX.utils.book_new(), dipakai = new Set();
+    lembar.forEach((l, i) => { let n = String(l.nama || "Data" + (i + 1)).replace(/[\\/?*[\]:]/g, " ").slice(0, 31) || "Data"; while (dipakai.has(n.toLowerCase())) n = n.slice(0, 28) + "_" + (i + 1); dipakai.add(n.toLowerCase()); const ws = XLSX.utils.aoa_to_sheet(l.kolom && l.kolom.length ? [l.kolom].concat(l.baris) : l.baris); XLSX.utils.book_append_sheet(wb, ws, n); });
+    XLSX.writeFile(wb, bpNamaBerkas(nama) + ".xlsx");
+    toast("Excel diunduh");
+  } catch (e) { toast("Gagal membuat Excel. Coba CSV."); }
+}
+window.bpUnduhRekap = (jenis) => {
+  const r = bpRev; if (!r) return;
+  if (r.dipotong) toast("Catatan: data terlalu besar, sebagian baris tidak ikut. Unduh lengkapnya dari Google Sheets.");
+  if (jenis === "csv") bpSimpan(new Blob([bpCsv(r.kolom || [], r.baris || [])], { type: "text/csv;charset=utf-8" }), bpNamaBerkas(r.judul) + ".csv");
+  else bpUnduhXlsx([{ nama: r.judul, kolom: r.kolom, baris: r.baris }], r.judul);
+};
+const bpTotal = (b) => b.some((x) => String(x).trim().toUpperCase() === "JUMLAH" || /^TOTAL\b/i.test(String(x)));
+const bpTabel = (kol, bar) => `<div class="tbw"><table class="tbl"><thead><tr>${kol.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${bar.map((b) => `<tr${bpTotal(b) ? ' class="tot"' : ""}>${b.map((c) => `<td title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+function bpBaris() { const r = bpRev, q = bpQ.trim().toLowerCase(); return !q ? r.baris : r.baris.filter((b) => b.some((c) => String(c).toLowerCase().includes(q))); }
+function bpPaintTb() {
+  const box = $("#bptb"), r = bpRev; if (!box || !r) return;
+  const rows = bpBaris(), hal = Math.max(1, Math.ceil(rows.length / BP_HAL));
+  if (bpPg >= hal) bpPg = hal - 1; if (bpPg < 0) bpPg = 0;
+  const potong = rows.slice(bpPg * BP_HAL, (bpPg + 1) * BP_HAL);
+  if (!r.baris.length) return setHtml(box, '<div class="mut" style="padding:6px 0">Belum ada data rekap untuk periode ini.</div>');
+  setHtml(box, bpTabel(r.kolom, potong) + `<div class="pager"><div class="mut">${rows.length === r.baris.length ? rows.length + " baris" : rows.length + " dari " + r.baris.length + " baris"} • halaman ${bpPg + 1} dari ${hal}</div><button class="btn" onclick="bpHal(-1)"${bpPg <= 0 ? " disabled" : ""}>Sebelumnya</button><button class="btn" onclick="bpHal(1)"${bpPg >= hal - 1 ? " disabled" : ""}>Berikutnya</button></div>`);
+}
+window.bpHal = (d) => { bpPg += d; bpPaintTb(); };
 function bpPaintTinjau() {
   const box = $("#bptinjau"), r = bpRev; if (!box || !r) return;
+  bpQ = ""; bpPg = 0;
   const stat = (r.ringkas || []).map((x) => `<div><b>${esc(x.nilai)}</b><span>${esc(x.label)}</span></div>`).join("");
   const belum = r.belum || [];
-  setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button>${r.link ? `<a class="btn ok" href="${esc(r.link)}" target="_blank" rel="noopener">Buka Google Sheets</a>` : ""}</div></div>
+  setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button></div></div>
     <div class="stat">${stat}</div>
     ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}
     <div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>
-    ${belum.length ? belum.map((b) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><span class="pill er">Belum</span></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}
-    <div class="nm" style="margin-top:14px">Sudah direkap (${r.totalBaris} baris)</div>
-    ${r.baris && r.baris.length ? bpTb(r) + (r.totalBaris > r.baris.length ? `<div class="mut" style="margin-top:6px">Menampilkan ${r.baris.length} baris pertama dari ${r.totalBaris}. Selebihnya ada di Google Sheets.</div>` : "") : '<div class="mut" style="padding:6px 0">Belum ada data rekap untuk periode ini.</div>'}`);
+    ${belum.length ? belum.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill er">Belum</span>${b.ref ? `<button class="btn" onclick="bpBuka(${i})">Lihat isi</button>` : ""}</div></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}
+    <div class="h" style="margin-top:16px"><div class="nm">Sudah direkap (${r.totalBaris} baris)</div><div class="row"><button class="btn ok" onclick="bpUnduhRekap('xlsx')"${r.baris.length ? "" : " disabled"}>Unduh Excel</button><button class="btn" onclick="bpUnduhRekap('csv')"${r.baris.length ? "" : " disabled"}>Unduh CSV</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Google Sheets</a>` : ""}</div></div>
+    ${r.baris.length ? '<div class="bbtools" style="margin-top:8px"><input id="bpq" type="search" placeholder="Cari di tabel (lokasi, nama, dll)" aria-label="Cari di tabel"></div>' : ""}
+    ${r.dipotong ? '<div class="err" style="margin-top:6px">Data terlalu besar, hanya sebagian baris yang dimuat. Lihat lengkapnya di Google Sheets.</div>' : ""}
+    <div id="bptb"></div>`);
+  const q = $("#bpq"); if (q) q.oninput = (e) => { bpQ = e.target.value; bpPg = 0; bpPaintTb(); };
+  bpPaintTb();
 }
+/* pratinjau isi file sumber yang belum direkap */
+let bpSum = null, bpSumTab = 0, bpSumB = null;
+window.bpBuka = async (i) => {
+  const b = bpRev && bpRev.belum[i]; if (!b || !b.ref) return;
+  const l = $("#layer");
+  const tutup = () => { l.innerHTML = ""; bpSum = null; };
+  l.innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:980px;width:min(96vw,980px)"><h4>${esc(b.nama)}</h4><div class="mut" id="sumst">Membuka file dari Google Drive… biasanya 5 sampai 20 detik.</div><div id="sumbd"></div><div class="row" style="margin-top:10px" id="sumbtn"><button class="btn" id="mn">Tutup</button></div></div></div>`;
+  $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+  try {
+    const r = await api("/api/bpjs/sumber", { ref: b.ref });
+    if (r.error) return ($("#sumst") ? $("#sumst").innerHTML = `<span class="err">${esc(r.error)}</span>` : 0);
+    let d = null;
+    for (let n = 0; n < 60 && !d; n++) {
+      await new Promise((ok) => setTimeout(ok, n < 3 ? 1500 : 2500));
+      if (!$("#sumst")) return;
+      const x = await api("/api/bpjs/tinjau?id=" + r.id);
+      if (x.status === "gagal") return ($("#sumst").innerHTML = `<span class="err">Gagal membuka: ${esc(x.error || "tidak diketahui")}</span>`);
+      if (x.status === "selesai") d = x.data;
+    }
+    if (!d) return ($("#sumst").innerHTML = '<span class="err">Belum ada jawaban dari laptop. Coba lagi nanti.</span>');
+    bpSum = d; bpSumTab = 0; bpSumB = b;
+    if (d.jenis === "pdf") {
+      const bin = atob(d.base64), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+      const blob = new Blob([u8], { type: "application/pdf" }), u = URL.createObjectURL(blob);
+      $("#sumst").textContent = "Pratinjau PDF • " + (d.ukuran > 1048576 ? (d.ukuran / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(d.ukuran / 1024)) + " KB");
+      $("#sumbd").innerHTML = `<iframe src="${u}" title="Pratinjau ${esc(b.nama)}" style="width:100%;height:62vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>`;
+      $("#sumbtn").innerHTML = `<a class="btn" href="${u}" target="_blank" rel="noopener">Buka di tab baru</a><button class="btn ok" id="sumdl">Unduh PDF</button><button class="btn" id="mn">Tutup</button>`;
+      $("#sumdl").onclick = () => bpSimpan(blob, bpNamaBerkas(String(b.nama).replace(/.pdf$/i, "")) + ".pdf"); $("#mn").onclick = () => { tutup(); URL.revokeObjectURL(u); };
+      return;
+    }
+    bpSumPaint(b);
+  } catch (e) { if ($("#sumst") && String(e.message) !== "login") $("#sumst").innerHTML = '<span class="err">Gagal membuka file. Periksa koneksi.</span>'; }
+};
+function bpSumPaint(b) {
+  const d = bpSum; if (!d || !$("#sumbd")) return;
+  const t = d.tabs[bpSumTab];
+  $("#sumst").innerHTML = esc((d.catatan || []).join(" ")) || `${d.tabs.length} tab`;
+  if (!d.tabs.length) { $("#sumbd").innerHTML = '<div class="mut" style="padding:8px 0">Tidak ada tab yang bisa ditampilkan.</div>'; return; }
+  $("#sumbd").innerHTML = (d.tabs.length > 1 ? `<div class="tabsel">${d.tabs.map((x, i) => `<button class="btn${i === bpSumTab ? " on" : ""}" onclick="bpSumPilih(${i})">${esc(x.nama)}</button>`).join("")}</div>` : "") +
+    bpTabel(t.baris[0] ? t.baris[0].map((_, i) => String.fromCharCode(65 + (i % 26))) : [], t.baris) + `<div class="mut" style="margin-top:6px">${t.baris.length} baris${t.total > t.baris.length ? " dari " + t.total + " (sisanya ada di file asli)" : ""}</div>`;
+  $("#sumbtn").innerHTML = `<button class="btn ok" id="sumdl">Unduh Excel</button><button class="btn" id="mn">Tutup</button>`;
+  $("#sumdl").onclick = () => bpUnduhXlsx(d.tabs.map((x) => ({ nama: x.nama, kolom: [], baris: x.baris })), d.judul || b.nama);
+  $("#mn").onclick = () => { $("#layer").innerHTML = ""; bpSum = null; };
+}
+window.bpSumPilih = (i) => { bpSumTab = i; bpSumPaint(bpSumB || { nama: "" }); };
 
 function render() {
   chrome();
