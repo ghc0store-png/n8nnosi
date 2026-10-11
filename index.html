@@ -575,7 +575,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS", rkesM: "BPJS KES - Data Mentah", rkesH: "BPJS KES - Data Hasil", rtkM: "BPJS TK - Data Mentah", rtkH: "BPJS TK - Data Hasil" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS", rkesM: "BPJS KES - Data Mentah", rkesH: "BPJS KES - Data Hasil", rtkM: "BPJS TK - Data Mentah", rtkH: "BPJS TK - Data Hasil", rabM: "Rekap RAB - Data Mentah", rabH: "Rekap RAB - Data Hasil", gajiM: "Rekap Gaji - Data Mentah", gajiH: "Rekap Gaji - Data Hasil" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -615,7 +615,7 @@ function rqView() {
   if (rqSub === "bpjs") return bpjsView();
   if (rqSub === "bb") return bbMenuView();
   if (rqSub === "rb") return rbMenuView();
-  if (rqSub === "rkes" || rqSub === "rtk") return rdMenuView();
+  if (rqSub === "rkes" || rqSub === "rtk" || rqSub === "rab" || rqSub === "gaji") return rdMenuView();
   if (BP[rqSub]) return bpView();
   if (rqSub === "bbtk" || rqSub === "bbkes") return bbView();
   if (!rqSub) {
@@ -639,7 +639,7 @@ window.bukaSub = async (k) => {
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rabM" || rqSub === "rabH" ? "rab" : rqSub === "gajiM" || rqSub === "gajiH" ? "gaji" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 function bpjsView() {
@@ -798,8 +798,10 @@ const BP = {
   rkesH: { kind: "kes", mode: "hasil", ket: "Data rapi hasil tarikan di Google Sheets (rincian peserta per lokasi). Lihat, cari, dan unduh. Tombol Jalankan menarik data baru dari file mentah." },
   rtkM: { kind: "tk", mode: "mentah", ket: "File F2 BPJS Ketenagakerjaan mentah (PDF) di Google Drive. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
   rtkH: { kind: "tk", mode: "hasil", ket: "Data rapi hasil bacaan F2 di Google Sheets. Lihat, cari, dan unduh. Tombol Jalankan membaca F2 baru dari Drive ke Sheets." },
-  rab: { kind: "rab", ket: "Membaca file RAB di folder RAB 2026 pada periode ini, lalu memperbarui REKAP RAB 2026 di Google Sheets." },
-  gaji: { kind: "gaji", ket: "Membaca rekap gaji per client pada periode ini, lalu menulisnya ke Google Sheets rekap gaji BPJS." },
+  rabM: { kind: "rab", mode: "mentah", ket: "File RAB (spreadsheet) mentah di folder Google Drive RAB 2026. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
+  rabH: { kind: "rab", mode: "hasil", ket: "REKAP RAB 2026 yang sudah rapi di Google Sheets. Lihat, cari, dan unduh. Tombol Jalankan menarik file RAB baru dari Drive ke rekap." },
+  gajiM: { kind: "gaji", mode: "mentah", ket: "File rekap gaji mentah tiap PIC di Google Drive. Lihat tab bulan yang dipilih, unduh, dan cek PIC mana yang belum masuk rekap." },
+  gajiH: { kind: "gaji", mode: "hasil", ket: "Rekap gaji yang sudah rapi per bulan di Google Sheets. Lihat, cari, dan unduh. Tombol Jalankan menarik rekap gaji terbaru dari file PIC." },
   hasil: { kind: "hasil", ket: "Menghitung selisih (untung/rugi) BPJS dari data yang sudah ada di Google Sheets. Tidak menarik data ulang, jadi jalankan Rekap RAB, Rincian KES/TK, dan Rekap Gaji lebih dulu bila datanya belum terbaru." },
 };
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -814,11 +816,18 @@ function rbMenuView() {
   </div>`;
 }
 function rdMenuView() {
-  const k = rqSub === "rkes" ? "rkes" : "rtk", jenis = k === "rkes" ? "BPJS KES" : "BPJS TK";
-  return `<div class="top"><div><h1>Rincian Bukti Bayar ${jenis}</h1><p>Pilih data yang ingin dilihat</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  const k = rqSub;
+  const J = { rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS" };
+  const D = {
+    rkes: ["File tagihan KES di Google Drive", "Data rapi di Google Sheets, bisa dilihat, dicari, dan diunduh"],
+    rtk: ["File F2 (PDF) di Google Drive", "Data rapi di Google Sheets, bisa dilihat, dicari, dan diunduh"],
+    rab: ["File RAB per bulan di Google Drive", "REKAP RAB 2026 di Google Sheets, bisa dilihat, dicari, dan diunduh"],
+    gaji: ["File rekap gaji tiap PIC di Google Drive", "Rekap gaji per bulan di Google Sheets, bisa dilihat, dicari, dan diunduh"],
+  }[k];
+  return `<div class="top"><div><h1>${J[k]}</h1><p>Pilih data yang ingin dilihat</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="grid two">
-    <div class="card item fade click" onclick="bukaSub('${k}M')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Data Mentah</div><div class="mut">${k === "rkes" ? "File tagihan KES di Google Drive" : "File F2 (PDF) di Google Drive"}, bisa dilihat dan diunduh</div></div></div></div></div>
-    <div class="card item fade click" onclick="bukaSub('${k}H')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("check")}</div><div><div class="nm">Data Hasil</div><div class="mut">Data rapi di Google Sheets, bisa dilihat, dicari, dan diunduh</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('${k}M')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Data Mentah</div><div class="mut">${D[0]}, bisa dilihat dan diunduh</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('${k}H')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("check")}</div><div><div class="nm">Data Hasil</div><div class="mut">${D[1]}</div></div></div></div></div>
   </div>`;
 }
 function bpView() {
