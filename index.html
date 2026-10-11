@@ -567,7 +567,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -606,6 +606,8 @@ function paintChat() {
 function rqView() {
   if (rqSub === "bpjs") return bpjsView();
   if (rqSub === "bb") return bbMenuView();
+  if (rqSub === "rb") return rbMenuView();
+  if (BP[rqSub]) return bpView();
   if (rqSub === "bbtk" || rqSub === "bbkes") return bbView();
   if (!rqSub) {
     const { items } = chatItems(); const jn = jenisPesan(items);
@@ -628,13 +630,17 @@ window.bukaSub = async (k) => {
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "bb" ? "bpjs" : ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 function bpjsView() {
   return `<div class="top"><div><h1>BPJS</h1><p>Pilih menu BPJS yang dibutuhkan</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="grid two">
     <div class="card item fade click" onclick="bukaSub('bb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS</div><div class="mut">Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('rb')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rincian Bukti Bayar BPJS</div><div class="mut">Tarik rincian tagihan BPJS KES dan TK ke Google Sheets</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('rab')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rekap RAB BPJS</div><div class="mut">Tarik file RAB per bulan ke REKAP RAB 2026</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('gaji')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Rekap Gaji BPJS</div><div class="mut">Tarik rekap gaji per bulan ke Google Sheets</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('hasil')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("check")}</div><div><div class="nm">Hasil BPJS</div><div class="mut">Hitung selisih untung/rugi dari data yang sudah ada</div></div></div></div></div>
   </div>`;
 }
 function bbMenuView() {
@@ -777,12 +783,85 @@ async function bbZip() {
   b.disabled = false; b.textContent = t0;
 }
 
+/* ---------- Permintaan > BPJS > Rincian KES/TK, Rekap RAB, Rekap Gaji, Hasil (menjalankan workflow n8n yang sama dengan perintah Telegram) ---------- */
+const BP = {
+  rkes: { kind: "kes", ket: "Menarik rincian tagihan BPJS Kesehatan dari file tagihan di Google Drive ke Google Sheets. Satu bulan biasanya 1 sampai 2 menit; semua bulan sekitar 5 sampai 7 menit." },
+  rtk: { kind: "tk", ket: "Membaca PDF F2A BPJS Ketenagakerjaan di folder Drive KUMPULAN F2 untuk periode ini, lalu mencatat rinciannya ke Google Sheets. Data yang sudah ada dilewati." },
+  rab: { kind: "rab", ket: "Membaca file RAB di folder RAB 2026 pada periode ini, lalu memperbarui REKAP RAB 2026 di Google Sheets." },
+  gaji: { kind: "gaji", ket: "Membaca rekap gaji per client pada periode ini, lalu menulisnya ke Google Sheets rekap gaji BPJS." },
+  hasil: { kind: "hasil", ket: "Menghitung selisih (untung/rugi) BPJS dari data yang sudah ada di Google Sheets. Tidak menarik data ulang, jadi jalankan Rekap RAB, Rincian KES/TK, dan Rekap Gaji lebih dulu bila datanya belum terbaru." },
+};
+const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const bpSt = { menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Perlu dicek", "er"] };
+let bpData = null, bpKind = "", bpTimer = null, bpBusy = false;
+const bpAktif = () => { const j = bpData && bpData.jobs[0]; return !!j && ["menunggu", "diproses"].includes(j.status) && bpData.now - j.updated < 45 * 60e3; };
+function rbMenuView() {
+  return `<div class="top"><div><h1>Rincian Bukti Bayar BPJS</h1><p>Pilih jenis BPJS</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="grid two">
+    <div class="card item fade click" onclick="bukaSub('rkes')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rincian Bukti Bayar BPJS KES</div><div class="mut">BPJS Kesehatan</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('rtk')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rincian Bukti Bayar BPJS TK</div><div class="mut">BPJS Ketenagakerjaan</div></div></div></div></div>
+  </div>`;
+}
+function bpView() {
+  const now = new Date(), th = now.getFullYear();
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="card item fade"><div class="nm">Pilih periode</div>
+    <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === now.getMonth() ? " selected" : ""}>${b}</option>`).join("")}<option value="semua">Semua bulan</option></select>
+      <input id="bpth" type="number" min="2024" max="2040" value="${th}" aria-label="Tahun" style="flex:0 1 110px">
+      <button class="btn pri" id="bpgo">Jalankan</button></div>
+    <div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div></div>
+  <div class="sec"><h3>Riwayat proses</h3></div>
+  <div id="bphasil" class="grid still"></div>`;
+}
+function bpInit() {
+  bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
+  const g = $("#bpgo"); if (!g) return;
+  g.onclick = bpJalan;
+  bpLoad();
+  clearInterval(bpTimer);
+  bpTimer = setInterval(() => { if (tab !== "rq" || !BP[rqSub]) return clearInterval(bpTimer); if (!document.hidden) bpLoad(); }, 4000);
+}
+async function bpJalan() {
+  if (bpAktif()) return toast("Masih ada proses yang berjalan");
+  const b = $("#bpgo"), bulan = $("#bpbln").value, tahun = Number($("#bpth").value);
+  if (!(tahun >= 2024 && tahun <= 2040)) return toast("Tahun tidak valid");
+  b.disabled = true; b.textContent = "Mengirim…";
+  try {
+    const r = await api("/api/bpjs/run", { kind: bpKind, bulan, tahun });
+    if (r.error) toast(r.error); else toast("Perintah terkirim, sedang diproses");
+  } catch (e) { if (String(e.message) !== "login") toast("Gagal mengirim. Periksa koneksi lalu coba lagi."); }
+  b.textContent = "Jalankan"; await bpLoad();
+}
+async function bpLoad() {
+  if (bpBusy) return; bpBusy = true;
+  const k = bpKind;
+  try {
+    const r = await api("/api/bpjs?kind=" + k);
+    if (k !== bpKind || r.error) return;
+    bpData = r; bpPaint();
+  } catch (e) {} finally { bpBusy = false; }
+}
+const bpLink = (t) => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">Buka Google Sheets</a>').replace(/\n/g, "<br>");
+function bpPaint() {
+  const box = $("#bphasil"), g = $("#bpgo"); if (!box || !bpData) return;
+  if (g && g.textContent === "Jalankan") g.disabled = bpAktif();
+  if (!bpData.jobs.length) return setHtml(box, `<div class="card">${empty("doc", "Belum ada proses. Pilih periode lalu tekan Jalankan.")}</div>`);
+  setHtml(box, bpData.jobs.map((j) => {
+    const aktif = ["menunggu", "diproses"].includes(j.status), lama = aktif && bpData.now - j.updated > 45 * 60e3;
+    const [t, c] = bpSt[j.status] || [j.status, "mut"];
+    return `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.label)}</div><div class="mut">${wib(j.created)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
+      (aktif && !lama ? `<div class="mut">Halaman ini diperbarui otomatis. Boleh ditinggal, prosesnya tetap berjalan di laptop.</div>` : "") +
+      (lama ? `<div class="err">Tidak ada kabar lebih dari 45 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
+      (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}" style="margin-top:6px">${bpLink(j.result)}</div>` : "") + `</div>`;
+  }).join(""));
+}
+
 function render() {
   chrome();
   if (!S) return;
   if (tab === "rq") {
-    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); }
-    paintChat(); return;
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (BP[rqSub]) bpInit(); }
+    if (!BP[rqSub]) paintChat(); return;
   }
   chatBuilt = false;
   if (tab === "cl") {
