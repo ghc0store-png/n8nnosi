@@ -176,6 +176,12 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .bbtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .bbtools select,.bbtools input{font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;min-width:0}
 .bbtools input{flex:1 1 160px}
+.tbw{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.tbl{border-collapse:collapse;width:max-content;min-width:100%;font-size:12.5px}
+.tbl th,.tbl td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.tbl th{position:sticky;top:0;background:var(--surface);font-weight:600;z-index:1}
+.tbl tr.tot td{font-weight:700;background:var(--accsoft)}
+.stat{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.stat>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:110px}.stat b{display:block;font-size:16px}.stat span{color:var(--mut);font-size:12px}
 </style>
 </head>
 <body>
@@ -793,7 +799,7 @@ const BP = {
 };
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const bpSt = { menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Perlu dicek", "er"] };
-let bpData = null, bpKind = "", bpTimer = null, bpBusy = false;
+let bpData = null, bpKind = "", bpTimer = null, bpBusy = false, bpPrev = "", bpRev = null, bpRevTok = 0;
 const bpAktif = () => { const j = bpData && bpData.jobs[0]; return !!j && ["menunggu", "diproses"].includes(j.status) && bpData.now - j.updated < 45 * 60e3; };
 function rbMenuView() {
   return `<div class="top"><div><h1>Rincian Bukti Bayar BPJS</h1><p>Pilih jenis BPJS</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
@@ -810,6 +816,8 @@ function bpView() {
       <input id="bpth" type="number" min="2024" max="2040" value="${th}" aria-label="Tahun" style="flex:0 1 110px">
       <button class="btn pri" id="bpgo">Jalankan</button></div>
     <div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div></div>
+  <div class="sec"><h3>Tinjau rekap</h3></div>
+  <div id="bptinjau" class="card fade"><div class="mut">Memuat tinjauan…</div></div>
   <div class="sec"><h3>Riwayat proses</h3></div>
   <div id="bphasil" class="grid still"></div>`;
 }
@@ -817,6 +825,9 @@ function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
   const g = $("#bpgo"); if (!g) return;
   g.onclick = bpJalan;
+  $("#bpbln").onchange = () => bpTinjau();
+  $("#bpth").onchange = () => bpTinjau();
+  bpPrev = ""; bpRev = null; bpTinjau();
   bpLoad();
   clearInterval(bpTimer);
   bpTimer = setInterval(() => { if (tab !== "rq" || !BP[rqSub]) return clearInterval(bpTimer); if (!document.hidden) bpLoad(); }, 4000);
@@ -844,6 +855,9 @@ async function bpLoad() {
 const bpLink = (t) => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">Buka Google Sheets</a>').replace(/\n/g, "<br>");
 function bpPaint() {
   const box = $("#bphasil"), g = $("#bpgo"); if (!box || !bpData) return;
+  const top = bpData.jobs[0], sig = top ? top.id + ":" + top.status : "";
+  if (bpPrev && sig !== bpPrev && top && ["selesai", "gagal"].includes(top.status)) setTimeout(bpTinjau, 500);
+  bpPrev = sig;
   if (g && g.textContent === "Jalankan") g.disabled = bpAktif();
   if (!bpData.jobs.length) return setHtml(box, `<div class="card">${empty("doc", "Belum ada proses. Pilih periode lalu tekan Jalankan.")}</div>`);
   setHtml(box, bpData.jobs.map((j) => {
@@ -854,6 +868,47 @@ function bpPaint() {
       (lama ? `<div class="err">Tidak ada kabar lebih dari 45 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
       (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}" style="margin-top:6px">${bpLink(j.result)}</div>` : "") + `</div>`;
   }).join(""));
+}
+
+
+const bpTb = (r) => {
+  const kol = r.kolom || [], bar = r.baris || [];
+  if (!kol.length) return "";
+  const tot = (b) => b.some((x) => String(x).trim().toUpperCase() === "JUMLAH" || /^TOTAL\b/i.test(String(x)));
+  return `<div class="tbw"><table class="tbl"><thead><tr>${kol.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${bar.map((b) => `<tr${tot(b) ? ' class="tot"' : ""}>${b.map((c) => `<td title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+};
+async function bpTinjau() {
+  const box = $("#bptinjau"); if (!box) return;
+  const bulan = $("#bpbln").value, tahun = Number($("#bpth").value), tok = ++bpRevTok, k = bpKind;
+  if (bulan === "semua") { bpRev = null; return setHtml(box, '<div class="mut">Pilih satu bulan untuk meninjau isi rekap dan sumber yang belum direkap.</div>'); }
+  if (!(tahun >= 2024 && tahun <= 2040)) return setHtml(box, '<div class="mut">Tahun tidak valid.</div>');
+  setHtml(box, '<div class="mut">Membaca Google Sheets dan Drive…</div>');
+  try {
+    const r = await api("/api/bpjs/tinjau", { kind: k, bulan: Number(bulan), tahun });
+    if (r.error) return setHtml(box, `<div class="err">${esc(r.error)}</div>`);
+    for (let i = 0; i < 60; i++) {
+      await new Promise((ok) => setTimeout(ok, i < 3 ? 1200 : 2000));
+      if (tok !== bpRevTok || k !== bpKind || !$("#bptinjau")) return;
+      const d = await api("/api/bpjs/tinjau?id=" + r.id);
+      if (d.error) return setHtml(box, `<div class="err">${esc(d.error)}</div>`);
+      if (d.status === "gagal") return setHtml(box, `<div class="err">Gagal membaca: ${esc(d.error || "tidak diketahui")}</div><div class="row" style="margin-top:8px"><button class="btn" onclick="bpTinjau()">Coba lagi</button></div>`);
+      if (d.status === "selesai") { bpRev = d.data; return bpPaintTinjau(); }
+    }
+    setHtml(box, '<div class="err">Belum ada jawaban dari laptop. Pastikan laptop menyala, lalu coba lagi.</div><div class="row" style="margin-top:8px"><button class="btn" onclick="bpTinjau()">Coba lagi</button></div>');
+  } catch (e) { if (String(e.message) !== "login") setHtml(box, '<div class="err">Gagal memuat tinjauan. Periksa koneksi.</div>'); }
+}
+window.bpTinjau = bpTinjau;
+function bpPaintTinjau() {
+  const box = $("#bptinjau"), r = bpRev; if (!box || !r) return;
+  const stat = (r.ringkas || []).map((x) => `<div><b>${esc(x.nilai)}</b><span>${esc(x.label)}</span></div>`).join("");
+  const belum = r.belum || [];
+  setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button>${r.link ? `<a class="btn ok" href="${esc(r.link)}" target="_blank" rel="noopener">Buka Google Sheets</a>` : ""}</div></div>
+    <div class="stat">${stat}</div>
+    ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}
+    <div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>
+    ${belum.length ? belum.map((b) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><span class="pill er">Belum</span></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}
+    <div class="nm" style="margin-top:14px">Sudah direkap (${r.totalBaris} baris)</div>
+    ${r.baris && r.baris.length ? bpTb(r) + (r.totalBaris > r.baris.length ? `<div class="mut" style="margin-top:6px">Menampilkan ${r.baris.length} baris pertama dari ${r.totalBaris}. Selebihnya ada di Google Sheets.</div>` : "") : '<div class="mut" style="padding:6px 0">Belum ada data rekap untuk periode ini.</div>'}`);
 }
 
 function render() {
