@@ -575,7 +575,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS", rkesM: "BPJS KES - Data Mentah", rkesH: "BPJS KES - Data Hasil", rtkM: "BPJS TK - Data Mentah", rtkH: "BPJS TK - Data Hasil" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -615,6 +615,7 @@ function rqView() {
   if (rqSub === "bpjs") return bpjsView();
   if (rqSub === "bb") return bbMenuView();
   if (rqSub === "rb") return rbMenuView();
+  if (rqSub === "rkes" || rqSub === "rtk") return rdMenuView();
   if (BP[rqSub]) return bpView();
   if (rqSub === "bbtk" || rqSub === "bbkes") return bbView();
   if (!rqSub) {
@@ -638,7 +639,7 @@ window.bukaSub = async (k) => {
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 function bpjsView() {
@@ -793,8 +794,10 @@ async function bbZip() {
 
 /* ---------- Permintaan > BPJS > Rincian KES/TK, Rekap RAB, Rekap Gaji, Hasil (menjalankan workflow n8n yang sama dengan perintah Telegram) ---------- */
 const BP = {
-  rkes: { kind: "kes", ket: "Menarik rincian tagihan BPJS Kesehatan dari file tagihan di Google Drive ke Google Sheets. Satu bulan biasanya 1 sampai 2 menit; semua bulan sekitar 5 sampai 7 menit." },
-  rtk: { kind: "tk", ket: "Membaca PDF F2A BPJS Ketenagakerjaan di folder Drive KUMPULAN F2 untuk periode ini, lalu mencatat rinciannya ke Google Sheets. Data yang sudah ada dilewati." },
+  rkesM: { kind: "kes", mode: "mentah", ket: "File tagihan BPJS Kesehatan mentah di Google Drive, per lokasi. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
+  rkesH: { kind: "kes", mode: "hasil", ket: "Data rapi hasil tarikan di Google Sheets (rincian peserta per lokasi). Lihat, cari, dan unduh. Tombol Jalankan menarik data baru dari file mentah." },
+  rtkM: { kind: "tk", mode: "mentah", ket: "File F2 BPJS Ketenagakerjaan mentah (PDF) di Google Drive. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
+  rtkH: { kind: "tk", mode: "hasil", ket: "Data rapi hasil bacaan F2 di Google Sheets. Lihat, cari, dan unduh. Tombol Jalankan membaca F2 baru dari Drive ke Sheets." },
   rab: { kind: "rab", ket: "Membaca file RAB di folder RAB 2026 pada periode ini, lalu memperbarui REKAP RAB 2026 di Google Sheets." },
   gaji: { kind: "gaji", ket: "Membaca rekap gaji per client pada periode ini, lalu menulisnya ke Google Sheets rekap gaji BPJS." },
   hasil: { kind: "hasil", ket: "Menghitung selisih (untung/rugi) BPJS dari data yang sudah ada di Google Sheets. Tidak menarik data ulang, jadi jalankan Rekap RAB, Rincian KES/TK, dan Rekap Gaji lebih dulu bila datanya belum terbaru." },
@@ -810,28 +813,35 @@ function rbMenuView() {
     <div class="card item fade click" onclick="bukaSub('rtk')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Rincian Bukti Bayar BPJS TK</div><div class="mut">BPJS Ketenagakerjaan</div></div></div></div></div>
   </div>`;
 }
+function rdMenuView() {
+  const k = rqSub === "rkes" ? "rkes" : "rtk", jenis = k === "rkes" ? "BPJS KES" : "BPJS TK";
+  return `<div class="top"><div><h1>Rincian Bukti Bayar ${jenis}</h1><p>Pilih data yang ingin dilihat</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="grid two">
+    <div class="card item fade click" onclick="bukaSub('${k}M')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Data Mentah</div><div class="mut">${k === "rkes" ? "File tagihan KES di Google Drive" : "File F2 (PDF) di Google Drive"}, bisa dilihat dan diunduh</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('${k}H')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("check")}</div><div><div class="nm">Data Hasil</div><div class="mut">Data rapi di Google Sheets, bisa dilihat, dicari, dan diunduh</div></div></div></div></div>
+  </div>`;
+}
 function bpView() {
-  const now = new Date(), th = now.getFullYear();
+  const now = new Date(), th = now.getFullYear(), mode = (BP[rqSub] || {}).mode || "";
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="card item fade"><div class="nm">Pilih periode</div>
-    <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === now.getMonth() ? " selected" : ""}>${b}</option>`).join("")}<option value="semua">Semua bulan</option></select>
+    <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === now.getMonth() ? " selected" : ""}>${b}</option>`).join("")}${mode ? "" : '<option value="semua">Semua bulan</option>'}</select>
       <input id="bpth" type="number" min="2024" max="2040" value="${th}" aria-label="Tahun" style="flex:0 1 110px">
-      <button class="btn pri" id="bpgo">Jalankan</button></div>
-    <div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div></div>
-  <div class="sec"><h3>Tinjau rekap</h3></div>
+      ${mode === "mentah" ? "" : '<button class="btn pri" id="bpgo">Jalankan</button>'}</div>
+    ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div>
+  <div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
   <div id="bptinjau" class="card fade"><div class="mut">Memuat tinjauan…</div></div>
-  <div class="sec"><h3>Riwayat proses</h3></div>
-  <div id="bphasil" class="grid still"></div>`;
+  ${mode === "mentah" ? "" : '<div class="sec"><h3>Riwayat proses</h3></div><div id="bphasil" class="grid still"></div>'}`;
 }
 function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
-  const g = $("#bpgo"); if (!g) return;
-  g.onclick = bpJalan;
+  const g = $("#bpgo"); if (g) g.onclick = bpJalan;
   $("#bpbln").onchange = () => bpTinjau();
   $("#bpth").onchange = () => bpTinjau();
   bpPrev = ""; bpRev = null; bpTinjau();
-  bpLoad();
   clearInterval(bpTimer);
+  if (!g) return;
+  bpLoad();
   bpTimer = setInterval(() => { if (tab !== "rq" || !BP[rqSub]) return clearInterval(bpTimer); if (!document.hidden) bpLoad(); }, 4000);
 }
 async function bpJalan() {
@@ -928,23 +938,38 @@ function bpPaintTb() {
   setHtml(box, bpTabel(r.kolom, potong) + `<div class="pager"><div class="mut">${rows.length === r.baris.length ? rows.length + " baris" : rows.length + " dari " + r.baris.length + " baris"} • halaman ${bpPg + 1} dari ${hal}</div><button class="btn" onclick="bpHal(-1)"${bpPg <= 0 ? " disabled" : ""}>Sebelumnya</button><button class="btn" onclick="bpHal(1)"${bpPg >= hal - 1 ? " disabled" : ""}>Berikutnya</button></div>`);
 }
 window.bpHal = (d) => { bpPg += d; bpPaintTb(); };
+let bpSQ = "";
+const bpMode = () => (BP[rqSub] && BP[rqSub].mode) || "";
+function bpPaintSl() {
+  const box = $("#bpsl"), r = bpRev; if (!box || !r) return;
+  const all = r.sumber || [], q = bpSQ.trim().toLowerCase();
+  const idx = all.map((_, i) => i).filter((i) => !q || all[i].nama.toLowerCase().includes(q));
+  const tampil = idx.slice(0, 150);
+  setHtml(box, tampil.map((i) => { const b = all[i]; return `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill ${b.status === "sudah" ? "ok" : "er"}">${b.status === "sudah" ? "Sudah diolah" : "Belum diolah"}</span><button class="btn" onclick="bpBuka(${i},'s')">Lihat / unduh</button></div></div>`; }).join("") +
+    (idx.length > tampil.length ? `<div class="mut" style="margin-top:6px">Menampilkan ${tampil.length} dari ${idx.length}. Pakai kotak cari untuk mempersempit.</div>` : "") + (!idx.length ? '<div class="mut" style="padding:6px 0">Tidak ada yang cocok.</div>' : ""));
+}
 function bpPaintTinjau() {
   const box = $("#bptinjau"), r = bpRev; if (!box || !r) return;
-  bpQ = ""; bpPg = 0;
+  bpQ = ""; bpPg = 0; bpSQ = "";
+  const mode = bpMode(), sumber = r.sumber || [], belum = r.belum || [];
   const stat = (r.ringkas || []).map((x) => `<div><b>${esc(x.nilai)}</b><span>${esc(x.label)}</span></div>`).join("");
-  const belum = r.belum || [];
-  setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button></div></div>
-    <div class="stat">${stat}</div>
-    ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}
-    ${(r.sumber || []).length ? `<div class="nm" style="margin-top:14px">${esc(r.sumberJudul || "File sumber")} (${r.sumber.length})</div>${r.sumber.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill ${b.status === "sudah" ? "ok" : "er"}">${b.status === "sudah" ? "Sudah" : "Belum"}</span><button class="btn" onclick="bpBuka(${i},'s')">Lihat / unduh</button></div></div>`).join("")}` : ""}
-    <div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>
-    ${belum.length ? belum.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill er">Belum</span>${b.ref ? `<button class="btn" onclick="bpBuka(${i})">Lihat isi</button>` : ""}</div></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}
+  const nBelum = sumber.length ? sumber.filter((x) => x.status === "belum").length : belum.length;
+  const blokMentah = mode === "hasil" ? "" : `
+    <div class="nm" style="margin-top:14px">${esc(r.sumberJudul || "File mentah di Google Drive")} (${sumber.length})${sumber.length ? " • belum diolah: " + nBelum : ""}</div>
+    ${sumber.length > 8 ? '<div class="bbtools" style="margin-top:8px"><input id="bpsq" type="search" placeholder="Cari nama file / lokasi" aria-label="Cari nama file"></div>' : ""}
+    ${sumber.length ? '<div id="bpsl"></div>' : '<div class="mut" style="padding:8px 0">Belum ada file mentah untuk periode ini di Google Drive.</div>'}
+    ${!sumber.length || !mode ? `<div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>${belum.length ? belum.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill er">Belum</span>${b.ref ? `<button class="btn" onclick="bpBuka(${i})">Lihat isi</button>` : ""}</div></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}` : ""}`;
+  const blokHasil = mode === "mentah" ? "" : `
     <div class="h" style="margin-top:16px"><div class="nm">Sudah direkap (${r.totalBaris} baris)</div><div class="row"><button class="btn ok" onclick="bpUnduhRekap('xlsx')"${r.baris.length ? "" : " disabled"}>Unduh Excel</button><button class="btn" onclick="bpUnduhRekap('csv')"${r.baris.length ? "" : " disabled"}>Unduh CSV</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Google Sheets</a>` : ""}</div></div>
     ${r.baris.length ? '<div class="bbtools" style="margin-top:8px"><input id="bpq" type="search" placeholder="Cari di tabel (lokasi, nama, dll)" aria-label="Cari di tabel"></div>' : ""}
     ${r.dipotong ? '<div class="err" style="margin-top:6px">Data terlalu besar, hanya sebagian baris yang dimuat. Lihat lengkapnya di Google Sheets.</div>' : ""}
-    <div id="bptb"></div>`);
+    <div id="bptb"></div>`;
+  setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button></div></div>
+    <div class="stat">${stat}</div>
+    ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}${blokMentah}${blokHasil}`);
   const q = $("#bpq"); if (q) q.oninput = (e) => { bpQ = e.target.value; bpPg = 0; bpPaintTb(); };
-  bpPaintTb();
+  const sq = $("#bpsq"); if (sq) sq.oninput = (e) => { bpSQ = e.target.value; bpPaintSl(); };
+  bpPaintTb(); bpPaintSl();
 }
 /* pratinjau isi file sumber yang belum direkap */
 let bpSum = null, bpSumTab = 0, bpSumB = null;
