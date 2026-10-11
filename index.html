@@ -936,6 +936,7 @@ function bpPaintTinjau() {
   setHtml(box, `<div class="h"><div style="min-width:0"><div class="nm">${esc(r.judul)}</div><div class="mut">Dibaca ${wib(r.dibuat)}</div></div><div class="row"><button class="btn" onclick="bpTinjau()">Muat ulang</button></div></div>
     <div class="stat">${stat}</div>
     ${(r.catatan || []).map((c) => `<div class="mut" style="margin-top:8px">${esc(c)}</div>`).join("")}
+    ${(r.sumber || []).length ? `<div class="nm" style="margin-top:14px">${esc(r.sumberJudul || "File sumber")} (${r.sumber.length})</div>${r.sumber.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill ${b.status === "sudah" ? "ok" : "er"}">${b.status === "sudah" ? "Sudah" : "Belum"}</span><button class="btn" onclick="bpBuka(${i},'s')">Lihat / unduh</button></div></div>`).join("")}` : ""}
     <div class="nm" style="margin-top:14px">Belum direkap (${belum.length})</div>
     ${belum.length ? belum.map((b, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm">${esc(b.nama)}</div><div class="mut">${esc(b.ket)}</div></div><div class="row"><span class="pill er">Belum</span>${b.ref ? `<button class="btn" onclick="bpBuka(${i})">Lihat isi</button>` : ""}</div></div>`).join("") : '<div class="mut" style="padding:6px 0">Tidak ada. Semua sumber periode ini sudah masuk rekap.</div>'}
     <div class="h" style="margin-top:16px"><div class="nm">Sudah direkap (${r.totalBaris} baris)</div><div class="row"><button class="btn ok" onclick="bpUnduhRekap('xlsx')"${r.baris.length ? "" : " disabled"}>Unduh Excel</button><button class="btn" onclick="bpUnduhRekap('csv')"${r.baris.length ? "" : " disabled"}>Unduh CSV</button>${r.link ? `<a class="btn" href="${esc(r.link)}" target="_blank" rel="noopener">Google Sheets</a>` : ""}</div></div>
@@ -947,8 +948,8 @@ function bpPaintTinjau() {
 }
 /* pratinjau isi file sumber yang belum direkap */
 let bpSum = null, bpSumTab = 0, bpSumB = null;
-window.bpBuka = async (i) => {
-  const b = bpRev && bpRev.belum[i]; if (!b || !b.ref) return;
+window.bpBuka = async (i, dari) => {
+  const b = bpRev && (dari === "s" ? bpRev.sumber : bpRev.belum)[i]; if (!b || !b.ref) return;
   const l = $("#layer");
   const tutup = () => { l.innerHTML = ""; bpSum = null; };
   l.innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:980px;width:min(96vw,980px)"><h4>${esc(b.nama)}</h4><div class="mut" id="sumst">Membuka file dari Google Drive… biasanya 5 sampai 20 detik.</div><div id="sumbd"></div><div class="row" style="margin-top:10px" id="sumbtn"><button class="btn" id="mn">Tutup</button></div></div></div>`;
