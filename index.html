@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#0b0f1a">
+<meta name="theme-color" content="#03407f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon-64.png" type="image/png" sizes="64x64">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -314,6 +314,57 @@ main>*{animation:in .4s var(--ease) both}
 .shd.ok{background:var(--ok);color:var(--ok)}.shd.wa{background:var(--wa);color:var(--wa)}.shd.er{background:var(--er);color:var(--er)}
 .sh .b{flex:1;min-width:0}.sh .t{font-weight:650}.sh .k{font-size:13px;color:var(--mut);margin-top:2px}.sh .a{margin-top:8px}
 .pand summary{cursor:pointer;font-weight:650;padding:8px 0}.pand ul{margin:6px 0 10px 18px;padding:0;color:var(--mut);font-size:13.5px;line-height:1.6}.pand li b{color:var(--tx)}
+/* ---------- tema RAY (biru tua + emas dari logo), watermark, dan cetak berkop ---------- */
+:root{--acc:#0b4f9c;--acc2:#0a74bd;--accsoft:rgba(11,79,156,.11);--gold:#c9a45c;--gold2:#ecd8a4;--hero:linear-gradient(125deg,#03407f 0%,#0a5fb0 52%,#1a86d0 118%);--wmop:.05}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--acc:#2f86dc;--acc2:#4aa3ee;--accsoft:rgba(47,134,220,.17);--hero:linear-gradient(125deg,#032e5c 0%,#0a4f9c 52%,#1572bd 118%);--wmop:.06}}
+:root[data-theme=dark]{--acc:#2f86dc;--acc2:#4aa3ee;--accsoft:rgba(47,134,220,.17);--hero:linear-gradient(125deg,#032e5c 0%,#0a4f9c 52%,#1572bd 118%);--wmop:.06}
+/* palet ungu lama tetap tersedia */
+:root[data-palet=ungu]{--acc:#5b5bf0;--acc2:#8b5cf6;--accsoft:rgba(91,91,240,.12);--gold:#d4a95a;--hero:linear-gradient(125deg,#4338ca 0%,#7c3aed 48%,#d946ef 118%)}
+@media(prefers-color-scheme:dark){:root[data-palet=ungu]:not([data-theme=light]){--acc:#7c7cff;--acc2:#a78bfa;--accsoft:rgba(124,124,255,.16)}}
+:root[data-palet=ungu][data-theme=dark]{--acc:#7c7cff;--acc2:#a78bfa;--accsoft:rgba(124,124,255,.16)}
+.hero{background:var(--hero);background-size:140% 140%;box-shadow:0 30px 60px -28px var(--acc),inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.08)}
+.hero.bad{background:linear-gradient(125deg,#be123c,#e11d48 55%,#fb923c 130%);background-size:140% 140%}
+.hero h2:after{background:linear-gradient(90deg,var(--gold2),transparent)}
+.btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.prg-bar{background:linear-gradient(90deg,var(--acc),var(--acc2),var(--gold))}
+.logo{background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.card:after{background:radial-gradient(220px circle at var(--mx) var(--my),color-mix(in srgb,var(--gold) 80%,transparent),color-mix(in srgb,var(--acc) 55%,transparent) 45%,transparent 75%)}
+/* watermark logo RAY sangat samar di latar */
+body:after{content:"";position:fixed;right:-4vw;bottom:-3vh;width:min(62vw,640px);aspect-ratio:720/493;background:url(logo.png) no-repeat center/contain;opacity:var(--wmop);pointer-events:none;z-index:0}
+.shell,main,.side,.tabbar{position:relative;z-index:1}.tabbar{position:fixed}.side{position:sticky}
+@media(max-width:899px){.side{position:static}body:after{width:88vw;right:-10vw}}
+.lg{position:relative;z-index:2}
+/* bayangan bernuansa biru (bukan ungu) */
+:root{--shadow:0 1px 2px rgba(20,24,39,.05),0 10px 30px -12px rgba(11,79,156,.22)}
+#login .card,.login .card{box-shadow:0 40px 80px -30px rgba(3,64,127,.5),var(--shadow)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--wmop:.045}}:root[data-theme=dark]{--wmop:.045}
+.stat .ic{flex:none;width:36px;height:36px;min-width:36px}
+/* kop dan kaki cetak */
+.printhead,.printfoot{display:none}
+@media print{
+  @page{size:A4;margin:16mm 14mm 18mm}
+  html,body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body:before,body:after,.side,.tabbar,.akunbar,#offnote,.toast,#login,.pasangBtn,.btn,button,.chips,.seg,.bbtools,.top .btn,.top button{display:none!important}
+  .shell{display:block!important}main{max-width:none!important;padding:0!important;margin:0!important}
+  .printhead{display:flex!important;align-items:center;gap:14px;padding:0 0 10px;margin-bottom:14px;border-bottom:2px solid #0b4f9c;position:relative}
+  .printhead:after{content:"";position:absolute;left:0;bottom:-5px;width:64px;height:3px;background:#c9a45c}
+  .printhead img{height:44px;width:auto}.printhead .pn{font-weight:800;font-size:16pt;color:#03407f;line-height:1.1}.printhead .ps{font-size:9pt;color:#555;margin-top:2px}.printhead .pd{margin-left:auto;font-size:9pt;color:#555;text-align:right}
+  .printfoot{display:block!important;position:fixed;left:0;right:0;bottom:0;border-top:1px solid #bbb;padding-top:4px;font-size:8pt;color:#666;text-align:center}
+  .card,.hero,.sheet,.stat{box-shadow:none!important;background:#fff!important;border:1px solid #cfd6e0!important;color:#000!important;backdrop-filter:none!important}
+  .card:before,.card:after{display:none!important}
+  .hero{color:#000!important}.hero h2,.hero p{text-shadow:none!important;color:#000!important}
+  .top h1{-webkit-text-fill-color:#03407f!important;background:none!important;color:#03407f!important}
+  .stat b{-webkit-text-fill-color:#03407f!important;background:none!important}
+  .fade,.card,main>*{animation:none!important}
+  .tbw,.tbw.tall{max-height:none!important;overflow:visible!important;border:1px solid #cfd6e0}
+  table{width:100%!important;border-collapse:collapse}thead{display:table-header-group}tr{page-break-inside:avoid}
+  td,th{font-size:9pt!important;color:#000!important;padding:4px 6px!important}
+  .tbl.rapi tr.sek td{background:#e7eef8!important}.tbl.rapi tr.hd td{background:#f2f4f8!important;position:static!important}.tbl.rapi tr.tot td{background:#fbf6e9!important}
+  .modal{position:static!important;background:none!important;backdrop-filter:none!important;display:block!important;padding:0!important}
+  .modal .sheet{max-width:none!important;width:100%!important;max-height:none!important;overflow:visible!important;border-radius:0!important;padding:0!important}
+  body:has(.modal) main,body:has(.modal) .side{display:none!important}
+  .sk,.skel,.prg{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -344,16 +395,20 @@ main>*{animation:in .4s var(--ease) both}
       <span id="agentS" class="pill mut"><i class="live"></i><span>memuat</span></span>
       <button class="btn pasangBtn" onclick="pasangApp()" hidden>Pasang aplikasi</button>
       <button class="btn" id="themeS">Ganti tema</button>
+      <button class="btn" onclick="gantiPalet()">Ganti warna (RAY / Ungu)</button>
+      <button class="btn" onclick="window.print()">Cetak halaman</button>
       <button class="btn" id="pwS" onclick="gantiPw()" hidden>Ganti password</button>
       <button class="btn" id="outS">Keluar</button>
     </div>
   </aside>
   <main>
+    <div class="printhead" aria-hidden="true"><img src="logo.png" alt="RAY"><div><div class="pn">PT Ray Mitra Perkasa</div><div class="ps" id="printAlamat">Pusat Kontrol RAYMP</div></div><div class="pd" id="printTgl"></div></div>
     <div class="akunbar"><span id="akunTxt" class="mut"></span><button class="btn" onclick="akunMenu()">Akun</button></div>
     <div id="offnote" class="banner" hidden></div>
     <div id="view"><div class="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
   </main>
   <nav class="tabbar" id="tabbar"></nav>
+  <div class="printfoot">PT Ray Mitra Perkasa &bull; Dokumen dicetak dari Pusat Kontrol RAYMP</div>
 </div>
 <div id="layer"></div>
 
@@ -426,7 +481,7 @@ const akunNama = () => (EMAIL || "Admin") + (PERAN === "admin" ? (EMAIL ? " • 
 // Menu akun untuk layar kecil (panel samping hanya tampil di layar lebar)
 window.akunMenu = () => {
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Akun</h4><p>${esc(akunNama())}</p>
-    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button><button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
+    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button><button class="btn" id="am2">Ganti tema</button><button class="btn" onclick="gantiPalet()">Ganti warna (RAY / Ungu)</button><button class="btn" onclick="window.print()">Cetak halaman</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
   $("#amn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
   if (EMAIL) $("#am1").onclick = () => { tutup(); gantiPw(); };
@@ -1200,6 +1255,11 @@ window.tiketKirim = (sumber) => ask("Teruskan ke Claude Code?", "Laporan (percak
     toast("Tiket #" + r.id + " terkirim. Di CMD ketik: lanjutkan tiket");
   } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); }
 });
+
+/* ---------- palet warna & tanggal cetak ---------- */
+try { const p = localStorage.getItem("palet"); if (p) document.documentElement.dataset.palet = p; } catch (e) {}
+window.gantiPalet = () => { const r = document.documentElement, n = r.dataset.palet === "ungu" ? "ray" : "ungu"; r.dataset.palet = n; try { localStorage.setItem("palet", n); } catch (e) {} toast(n === "ray" ? "Warna RAY (biru dan emas)" : "Warna ungu"); };
+window.addEventListener("beforeprint", () => { const e = document.getElementById("printTgl"); if (e) e.innerHTML = "Dicetak<br>" + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long", timeStyle: "short" }) + " WIB"; });
 const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
