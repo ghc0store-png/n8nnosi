@@ -229,6 +229,7 @@ details.alrt summary{cursor:pointer;font-weight:600}
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div><div>Pusat Kontrol<small>PT Ray Mitra Perkasa</small></div></div>
     <div id="sidenav"></div>
     <div class="sidefoot">
+      <div id="akunSide" class="mut" style="font-size:12.5px;overflow-wrap:anywhere;padding:0 4px"></div>
       <span id="agentS" class="pill mut"><i class="live"></i><span>memuat</span></span>
       <button class="btn" id="themeS">Ganti tema</button>
       <button class="btn" id="pwS" onclick="gantiPw()" hidden>Ganti password</button>
@@ -642,7 +643,7 @@ const stPill = (s) => s === "success" ? '<span class="pill ok">Sukses</span>' : 
 const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 
 function chrome() {
-  $("#akunTxt").textContent = akunNama();
+  $("#akunTxt").textContent = $("#akunSide").textContent = akunNama();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
   setHtml($("#sidenav"), tabsBoleh().map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
   setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
