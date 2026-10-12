@@ -249,6 +249,7 @@ try { token = localStorage.getItem("tok") || ""; } catch (e) {}
 // Peran hanya menyesuaikan tampilan; pembatasan sebenarnya dipaksa oleh server.
 function peranDariToken(t) { try { const p = t.split("."); if (p[0] === "v2" && p.length === 3) { const x = p[1].replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(decodeURIComponent(escape(atob(x + "=".repeat((4 - (x.length % 4)) % 4))))).role || "admin"; } } catch (e) {} return "admin"; }
 let PERAN = peranDariToken(token);
+let MENUS = PERAN === "slip" || PERAN === "bpjs" ? [PERAN] : []; // daftar resmi diambil dari server lewat /api/me
 if (PERAN !== "admin") tab = "rq";
 
 const I = {
@@ -286,7 +287,7 @@ function showLogin() { try { localStorage.removeItem("tok"); } catch (e) {} toke
 function enter() {
   $("#login").hidden = true; $("#app").hidden = false; load();
   // peran/email resmi dari server (admin bisa mengubah peran kapan saja)
-  api("/api/me").then((r) => { if (r && r.role) { const ganti = r.role !== PERAN; PERAN = r.role; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (ganti) { tab = PERAN === "admin" ? tab : "rq"; chatBuilt = false; } render(); } }).catch(() => {});
+  api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") tab = "rq"; chatBuilt = false; render(); } }).catch(() => {});
 }
 let EMAIL = "";
 window.gantiPw = () => {
@@ -360,50 +361,83 @@ window.aiSoon = () => toast("Perbaikan oleh AI segera hadir");
 let clJobs = [], clBuilt = false, clTimer = null;
 const clSt = { menunggu: ["Menunggu", "mut"], menganalisis: ["Menganalisis…", "mut"], stop_diminta: ["Menghentikan…", "mut"], selesai: ["Selesai", "ok"], gagal: ["Gagal", "er"], dihentikan: ["Dihentikan", "mut"] };
 /* ---------- Pengaturan: kelola akun pekerja (khusus admin) ---------- */
+// Daftar menu di halaman Permintaan. Menu baru: tambah satu baris di sini (dan kuncinya di MENU_KEYS pada Worker).
+const MENU_REQ = [
+  { k: "slip", nama: "Slip Gaji", ikon: "money", ket: (cnt) => `Buat slip gaji karyawan • ${cnt("slip")} dokumen` },
+  { k: "inv", nama: "Invoice", ikon: "doc", ket: (cnt) => `Buat invoice dan kwitansi • ${cnt("inv")} dokumen` },
+  { k: "bpjs", nama: "BPJS", ikon: "shield", ket: () => "Bukti bayar dan pengolahan BPJS" },
+];
+const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
 let USERS = null, stBuilt = false;
-const PERAN_NAMA = { slip: "Slip Gaji", bpjs: "BPJS", admin: "Admin (semua menu)" };
+const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
+const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map(namaMenu).join(", ") : "Belum ada menu");
+function pilihMenuHtml(pre, menus, adm) {
+  const cb = "display:flex;align-items:center;gap:7px;font-weight:500;color:var(--tx);font-size:14px";
+  const ip = "width:auto;padding:0;margin:0";
+  return `<div id="${pre}box"><div class="mut" style="font-size:12.5px;font-weight:600;margin-bottom:6px">Boleh membuka (menu Permintaan)</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${MENU_REQ.map((m) => `<label style="${cb}"><input type="checkbox" class="${pre}m" value="${m.k}" style="${ip}" ${menus.includes(m.k) ? "checked" : ""}>${esc(m.nama)}</label>`).join("")}
+  <label style="${cb}"><input type="checkbox" id="${pre}adm" style="${ip}" ${adm ? "checked" : ""}>Admin (semua menu, termasuk Pengaturan)</label></div></div>`;
+}
+function bacaPilihan(pre) {
+  const adm = $("#" + pre + "adm").checked;
+  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value) };
+}
+const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); return [...b].map((x) => a[x % a.length]).join(""); };
 async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; stPaint(); } } catch (e) {} }
 function stView() {
-  return `<div class="top"><div><h1>Pengaturan</h1><p>Tambah akun pekerja dan atur menu yang boleh mereka buka. Pekerja bisa mengganti password sendiri lewat tombol "Ganti password".</p></div></div>
+  return `<div class="top"><div><h1>Pengaturan</h1><p>Tambah akun pekerja dan pilih menu Permintaan yang boleh mereka buka. Pekerja bisa mengganti password sendiri lewat tombol "Ganti password".</p></div></div>
   <div class="card item"><div class="nm" style="margin-bottom:10px">Tambah / ubah akun</div>
-  <div class="grid two"><label>Email<input id="ue" type="email" placeholder="nama@email.com" autocomplete="off"></label>
-  <label>Boleh membuka<select id="ur"><option value="slip">Slip Gaji saja</option><option value="bpjs">BPJS saja</option><option value="admin">Semua menu (admin)</option></select></label></div>
-  <label style="margin-top:10px">Password awal (minimal 8 karakter)<input id="up" type="text" placeholder="Atau tekan Buat acak" autocomplete="off"></label>
-  <div class="row" style="margin-top:10px"><button class="btn" onclick="stAcak()">Buat acak</button><button class="btn pri" id="usv" onclick="stSimpan()">Simpan akun</button></div>
-  <div class="mut" style="margin-top:8px;font-size:12.5px">Email yang sudah ada akan diperbarui (password dan peran diganti). Berikan email dan password awal ke pekerja, lalu sarankan mereka menggantinya.</div></div>
+  <label>Email<input id="ue" type="email" placeholder="nama@email.com" autocomplete="off"></label>
+  <div style="margin-top:12px">${pilihMenuHtml("n", [], false)}</div>
+  <label style="margin-top:12px">Password awal (minimal 8 karakter)<input id="up" type="text" placeholder="Atau tekan Buat acak" autocomplete="off"></label>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="$('#up').value=acakPw()">Buat acak</button><button class="btn pri" id="usv" onclick="stSimpan()">Simpan akun</button></div>
+  <div class="mut" style="margin-top:8px;font-size:12.5px">Email yang sudah ada akan diperbarui (password dan akses diganti). Berikan email dan password awal ke pekerja, lalu sarankan mereka menggantinya.</div></div>
   <div class="sec"><h3>Daftar akun</h3></div><div id="ulist" class="grid still"></div>`;
 }
 function stPaint() {
   const el = $("#ulist"); if (!el) return;
   if (!USERS) { setHtml(el, '<div class="card"><div class="mut" style="padding:12px">Memuat…</div></div>'); return; }
-  setHtml(el, USERS.length ? USERS.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(PERAN_NAMA[u.role] || u.role)}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
-    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" data-r="${esc(u.role)}" onclick="stReset(this.dataset.e,this.dataset.r,${u.active})">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" data-r="${esc(u.role)}" onclick="stAktif(this.dataset.e,this.dataset.r,${u.active ? 0 : 1})">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
+  setHtml(el, USERS.length ? USERS.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(aksesTeks(u))}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
 }
-window.stAcak = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); $("#up").value = [...b].map((x) => a[x % a.length]).join(""); };
+const stAkun = (email) => (USERS || []).find((u) => u.email === email);
+async function stKirim(body, okMsg) {
+  try { const r = await api("/api/users", body); if (r.error) { toast(r.error); return false; } toast(okMsg); stMuat(); return true; }
+  catch (e) { if (String(e.message) !== "login") toast("Gagal menyimpan"); return false; }
+}
 window.stSimpan = async () => {
-  const email = $("#ue").value.trim(), role = $("#ur").value, password = $("#up").value;
+  const email = $("#ue").value.trim(), password = $("#up").value, p = bacaPilihan("n");
   if (!email) return toast("Isi email dulu");
+  if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
   if (password.length < 8) return toast("Password awal minimal 8 karakter");
   $("#usv").disabled = true;
-  try {
-    const r = await api("/api/users", { email, role, password });
-    if (r.error) toast(r.error);
-    else { toast("Akun disimpan. Berikan email dan password ke pekerja."); $("#ue").value = ""; $("#up").value = ""; stMuat(); }
-  } catch (e) { if (String(e.message) !== "login") toast("Gagal menyimpan"); }
+  if (await stKirim({ email, role: p.role, menus: p.menus, password }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
   $("#usv").disabled = false;
 };
-window.stAktif = async (email, role, aktif) => { try { const r = await api("/api/users", { email, role, active: !!aktif }); if (r.error) toast(r.error); else { toast(aktif ? "Akun diaktifkan" : "Akun dinonaktifkan"); stMuat(); } } catch (e) {} };
-window.stHapus = (email) => ask("Hapus akun?", email + " tidak akan bisa masuk lagi.", "Hapus", true, async () => { try { const r = await api("/api/users", { email, hapus: true }); if (r.error) toast(r.error); else { toast("Akun dihapus"); stMuat(); } } catch (e) {} });
-window.stReset = (email, role, aktif) => {
-  $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Atur ulang password</h4><p>${esc(email)}</p>
-    <label>Password baru (minimal 8 karakter)<input id="rp" type="text" autocomplete="off"></label>
-    <div class="row" style="margin-top:14px"><button class="btn" id="rn">Batal</button><button class="btn" id="rr">Buat acak</button><button class="btn pri" id="ry">Simpan</button></div></div></div>`;
+window.stAktif = (email) => { const u = stAkun(email); if (u) stKirim({ email, role: u.role, menus: u.menus, active: !u.active }, u.active ? "Akun dinonaktifkan" : "Akun diaktifkan"); };
+window.stHapus = (email) => ask("Hapus akun?", email + " tidak akan bisa masuk lagi.", "Hapus", true, () => stKirim({ email, hapus: true }, "Akun dihapus"));
+function modalAkun(isi) {
+  $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet">${isi}</div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
-  $("#rn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
-  $("#rr").onclick = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); $("#rp").value = [...b].map((x) => a[x % a.length]).join(""); };
+  $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+  return tutup;
+}
+window.stAkses = (email) => {
+  const u = stAkun(email); if (!u) return;
+  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin")}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
+  $("#ry").onclick = async () => {
+    const p = bacaPilihan("e"); if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
+    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active }, "Akses diperbarui")) tutup();
+  };
+};
+window.stReset = (email) => {
+  const u = stAkun(email); if (!u) return;
+  const tutup = modalAkun(`<h4>Atur ulang password</h4><p>${esc(email)}</p><label>Password baru (minimal 8 karakter)<input id="rp" type="text" autocomplete="off"></label>
+    <div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn" id="rr">Buat acak</button><button class="btn pri" id="ry">Simpan</button></div>`);
+  $("#rr").onclick = () => ($("#rp").value = acakPw());
   $("#ry").onclick = async () => {
     const password = $("#rp").value; if (password.length < 8) return toast("Password minimal 8 karakter");
-    try { const r = await api("/api/users", { email, role, active: !!aktif, password }); if (r.error) toast(r.error); else { tutup(); toast("Password diganti. Berikan yang baru ke pekerja."); stMuat(); } } catch (e) {}
+    if (await stKirim({ email, role: u.role, menus: u.menus, active: !!u.active, password }, "Password diganti. Berikan yang baru ke pekerja.")) tutup();
   };
 };
 
@@ -721,9 +755,7 @@ function rqView() {
     const cnt = (k) => items.filter((o, i) => jn[i] === k && o.kind === "file").length;
     return `<div class="top"><div><h1>Permintaan</h1><p>Pilih jenis dokumen yang dibutuhkan</p></div>${PERAN === "admin" ? '<button class="btn" onclick="hapusChat()">Hapus riwayat</button>' : ""}</div>
     <div class="grid two">
-      ${PERAN === "admin" || PERAN === "slip" ? `<div class="card item fade click" onclick="bukaSub('slip')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("money")}</div><div><div class="nm">Slip Gaji</div><div class="mut">Buat slip gaji karyawan • ${cnt("slip")} dokumen</div></div></div></div></div>` : ""}
-      ${PERAN === "admin" ? `<div class="card item fade click" onclick="bukaSub('inv')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Invoice</div><div class="mut">Buat invoice dan kwitansi • ${cnt("inv")} dokumen</div></div></div></div></div>` : ""}
-      ${PERAN === "admin" || PERAN === "bpjs" ? `<div class="card item fade click" onclick="bukaSub('bpjs')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("shield")}</div><div><div class="nm">BPJS</div><div class="mut">Bukti bayar dan pengolahan BPJS</div></div></div></div></div>` : ""}
+      ${MENU_REQ.filter((m) => bolehMenu(m.k)).map((m) => `<div class="card item fade click" onclick="bukaSub('${m.k}')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic(m.ikon)}</div><div><div class="nm">${esc(m.nama)}</div><div class="mut">${m.ket(cnt)}</div></div></div></div></div>`).join("")}
     </div>`;
   }
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan, lalu hasil dan konfirmasi muncul di bawah</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
