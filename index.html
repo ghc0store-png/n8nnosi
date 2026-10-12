@@ -614,7 +614,7 @@ window.dl = async (id, name) => {
 
 /* ---------- render ---------- */
 const isBad = (e) => e.status === "error" || e.status === "crashed";
-const TRANSIENT = /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|timed out|ECONNREFUSED|503|502|429/i;
+const TRANSIENT = /too many requests|rate limit|quota exceeded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|timed out|ECONNREFUSED|503|502|429/i;
 function resolvedBy(e) {
   const ex = S.executions;
   if (ex.some((x) => String(x.retry_of) === String(e.id) && x.status === "success")) return "dicoba ulang, berhasil";
