@@ -626,6 +626,9 @@ function resolvedBy(e) {
   }
   // percobaan ulang yang gagal/rusak, padahal eksekusi asalnya sudah berhasil diulang
   if (e.retry_of && ex.some((x) => String(x.retry_of) === String(e.retry_of) && x.status === "success" && new Date(x.started) > t)) return "sudah diperbaiki lewat percobaan ulang berikutnya";
+  // workflow sudah diperbaiki (diubah) setelah eror ini, dan eksekusi sesudahnya berhasil
+  const wf = (S.workflows || []).find((w) => w.id === e.wf_id);
+  if (wf && wf.updated && new Date(wf.updated) > t && ex.some((x) => later(x) && new Date(x.started) > new Date(wf.updated) && x.status === "success")) return "sudah diperbaiki, berjalan normal lagi";
   // eror dari pemicu terjadwal/hasil ulang: kalau eksekusi berikutnya sukses, berarti sudah normal
   if (/^(trigger|cron|retry|manual)$/.test(e.mode) && ex.some((x) => later(x) && x.status === "success")) return "workflow sudah berjalan normal lagi";
   return "";
