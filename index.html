@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0b0f1a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kontrol RAYMP">
@@ -43,6 +43,7 @@ svg{width:1.15em;height:1.15em;flex:none;stroke:currentColor;fill:none;stroke-wi
 .shell{display:grid;grid-template-columns:1fr;min-height:100vh}
 .side{display:none}
 main{padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));max-width:1080px;width:100%;margin:0 auto}
+.pasangBtn[hidden]{display:none!important}
 .akunbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.akunbar span{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.akunbar .btn{padding:7px 14px;flex:none}
 @media(min-width:900px){
   .akunbar{display:none}
@@ -220,6 +221,7 @@ details.alrt summary{cursor:pointer;font-weight:600}
       <button class="btn pri full" id="go">Masuk</button>
       <div id="lerr" class="err" hidden></div>
     </div>
+    <button class="btn pasangBtn" onclick="pasangApp()" style="margin-top:12px" hidden>Pasang aplikasi di perangkat ini</button>
   </div>
 </div>
 
@@ -231,6 +233,7 @@ details.alrt summary{cursor:pointer;font-weight:600}
     <div class="sidefoot">
       <div id="akunSide" class="mut" style="font-size:12.5px;overflow-wrap:anywhere;padding:0 4px"></div>
       <span id="agentS" class="pill mut"><i class="live"></i><span>memuat</span></span>
+      <button class="btn pasangBtn" onclick="pasangApp()" hidden>Pasang aplikasi</button>
       <button class="btn" id="themeS">Ganti tema</button>
       <button class="btn" id="pwS" onclick="gantiPw()" hidden>Ganti password</button>
       <button class="btn" id="outS">Keluar</button>
@@ -294,11 +297,27 @@ function enter() {
   api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") tab = "rq"; chatBuilt = false; render(); } }).catch(() => {});
 }
 let EMAIL = "";
+/* ---------- pasang sebagai aplikasi (PWA) ---------- */
+let pasangEvt = null;
+const sudahTerpasang = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function tombolPasang() { const tampil = !sudahTerpasang(); document.querySelectorAll(".pasangBtn").forEach((b) => (b.hidden = !tampil)); }
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pasangEvt = e; tombolPasang(); });
+window.addEventListener("appinstalled", () => { pasangEvt = null; toast("Aplikasi terpasang"); tombolPasang(); });
+window.pasangApp = async () => {
+  if (pasangEvt) { pasangEvt.prompt(); try { await pasangEvt.userChoice; } catch (e) {} pasangEvt = null; return; }
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), and = /Android/.test(ua);
+  const cara = ios ? ["Buka halaman ini di <b>Safari</b>.", "Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).", "Pilih <b>Tambah ke Layar Utama</b>, lalu <b>Tambah</b>."]
+    : and ? ["Buka menu Chrome (titik tiga di kanan atas).", "Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>."]
+    : ["Pakai <b>Chrome</b> atau <b>Edge</b>.", "Klik ikon <b>Pasang</b> di sebelah kanan kolom alamat, atau buka menu (titik tiga) lalu <b>Instal Pusat Kontrol RAYMP</b> / <b>Aplikasi &gt; Instal situs ini sebagai aplikasi</b>."];
+  $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Pasang aplikasi</h4><p>Aplikasi akan muncul seperti aplikasi biasa dengan ikon sendiri, tanpa kolom alamat browser.</p><ol style="margin:0 0 16px;padding-left:20px;display:grid;gap:6px">${cara.map((c) => `<li>${c}</li>`).join("")}</ol><div class="row"><button class="btn pri" id="mn">Mengerti</button></div></div></div>`;
+  const tutup = () => ($("#layer").innerHTML = "");
+  $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+};
 const akunNama = () => (EMAIL || "Admin") + (PERAN === "admin" ? (EMAIL ? " • Admin" : "") : " • " + (MENUS.map((k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama).join(", ") || "Staf"));
 // Menu akun untuk layar kecil (panel samping hanya tampil di layar lebar)
 window.akunMenu = () => {
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Akun</h4><p>${esc(akunNama())}</p>
-    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
+    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button><button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
   $("#amn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
   if (EMAIL) $("#am1").onclick = () => { tutup(); gantiPw(); };
@@ -643,7 +662,7 @@ const stPill = (s) => s === "success" ? '<span class="pill ok">Sukses</span>' : 
 const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 
 function chrome() {
-  $("#akunTxt").textContent = $("#akunSide").textContent = akunNama();
+  $("#akunTxt").textContent = $("#akunSide").textContent = akunNama(); tombolPasang();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
   setHtml($("#sidenav"), tabsBoleh().map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
   setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
@@ -1311,6 +1330,7 @@ async function load() {
 }
 window.addEventListener("online", load);
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+tombolPasang();
 if (token) enter(); else $("#login").hidden = false;
 setInterval(() => { if (token && !document.hidden) load(); }, 10000);
 </script>
