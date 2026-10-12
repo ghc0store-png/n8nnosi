@@ -295,6 +295,14 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opac
 /* transisi halaman */
 main>*{animation:in .4s var(--ease) both}
 @media(prefers-reduced-motion:reduce){main>*{animation:none}}
+/* ---------- animasi persentase proses ---------- */
+.prg{display:grid;gap:8px;margin-top:6px}.prg-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.prg-n{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.prg-cap{font-size:12.5px;color:var(--mut);text-align:right}
+.prg-track{height:12px;border-radius:99px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.prg-bar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2),#e879f9);position:relative;transition:width .35s linear;box-shadow:0 0 18px -2px var(--acc)}
+.prg-bar:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:200% 100%;animation:prgshine 1.4s linear infinite}
+@keyframes prgshine{from{background-position:200% 0}to{background-position:-200% 0}}
 </style>
 </head>
 <body>
@@ -868,7 +876,7 @@ function paintChat() {
   const lastOb = ob.length ? ob[ob.length - 1] : null;
   const needOk = lastOb && lastOb.kind === "text" && /SETUJU/.test(lastOb.text || "") && !echo.length && mine.includes(lastOb);
   const rev = mine.slice().reverse().slice(0, 25);
-  setHtml(box, (proses ? '<div class="card item"><div class="mut">Sedang diproses…</div></div>' : "") +
+  setHtml(box, (proses ? '<div class="card item">' + prgHtml(Date.now() - (last.created || Date.now()), "chat", false) + '</div>' : "") +
     (rev.map((o) => hasilHtml(o, needOk && o === lastOb)).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Isi formulir di atas untuk membuat permintaan.")}</div>`));
 }
 function rqView() {
@@ -1040,7 +1048,7 @@ function bbPaintJob() {
   const aktif = ["mengunggah", "menunggu", "diproses"].includes(j.status), lama = aktif && bbData.now - j.updated > 20 * 60e3;
   const [t, c] = bbSt[j.status] || [j.status, "mut"];
   setHtml(box, `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.filename)}</div><div class="mut">${wib(j.created)} • ${kbs(j.size)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
-    (aktif && !lama ? `<div class="mut">Biasanya selesai dalam 1 sampai 3 menit. Halaman ini diperbarui otomatis.</div>` : "") +
+    (aktif && !lama ? prgHtml(bbData.now - (j.created || j.updated), "bb", j.status === "menunggu") : "") +
     (lama ? `<div class="err">Laptop belum memberi kabar lebih dari 20 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
     (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}">${esc(j.result)}</div>` : "") + `</div>`);
 }
@@ -1113,6 +1121,25 @@ const BP = {
   hasil: { kind: "hasil", ket: "Menghitung selisih (untung/rugi) BPJS dari data yang sudah ada di Google Sheets. Tidak menarik data ulang, jadi jalankan Rekap RAB, Rincian KES/TK, dan Rekap Gaji lebih dulu bila datanya belum terbaru." },
 };
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+/* ---------- animasi persentase proses (perkiraan berdasar waktu; 100% hanya saat benar-benar selesai) ---------- */
+const PRG_DUR = { rab: 170e3, kes: 130e3, tk: 130e3, gaji: 120e3, hasil: 90e3, bb: 120e3, chat: 45e3 };
+function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
+function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
+function prgHtml(el, kind, menunggu) {
+  const dur = PRG_DUR[kind] || 150e3, p = prgHitung(el, dur);
+  return '<div class="prg" data-el="' + Math.max(0, Math.round(el)) + '" data-t0="' + Date.now() + '" data-dur="' + dur + '"><div class="prg-top"><span class="prg-n">' + p + '%</span><span class="prg-cap">' + (menunggu ? "Menunggu laptop…" : prgCap(p, el, dur)) + '</span></div><div class="prg-track"><div class="prg-bar" style="width:' + p + '%"></div></div></div>';
+}
+try {
+  setInterval(function () {
+    document.querySelectorAll(".prg[data-dur]").forEach(function (e) {
+      var dur = +e.dataset.dur, el = +e.dataset.el + (Date.now() - +e.dataset.t0), p = prgHitung(el, dur);
+      var n = e.querySelector(".prg-n"), b = e.querySelector(".prg-bar"), c = e.querySelector(".prg-cap");
+      if (n) n.textContent = p + "%"; if (b) b.style.width = p + "%";
+      if (c && !/Menunggu laptop/.test(c.textContent)) c.textContent = prgCap(p, el, dur);
+    });
+  }, 300);
+} catch (_) {}
 const bpSt = { menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Perlu dicek", "er"] };
 let bpData = null, bpKind = "", bpTimer = null, bpBusy = false, bpPrev = "", bpRev = null, bpRevTok = 0;
 const bpAktif = () => { const j = bpData && bpData.jobs[0]; return !!j && ["menunggu", "diproses"].includes(j.status) && bpData.now - j.updated < 45 * 60e3; };
@@ -1193,7 +1220,7 @@ function bpPaint() {
     const aktif = ["menunggu", "diproses"].includes(j.status), lama = aktif && bpData.now - j.updated > 45 * 60e3;
     const [t, c] = bpSt[j.status] || [j.status, "mut"];
     return `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.label)}</div><div class="mut">${wib(j.created)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
-      (aktif && !lama ? `<div class="mut">Halaman ini diperbarui otomatis. Boleh ditinggal, prosesnya tetap berjalan di laptop.</div>` : "") +
+      (aktif && !lama ? prgHtml(bpData.now - (j.created || j.updated), j.kind || bpKind, j.status === "menunggu") + `<div class="mut">Boleh ditinggal, prosesnya tetap berjalan di laptop.</div>` : "") +
       (lama ? `<div class="err">Tidak ada kabar lebih dari 45 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
       (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}" style="margin-top:6px">${bpLink(j.result)}</div>` : "") + `</div>`;
   }).join(""));
