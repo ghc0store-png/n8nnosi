@@ -1123,7 +1123,7 @@ const BP = {
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 /* ---------- animasi persentase proses (perkiraan berdasar waktu; 100% hanya saat benar-benar selesai) ---------- */
-const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 170e3, kes: 130e3, tk: 130e3, gaji: 120e3, hasil: 90e3, bb: 120e3, chat: 45e3 };
+const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 50e3, kes: 130e3, tk: 130e3, gaji: 120e3, hasil: 90e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
