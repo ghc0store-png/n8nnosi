@@ -308,16 +308,6 @@ main>*{animation:in .4s var(--ease) both}
 .logotile img{display:block;height:30px;width:auto}
 .brand .logotile{flex:none}
 .lgc .logotile{display:grid;width:max-content;margin:0 auto 18px;border-radius:20px;padding:10px 16px}.lgc .logotile img{height:64px}
-/* ---------- asisten AI ---------- */
-.aslog{display:grid;gap:10px;align-content:start;height:min(56vh,560px);overflow:auto;padding:4px 2px 8px}
-.asm{max-width:88%;padding:11px 14px;border-radius:18px;line-height:1.55;word-break:break-word;font-size:14.5px}
-.asm.u{justify-self:end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:6px;white-space:pre-wrap}
-.asm.a{justify-self:start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
-.asm.a code{background:var(--surface2);padding:1px 6px;border-radius:6px;font-size:13px}
-.asm.a pre{background:var(--surface2);padding:10px 12px;border-radius:12px;overflow:auto;margin:8px 0;font-size:13px}
-.asm.p{justify-self:start;min-width:min(78%,300px)}
-.asin{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.asin textarea{flex:1;resize:none;max-height:140px}
-.asnote{font-size:12.5px;color:var(--mut);margin-bottom:10px}
 /* ---------- kesehatan sistem ---------- */
 .sh{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}.sh:last-child{border-bottom:0}
 .shd{width:11px;height:11px;border-radius:50%;margin-top:6px;flex:none;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 18%,transparent)}
@@ -394,7 +384,7 @@ const I = {
 I.cog = '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>';
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
-const TABS_ALL = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"], ["as", "Asisten AI", "chat"], ["st", "Pengaturan", "cog"]];
+const TABS_ALL = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"], ["st", "Pengaturan", "cog"]];
 const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => t[0] === "rq"));
 
 /*anti-kedip*/ const _last = new WeakMap();
@@ -1146,45 +1136,6 @@ const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Ag
 
 /* ---------- animasi persentase proses (perkiraan berdasar waktu; 100% hanya saat benar-benar selesai) ---------- */
 
-/* ---------- asisten AI (gratis, Cloudflare Workers AI lewat server sendiri) ---------- */
-let asMsgs = [], asBuilt = false, asBusy = false, asSisa = null;
-try { asMsgs = JSON.parse(sessionStorage.getItem("asMsgs") || "[]"); } catch (e) { asMsgs = []; }
-const asSimpan = () => { try { sessionStorage.setItem("asMsgs", JSON.stringify(asMsgs.slice(-30))); } catch (e) {} };
-function asFmt(t) {
-  let s = esc(t);
-  s = s.replace(/```([\s\S]*?)```/g, (m, k) => "<pre>" + k.replace(/^\w*\n/, "") + "</pre>");
-  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
-  return s.split(/(<pre>[\s\S]*?<\/pre>)/).map((x) => (x.indexOf("<pre>") === 0 ? x : x.replace(/\n/g, "<br>"))).join("");
-}
-function asView() {
-  return `<div class="top"><div><h1>Asisten AI</h1><p>Tanya jawab umum dan bantuan menulis atau menghitung. Gratis lewat Cloudflare AI.</p></div><div class="row"><button class="btn" onclick="tiketKirim('ai')">Teruskan ke Claude Code</button><button class="btn" onclick="asBersih()">Percakapan baru</button></div></div>
-  <div class="asnote">AI ini tidak punya akses ke data perusahaan dan bisa keliru. Periksa ulang angka uang sebelum dipakai. Jangan tempel NIK, nomor rekening, atau data gaji pribadi.</div>
-  <div class="card"><div class="aslog" id="aslog"></div>
-  <div class="asin"><textarea id="asbox" rows="2" maxlength="3000" placeholder="Tulis pertanyaan… (Enter kirim, Shift+Enter baris baru)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();asKirim()}"></textarea><button class="btn pri" id="assend" onclick="asKirim()">${ic("send")}Kirim</button></div>
-  <div class="mut" id="assisa" style="margin-top:6px"></div></div>`;
-}
-function asPaint() {
-  const el = $("#aslog"); if (!el) return;
-  const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  el.innerHTML = (asMsgs.length ? asMsgs.map((m) => '<div class="asm ' + (m.role === "user" ? "u" : "a") + '">' + (m.role === "user" ? esc(m.content) : asFmt(m.content)) + "</div>").join("") : '<div class="mut" style="padding:18px 6px">Belum ada percakapan. Contoh: "Buatkan kalimat pengingat sopan untuk karyawan yang terlambat mengumpulkan berkas BPJS."</div>') +
-    (asMsgs.length && !asBusy && asMsgs[asMsgs.length - 1].role === "assistant" ? '<div class="mut" style="padding:0 6px">Belum terselesaikan? <a href="#" onclick="tiketKirim(\'ai\');return false">Teruskan ke Claude Code</a></div>' : "") + (asBusy ? '<div class="asm a p">' + prgHtml(asT0 ? Date.now() - asT0 : 0, "ai", false) + "</div>" : "");
-  if (near || asBusy) el.scrollTop = el.scrollHeight;
-  const s = $("#assisa"); if (s) s.textContent = asSisa != null ? "Sisa pertanyaan hari ini: " + asSisa : "";
-  const b = $("#assend"); if (b) b.disabled = asBusy;
-}
-let asT0 = 0;
-window.asBersih = () => { asMsgs = []; asSimpan(); asPaint(); };
-window.asKirim = async () => {
-  const b = $("#asbox"); if (!b || asBusy) return;
-  const t = b.value.trim(); if (!t) return;
-  b.value = ""; asMsgs.push({ role: "user", content: t }); asBusy = true; asT0 = Date.now(); asSimpan(); asPaint();
-  try {
-    const r = await api("/api/ai", { messages: asMsgs });
-    if (r.error) asMsgs.push({ role: "assistant", content: "⚠ " + r.error }); else { asMsgs.push({ role: "assistant", content: r.jawab }); asSisa = r.sisa; }
-  } catch (e) { if (String(e.message) !== "login") asMsgs.push({ role: "assistant", content: "⚠ Gagal menghubungi server. Coba lagi." }); }
-  asBusy = false; asSimpan(); asPaint();
-};
-
 /* ---------- kesehatan sistem & perbaikan mandiri ---------- */
 let SEH = null, sehBusy = false;
 async function sehMuat() { sehBusy = true; sehPaint(); try { SEH = await api("/api/sehat"); } catch (e) { SEH = { gagal: true }; } sehBusy = false; sehPaint(); }
@@ -1203,7 +1154,6 @@ function sehBaris() {
   else r.push({ s: "ok", t: jalan ? jalan + " proses sedang berjalan" : "Tidak ada proses menggantung", k: jalan ? "Tunggu sampai selesai." : "Semua proses selesai atau tidak ada." });
   const terbuka = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e)).length;
   r.push(terbuka ? { s: "wa", t: terbuka + " eror workflow perlu perhatian", k: "Buka halaman Eror, tekan Perbaiki otomatis atau Coba ulang. Eror kuota Google akan pulih sendiri.", a: '<button class="btn" onclick="go(\'er\')">Buka halaman Eror</button>' } : { s: "ok", t: "Tidak ada eror workflow", k: "Semua berjalan normal." });
-  r.push(SEH.ai ? { s: "ok", t: "Asisten AI aktif", k: "Gratis lewat Cloudflare." } : { s: "wa", t: "Asisten AI belum aktif", k: "Server belum dipasang dengan fitur AI." });
   return r;
 }
 function sehPaint() {
@@ -1213,7 +1163,7 @@ function sehPaint() {
   const ring = bad ? bad + " masalah serius" : wa ? wa + " hal perlu dicek" : "Semua sehat";
   el.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="pill ' + (bad ? "er" : wa ? "wa" : "ok") + '">' + ring + '</span><button class="btn" onclick="sehMuat()"' + (sehBusy ? " disabled" : "") + '>' + ic("retry") + 'Periksa sekarang</button></div>' +
     baris.map((x) => '<div class="sh"><span class="shd ' + x.s + '"></span><div class="b"><div class="t">' + esc(x.t) + '</div><div class="k">' + esc(x.k) + "</div>" + (x.a ? '<div class="a">' + x.a + "</div>" : "") + "</div></div>").join("") +
-    '<div class="row" style="margin-top:12px"><button class="btn" onclick="sehCache()">Bersihkan cache dan muat ulang</button><button class="btn" onclick="tiketKirim(\'seh\')">Teruskan ke Claude Code</button><button class="btn" onclick="sehTanyaAI()">' + ic("ai") + 'Tanya Asisten AI</button></div>' +
+    '<div class="row" style="margin-top:12px"><button class="btn" onclick="sehCache()">Bersihkan cache dan muat ulang</button><button class="btn" onclick="tiketKirim(\'seh\')">Teruskan ke Claude Code</button></div>' +
     '<details class="pand" style="margin-top:10px"><summary>Panduan cepat bila ada masalah</summary><ul>' +
     '<li><b>Loading tidak selesai-selesai:</b> tekan Periksa sekarang, lalu Tutup proses menggantung. Setelah itu coba lagi sekali saja.</li>' +
     '<li><b>Tampilan atau data tidak berubah:</b> tekan Bersihkan cache dan muat ulang. Di HP, hapus aplikasi dari layar utama lalu pasang lagi.</li>' +
@@ -1221,7 +1171,7 @@ function sehPaint() {
     '<li><b>Eror too many requests (Google):</b> kuota baca Google Sheets sedang penuh. Tunggu 1 sampai 2 menit, jangan menekan tombol berulang.</li>' +
     '<li><b>Penarikan data BPJS/RAB menolak jalan:</b> proses sebelumnya masih berjalan (tunggu sekitar 1 menit) atau menggantung (Tutup proses menggantung).</li>' +
     '<li><b>Lupa password pekerja:</b> di daftar akun di bawah, tekan Atur ulang password.</li>' +
-    '<li><b>Masalah lain:</b> tekan Tanya Asisten AI untuk dibantu, atau minta Claude memeriksa lewat menu Claude.</li></ul></details>';
+    '<li><b>Masalah lain:</b> tekan Teruskan ke Claude Code agar Claude memeriksanya, atau minta Claude memeriksa lewat menu Claude.</li></ul></details>';
 }
 window.sehMuat = sehMuat;
 window.sehTutup = async () => { try { const r = await api("/api/sehat/perbaiki", { aksi: "tutup_macet" }); if (r.error) toast(r.error); else toast(r.ditutup + " proses ditutup"); } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); } sehMuat(); load && load(); };
@@ -1233,16 +1183,10 @@ window.sehCache = async () => {
   try { if (window.caches) { const k = await caches.keys(); await Promise.all(k.map((x) => caches.delete(x))); } if (navigator.serviceWorker) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map((x) => x.unregister())); } } catch (e) {}
   setTimeout(() => location.reload(), 500);
 };
-window.sehTanyaAI = () => {
-  const baris = sehBaris().map((x) => "- " + x.t + ": " + x.k).join("\n");
-  go("as");
-  setTimeout(() => { const b = $("#asbox"); if (b) { b.value = "Website kontrol saya sedang bermasalah. Hasil pemeriksaan sistem:\n" + baris + "\n\nApa penyebab yang paling mungkin dan langkah apa yang sebaiknya saya lakukan?"; b.focus(); } }, 300);
-};
 
 /* ---------- tiket ke Claude Code di laptop ---------- */
 function tiketIsi(sumber) {
   const bagian = [];
-  if (sumber === "ai" && asMsgs.length) bagian.push("## Percakapan dengan Asisten AI\n" + asMsgs.slice(-12).map((m) => (m.role === "user" ? "Admin: " : "AI: ") + m.content).join("\n\n"));
   try { if (SEH && !SEH.gagal && !SEH.error) bagian.push("## Hasil pemeriksaan sistem\n" + sehBaris().map((x) => "- [" + x.s + "] " + x.t + ": " + x.k).join("\n")); } catch (e) {}
   const err = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e)).slice(0, 5).map((e) => "- #" + e.id + " " + e.wf_name + " (" + e.err_node + "): " + String(e.err_msg || "").slice(0, 160));
   if (err.length) bagian.push("## Eror workflow terbuka\n" + err.join("\n"));
@@ -1251,12 +1195,12 @@ function tiketIsi(sumber) {
 }
 window.tiketKirim = (sumber) => ask("Teruskan ke Claude Code?", "Laporan (percakapan dan hasil pemeriksaan) disimpan sebagai tiket di laptop, lalu Claude menganalisisnya (hanya baca). Perbaikan sebenarnya dilanjutkan Claude Code di CMD Anda, dengan izin Anda.", "Teruskan", false, async () => {
   try {
-    const r = await api("/api/tiket", { judul: sumber === "ai" ? "Dari Asisten AI: perlu bantuan Claude Code" : "Dari Kesehatan sistem: perlu bantuan Claude Code", isi: tiketIsi(sumber) });
+    const r = await api("/api/tiket", { judul: "Dari Kesehatan sistem: perlu bantuan Claude Code", isi: tiketIsi(sumber) });
     if (r.error) return toast(r.error);
     toast("Tiket #" + r.id + " terkirim. Di CMD ketik: lanjutkan tiket");
   } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); }
 });
-const PRG_DUR = { ai: 9e3, tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
+const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
@@ -1580,11 +1524,6 @@ function render() {
     clPaint(); return;
   }
   clBuilt = false;
-  if (tab === "as") {
-    if (!asBuilt || !$("#asbox")) { $("#view").innerHTML = asView(); asBuilt = true; }
-    asPaint(); return;
-  }
-  asBuilt = false;
   if (tab === "st") {
     if (PERAN !== "admin") { tab = "rq"; return render(); }
     if (!stBuilt || !$("#ulist")) { $("#view").innerHTML = stView(); stBuilt = true; stMuat(); sehMuat(); }
