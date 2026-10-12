@@ -189,7 +189,8 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .alrt{border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px}.alrt ul{margin:6px 0 0 18px;padding:0}.alrt li{margin:2px 0}
 .alrt.tinggi{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45)}.alrt.sedang{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)}.alrt.oke{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)}
 .tbl tbody tr:nth-child(even){background:var(--surface2)}.tbl tbody tr:hover{background:var(--accsoft)}.tbl tr.tot:hover{background:var(--accsoft)}
-.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}.tbl th.srt{cursor:pointer;user-select:none}.tbl th.srt:hover{color:var(--acc)}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbw.tall{max-height:62vh}.tbl.rapi{width:100%}.tbl.rapi td{white-space:normal;overflow:visible;text-overflow:clip;vertical-align:top;max-width:360px;line-height:1.35}.tbl.rapi td.n{white-space:nowrap}.tbl.rapi td.mt{color:var(--mut)}.tbl.rapi tr.sek td{font-weight:700;background:var(--accsoft);letter-spacing:.01em}.tbl.rapi tbody tr:nth-child(even){background:none}.tbl.rapi tbody tr.sek:nth-child(even){background:var(--accsoft)}.rjudul{margin:6px 0 4px;font-size:13px;line-height:1.5}.rjudul .rj{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mut)}.rjudul .rj.t{color:var(--tx);font-weight:700;font-size:15px}.rjudul .rj em{font-style:normal;font-size:12.5px}.tbl.rapi tr.hd td{font-weight:600;color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;background:var(--surface);z-index:1}.tbl th.srt{cursor:pointer;user-select:none}.tbl th.srt:hover{color:var(--acc)}
 .fch{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}.fch button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:99px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s,border-color .15s}.fch button:hover{border-color:var(--acc)}.fch button.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .lnk{background:none;border:0;color:var(--acc);cursor:pointer;font:inherit;text-decoration:underline;padding:0 0 0 6px}
 details.alrt summary{cursor:pointer;font-weight:600}
@@ -1271,14 +1272,44 @@ window.bpBuka = async (i, dari) => {
     bpSumPaint(b);
   } catch (e) { if ($("#sumst") && String(e.message) !== "login") $("#sumst").innerHTML = '<span class="err">Gagal membuka file. Periksa koneksi.</span>'; }
 };
+/* tampilan rapi isi file sumber (lembar bergaya formulir): gabungkan kolom yang tidak pernah terisi bersamaan, rapikan teks/angka, judul & seksi menonjol */
+let bpSumRapi = true;
+function bpTabelRapi(baris) {
+  const rows = baris.map((r) => r.map((c) => String(c == null ? "" : c).replace(/\s+/g, " ").trim()));
+  const lebar = Math.max(1, ...rows.map((r) => r.length));
+  const ada = (r, i) => (r[i] || "") !== "";
+  const keep = []; for (let i = 0; i < lebar; i++) if (rows.some((r) => ada(r, i))) keep.push(i);
+  // kolom bersebelahan yang tidak pernah sama-sama terisi dalam satu baris dijadikan satu kolom (sel gabungan di Excel jadi banyak kolom kosong)
+  const grup = [];
+  for (const c of keep) {
+    const g = grup[grup.length - 1];
+    if (g && !rows.some((r) => ada(r, c) && g.some((x) => ada(r, x)))) g.push(c); else grup.push([c]);
+  }
+  const isi = rows.map((r) => grup.map((g) => { for (const c of g) if (ada(r, c)) return r[c]; return ""; })).filter((r) => r.some((c) => c !== ""));
+  const angkaRe = /^\(?[-+]?(Rp\s*)?\d[\d.,]*\)?%?$/, tebal = /^([A-Z]\.\s*)?(SUB\s*)?TOTAL\b|^GRAND TOTAL|^JUMLAH\b|^BIAYA PER PERSONIL|^MANAGEMENT FEE/i;
+  const hitung = (r) => r.filter((c) => c).length;
+  // blok judul di atas: baris sebelum baris pertama yang berisi 3 sel atau lebih
+  let i0 = 0; while (i0 < isi.length && hitung(isi[i0]) < 3) i0++;
+  const kepala = isi.slice(0, i0).map((r) => r.filter((c) => c));
+  const judul = kepala.length ? `<div class="rjudul">${kepala.map((p, i) => `<div class="rj${i === 0 ? " t" : ""}"><span>${esc(p[0])}</span>${p[1] ? `<em>${esc(p.slice(1).join(" • "))}</em>` : ""}</div>`).join("")}</div>` : "";
+  let body = "", sudahAngka = false;
+  for (const r of isi.slice(i0)) {
+    const n = hitung(r), pertama = r.find((c) => c) || "", punyaAngka = r.some((c) => angkaRe.test(c));
+    if (n === 1 && r[0]) { body += `<tr class="sek"><td colspan="${r.length}">${esc(r[0])}</td></tr>`; continue; }
+    const hd = !sudahAngka && !punyaAngka && n >= 3; if (punyaAngka) sudahAngka = true;
+    body += `<tr${hd ? ' class="hd"' : tebal.test(pertama) ? ' class="tot"' : ""}>${r.map((c) => c === "" ? "<td></td>" : c === "-" ? '<td class="mt n">–</td>' : `<td${angkaRe.test(c) ? ' class="n"' : ""}>${esc(c)}</td>`).join("")}</tr>`;
+  }
+  return judul + `<div class="tbw tall"><table class="tbl rapi"><tbody>${body}</tbody></table></div>`;
+}
+window.bpSumRapiToggle = () => { bpSumRapi = !bpSumRapi; bpSumPaint(bpSumB || { nama: "" }); };
 function bpSumPaint(b) {
   const d = bpSum; if (!d || !$("#sumbd")) return;
   const t = d.tabs[bpSumTab];
   $("#sumst").innerHTML = esc((d.catatan || []).join(" ")) || `${d.tabs.length} tab`;
   if (!d.tabs.length) { $("#sumbd").innerHTML = '<div class="mut" style="padding:8px 0">Tidak ada tab yang bisa ditampilkan.</div>'; return; }
   $("#sumbd").innerHTML = (d.tabs.length > 1 ? `<div class="tabsel">${d.tabs.map((x, i) => `<button class="btn${i === bpSumTab ? " on" : ""}" onclick="bpSumPilih(${i})">${esc(x.nama)}</button>`).join("")}</div>` : "") +
-    bpTabel(t.baris[0] ? t.baris[0].map((_, i) => String.fromCharCode(65 + ((i + (t.kolomAwal || 0)) % 26))) : [], t.baris) + `<div class="mut" style="margin-top:6px">${t.baris.length} baris${t.total > t.baris.length ? " dari " + t.total + " (sisanya ada di file asli)" : ""}</div>`;
-  $("#sumbtn").innerHTML = `<button class="btn ok" id="sumdl">Unduh Excel</button><button class="btn" id="mn">Tutup</button>`;
+    (bpSumRapi ? bpTabelRapi(t.baris) : bpTabel(t.baris[0] ? t.baris[0].map((_, i) => String.fromCharCode(65 + ((i + (t.kolomAwal || 0)) % 26))) : [], t.baris)) + `<div class="mut" style="margin-top:6px">${t.baris.length} baris${t.total > t.baris.length ? " dari " + t.total + " (sisanya ada di file asli)" : ""}</div>`;
+  $("#sumbtn").innerHTML = `<button class="btn ok" id="sumdl">Unduh Excel</button><button class="btn" onclick="bpSumRapiToggle()">${bpSumRapi ? "Lihat apa adanya" : "Lihat rapi"}</button><button class="btn" id="mn">Tutup</button>`;
   $("#sumdl").onclick = () => bpUnduhXlsx(d.tabs.map((x) => ({ nama: x.nama, kolom: [], baris: x.baris })), d.judul || b.nama);
   $("#mn").onclick = () => { $("#layer").innerHTML = ""; bpSum = null; };
 }
