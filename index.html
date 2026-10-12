@@ -308,6 +308,16 @@ main>*{animation:in .4s var(--ease) both}
 .logotile img{display:block;height:30px;width:auto}
 .brand .logotile{flex:none}
 .lgc .logotile{display:grid;width:max-content;margin:0 auto 18px;border-radius:20px;padding:10px 16px}.lgc .logotile img{height:64px}
+/* ---------- asisten AI ---------- */
+.aslog{display:grid;gap:10px;align-content:start;height:min(56vh,560px);overflow:auto;padding:4px 2px 8px}
+.asm{max-width:88%;padding:11px 14px;border-radius:18px;line-height:1.55;word-break:break-word;font-size:14.5px}
+.asm.u{justify-self:end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:6px;white-space:pre-wrap}
+.asm.a{justify-self:start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.asm.a code{background:var(--surface2);padding:1px 6px;border-radius:6px;font-size:13px}
+.asm.a pre{background:var(--surface2);padding:10px 12px;border-radius:12px;overflow:auto;margin:8px 0;font-size:13px}
+.asm.p{justify-self:start;min-width:min(78%,300px)}
+.asin{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.asin textarea{flex:1;resize:none;max-height:140px}
+.asnote{font-size:12.5px;color:var(--mut);margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -378,7 +388,7 @@ const I = {
 I.cog = '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>';
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
-const TABS_ALL = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"], ["st", "Pengaturan", "cog"]];
+const TABS_ALL = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"], ["as", "Asisten AI", "chat"], ["st", "Pengaturan", "cog"]];
 const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => t[0] === "rq"));
 
 /*anti-kedip*/ const _last = new WeakMap();
@@ -1128,7 +1138,46 @@ const BP = {
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 /* ---------- animasi persentase proses (perkiraan berdasar waktu; 100% hanya saat benar-benar selesai) ---------- */
-const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
+
+/* ---------- asisten AI (gratis, Cloudflare Workers AI lewat server sendiri) ---------- */
+let asMsgs = [], asBuilt = false, asBusy = false, asSisa = null;
+try { asMsgs = JSON.parse(sessionStorage.getItem("asMsgs") || "[]"); } catch (e) { asMsgs = []; }
+const asSimpan = () => { try { sessionStorage.setItem("asMsgs", JSON.stringify(asMsgs.slice(-30))); } catch (e) {} };
+function asFmt(t) {
+  let s = esc(t);
+  s = s.replace(/```([\s\S]*?)```/g, (m, k) => "<pre>" + k.replace(/^\w*\n/, "") + "</pre>");
+  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+  return s.split(/(<pre>[\s\S]*?<\/pre>)/).map((x) => (x.indexOf("<pre>") === 0 ? x : x.replace(/\n/g, "<br>"))).join("");
+}
+function asView() {
+  return `<div class="top"><div><h1>Asisten AI</h1><p>Tanya jawab umum dan bantuan menulis atau menghitung. Gratis lewat Cloudflare AI.</p></div><button class="btn" onclick="asBersih()">Percakapan baru</button></div>
+  <div class="asnote">AI ini tidak punya akses ke data perusahaan dan bisa keliru. Periksa ulang angka uang sebelum dipakai. Jangan tempel NIK, nomor rekening, atau data gaji pribadi.</div>
+  <div class="card"><div class="aslog" id="aslog"></div>
+  <div class="asin"><textarea id="asbox" rows="2" maxlength="3000" placeholder="Tulis pertanyaan… (Enter kirim, Shift+Enter baris baru)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();asKirim()}"></textarea><button class="btn pri" id="assend" onclick="asKirim()">${ic("send")}Kirim</button></div>
+  <div class="mut" id="assisa" style="margin-top:6px"></div></div>`;
+}
+function asPaint() {
+  const el = $("#aslog"); if (!el) return;
+  const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  el.innerHTML = (asMsgs.length ? asMsgs.map((m) => '<div class="asm ' + (m.role === "user" ? "u" : "a") + '">' + (m.role === "user" ? esc(m.content) : asFmt(m.content)) + "</div>").join("") : '<div class="mut" style="padding:18px 6px">Belum ada percakapan. Contoh: "Buatkan kalimat pengingat sopan untuk karyawan yang terlambat mengumpulkan berkas BPJS."</div>') +
+    (asBusy ? '<div class="asm a p">' + prgHtml(asT0 ? Date.now() - asT0 : 0, "ai", false) + "</div>" : "");
+  if (near || asBusy) el.scrollTop = el.scrollHeight;
+  const s = $("#assisa"); if (s) s.textContent = asSisa != null ? "Sisa pertanyaan hari ini: " + asSisa : "";
+  const b = $("#assend"); if (b) b.disabled = asBusy;
+}
+let asT0 = 0;
+window.asBersih = () => { asMsgs = []; asSimpan(); asPaint(); };
+window.asKirim = async () => {
+  const b = $("#asbox"); if (!b || asBusy) return;
+  const t = b.value.trim(); if (!t) return;
+  b.value = ""; asMsgs.push({ role: "user", content: t }); asBusy = true; asT0 = Date.now(); asSimpan(); asPaint();
+  try {
+    const r = await api("/api/ai", { messages: asMsgs });
+    if (r.error) asMsgs.push({ role: "assistant", content: "⚠ " + r.error }); else { asMsgs.push({ role: "assistant", content: r.jawab }); asSisa = r.sisa; }
+  } catch (e) { if (String(e.message) !== "login") asMsgs.push({ role: "assistant", content: "⚠ Gagal menghubungi server. Coba lagi." }); }
+  asBusy = false; asSimpan(); asPaint();
+};
+const PRG_DUR = { ai: 9e3, tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
@@ -1452,6 +1501,11 @@ function render() {
     clPaint(); return;
   }
   clBuilt = false;
+  if (tab === "as") {
+    if (!asBuilt || !$("#asbox")) { $("#view").innerHTML = asView(); asBuilt = true; }
+    asPaint(); return;
+  }
+  asBuilt = false;
   if (tab === "st") {
     if (PERAN !== "admin") { tab = "rq"; return render(); }
     if (!stBuilt || !$("#ulist")) { $("#view").innerHTML = stView(); stBuilt = true; stMuat(); }
