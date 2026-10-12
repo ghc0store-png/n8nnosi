@@ -328,7 +328,6 @@ main>*{animation:in .4s var(--ease) both}
       <label>Email<input id="em" type="email" placeholder="Kosongkan jika admin" autocomplete="username"></label>
       <label>Password<input id="pw" type="password" placeholder="Masukkan password" autocomplete="current-password"></label>
       <button class="btn pri full" id="go">Masuk</button>
-      <button class="btn full" id="pkgo" hidden style="margin-top:8px"><svg viewBox="0 0 24 24"><path d="M12 11v4"/><path d="M8 10a4 4 0 0 1 8 0v3"/><path d="M5 12a7 7 0 0 1 14 0v2"/><path d="M12 6V3"/><path d="M9 20c.5-1.5 1-3 1-5"/><path d="M15 20c-.4-1.5-.7-3.3-.7-6"/></svg>Masuk dengan sidik jari / wajah</button>
       <div id="lerr" class="err" hidden></div>
     </div>
     <button class="btn pasangBtn" onclick="pasangApp()" style="margin-top:12px" hidden>Pasang aplikasi di perangkat ini</button>
@@ -346,7 +345,6 @@ main>*{animation:in .4s var(--ease) both}
       <button class="btn pasangBtn" onclick="pasangApp()" hidden>Pasang aplikasi</button>
       <button class="btn" id="themeS">Ganti tema</button>
       <button class="btn" id="pwS" onclick="gantiPw()" hidden>Ganti password</button>
-      <button class="btn" id="pkS" onclick="pkKelola()" hidden>Sidik jari / wajah</button>
       <button class="btn" id="outS">Keluar</button>
     </div>
   </aside>
@@ -428,7 +426,7 @@ const akunNama = () => (EMAIL || "Admin") + (PERAN === "admin" ? (EMAIL ? " • 
 // Menu akun untuk layar kecil (panel samping hanya tampil di layar lebar)
 window.akunMenu = () => {
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Akun</h4><p>${esc(akunNama())}</p>
-    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button>${pkAda() ? '<button class="btn" id="am4" onclick="pkAkun()">Sidik jari / wajah</button>' : ""}<button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
+    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button><button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
   $("#amn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
   if (EMAIL) $("#am1").onclick = () => { tutup(); gantiPw(); };
@@ -1202,53 +1200,6 @@ window.tiketKirim = (sumber) => ask("Teruskan ke Claude Code?", "Laporan (percak
     toast("Tiket #" + r.id + " terkirim. Di CMD ketik: lanjutkan tiket");
   } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); }
 });
-
-/* ---------- masuk dengan sidik jari / wajah (passkey, WebAuthn) ---------- */
-const pkB = {
-  enc: (b) => { const a = new Uint8Array(b); let s = ""; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); },
-  dec: (s) => { s = String(s).replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return Uint8Array.from(atob(s), (c) => c.charCodeAt(0)); },
-};
-const pkAda = () => !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
-const pkLabel = () => { const u = navigator.userAgent; const os = /Windows/.test(u) ? "Windows" : /Android/.test(u) ? "Android" : /iPhone|iPad/.test(u) ? "iPhone/iPad" : /Mac/.test(u) ? "Mac" : "Perangkat"; const br = /Edg\//.test(u) ? "Edge" : /Chrome/.test(u) ? "Chrome" : /Safari/.test(u) ? "Safari" : /Firefox/.test(u) ? "Firefox" : "Browser"; return os + " • " + br; };
-const pkPesan = (e) => { const n = e && e.name; return n === "NotAllowedError" ? "Dibatalkan, atau tidak ada sidik jari/wajah yang cocok di perangkat ini." : n === "InvalidStateError" ? "Sidik jari/wajah perangkat ini sudah terdaftar untuk akun ini." : n === "SecurityError" ? "Fitur ini hanya berjalan di alamat resmi website (github.io), bukan dari file lokal." : n === "NotSupportedError" ? "Perangkat atau browser ini tidak mendukung sidik jari/wajah." : "Gagal memakai sidik jari/wajah. Coba lagi atau masuk dengan password."; };
-async function pkMasuk() {
-  const e = $("#lerr"), b = $("#pkgo"); e.hidden = true; b.disabled = true;
-  try {
-    const o = await (await fetch(API + "/api/passkey/opsi-masuk", { method: "POST" })).json();
-    const c = await navigator.credentials.get({ publicKey: { challenge: pkB.dec(o.challenge), rpId: o.rpId, userVerification: "required", timeout: 60000 } });
-    const r = c.response;
-    const d = await (await fetch(API + "/api/passkey/masuk", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cid: o.cid, id: c.id, clientDataJSON: pkB.enc(r.clientDataJSON), authenticatorData: pkB.enc(r.authenticatorData), signature: pkB.enc(r.signature) }) })).json();
-    if (d.ok) { token = d.token; PERAN = d.role || "admin"; tab = PERAN === "admin" ? "ov" : "rq"; rqSub = ""; S = null; try { localStorage.setItem("tok", token); localStorage.removeItem("cacheS"); } catch (x) {} enter(); }
-    else { e.hidden = false; e.textContent = d.error || "Gagal masuk"; }
-  } catch (x) { e.hidden = false; e.textContent = pkPesan(x); }
-  b.disabled = false;
-}
-async function pkDaftar() {
-  try {
-    const o = await api("/api/passkey/opsi-daftar", {}); if (o.error) return toast(o.error);
-    const pub = o.publicKey; pub.challenge = pkB.dec(pub.challenge); pub.user.id = pkB.dec(pub.user.id); pub.excludeCredentials = (pub.excludeCredentials || []).map((x) => ({ type: x.type, id: pkB.dec(x.id) }));
-    const c = await navigator.credentials.create({ publicKey: pub }), r = c.response;
-    const res = await api("/api/passkey/daftar", { cid: o.cid, id: c.id, label: pkLabel(), clientDataJSON: pkB.enc(r.clientDataJSON), attestationObject: pkB.enc(r.attestationObject) });
-    if (res.error) return toast(res.error);
-    toast("Sidik jari/wajah aktif. Mulai sekarang bisa masuk tanpa password."); return true;
-  } catch (x) { if (String(x && x.message) !== "login") toast(pkPesan(x)); }
-}
-window.pkAkun = () => { $("#layer").innerHTML = ""; pkKelola(); };
-window.pkKelola = async () => {
-  if (!pkAda()) return toast("Browser ini tidak mendukung sidik jari/wajah.");
-  const tampil = async () => {
-    let daftar = []; try { daftar = (await api("/api/passkey")).daftar || []; } catch (e) {}
-    $("#layer").innerHTML = '<div class="modal" id="mdl"><div class="sheet"><h4>Sidik jari / wajah</h4><p>Masuk lebih cepat memakai pengaman bawaan HP atau laptop. Password tetap bisa dipakai kapan saja.</p>' +
-      (daftar.length ? '<div class="grid" style="margin-bottom:12px">' + daftar.map((x) => '<div class="card item" style="padding:10px 12px"><div class="h"><div style="min-width:0"><div class="nm">' + esc(x.label || "Perangkat") + '</div><div class="mut">Ditambahkan ' + wib(x.created) + '</div></div><button class="btn dg" data-i="' + esc(x.id) + '">Hapus</button></div></div>').join("") + "</div>" : '<div class="mut" style="margin-bottom:12px">Belum ada perangkat yang didaftarkan.</div>') +
-      '<div class="grid"><button class="btn pri" id="pkadd">Aktifkan di perangkat ini</button><button class="btn" id="pkx">Tutup</button></div></div></div>';
-    const tutup = () => ($("#layer").innerHTML = "");
-    $("#pkx").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
-    $("#pkadd").onclick = async () => { $("#pkadd").disabled = true; await pkDaftar(); tampil(); };
-    document.querySelectorAll("#mdl [data-i]").forEach((b) => (b.onclick = async () => { try { await api("/api/passkey/hapus", { id: b.dataset.i }); toast("Perangkat dihapus"); } catch (e) {} tampil(); }));
-  };
-  tampil();
-};
-(function () { try { if (pkAda()) { $("#pkgo").hidden = false; $("#pkgo").onclick = pkMasuk; $("#pkS").hidden = false; } else { $("#am4") && ($("#am4").hidden = true); } } catch (e) {} })();
 const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
