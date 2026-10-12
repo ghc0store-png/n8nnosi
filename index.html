@@ -252,6 +252,49 @@ input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0
 .top h1{background:linear-gradient(135deg,var(--tx) 40%,color-mix(in srgb,var(--acc) 75%,var(--tx)));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 @media(max-width:560px){main{padding-left:14px;padding-right:14px}.hero{border-radius:22px;padding:20px}.top h1{font-size:22px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* ---------- lapisan mewah ---------- */
+:root{--gold:#d4a95a;--gold2:#f3d99b;--hair:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gold) 70%,transparent),transparent)}
+body{font-feature-settings:"cv11","ss01","tnum";letter-spacing:-.004em}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.035;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.shell,main,.side,.tabbar{position:relative;z-index:1}.tabbar{position:fixed}.side{position:sticky}@media(max-width:899px){.side{position:static}}
+/* kartu: sorot cahaya mengikuti kursor + tepi bergradasi */
+.card{--mx:50%;--my:0%;isolation:isolate}
+.card:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;opacity:0;transition:opacity .35s;background:radial-gradient(260px circle at var(--mx) var(--my),color-mix(in srgb,var(--acc) 16%,transparent),transparent 70%)}
+.card:after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(220px circle at var(--mx) var(--my),color-mix(in srgb,var(--gold) 80%,transparent),color-mix(in srgb,var(--acc) 55%,transparent) 45%,transparent 75%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+@media(hover:hover){.card:hover:before,.card:hover:after{opacity:1}}
+.card{box-shadow:0 1px 0 rgba(255,255,255,.55) inset,var(--shadow)}
+:root[data-theme=dark] .card,:root:not([data-theme=light]) .card{--hl:rgba(255,255,255,.05)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .card{box-shadow:0 1px 0 rgba(255,255,255,.06) inset,var(--shadow)}}
+:root[data-theme=dark] .card{box-shadow:0 1px 0 rgba(255,255,255,.06) inset,var(--shadow)}
+/* hero: kilau emas tipis dan garis rambut */
+.hero{box-shadow:0 30px 60px -28px #6d28d9,inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.08)}
+.hero h2{text-shadow:0 2px 18px rgba(0,0,0,.18)}
+.hero h2:after{content:"";display:block;width:56px;height:2px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,var(--gold2),transparent)}
+/* judul halaman & brand */
+.top{position:relative;padding-bottom:14px;margin-bottom:18px}.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--hair);opacity:.55}
+.top h1{font-size:clamp(24px,3.2vw,30px);font-weight:750;letter-spacing:-.03em}
+.brand b{letter-spacing:.01em}.logo{background:linear-gradient(135deg,var(--acc),var(--acc2) 70%,#e879f9)}
+.side{box-shadow:1px 0 0 var(--line),24px 0 60px -40px rgba(20,24,39,.25)}
+.nav.on:before{content:"";position:absolute;left:-16px;top:calc(50% - 11px);width:4px;height:22px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,var(--gold2),var(--gold))}.nav{position:relative}
+/* tombol: lapisan kaca & tepi emas pada tombol utama */
+.btn{border-radius:14px;letter-spacing:.005em}
+.btn.pri{background:linear-gradient(135deg,var(--acc) 0%,var(--acc2) 60%,#c084fc 120%);outline:1px solid color-mix(in srgb,var(--gold) 28%,transparent);outline-offset:-1px}
+.btn:not(.pri):not(.ok):not(.dg){background:color-mix(in srgb,var(--surface) 70%,transparent);backdrop-filter:blur(8px)}
+/* pil, label, angka */
+.pill{letter-spacing:.015em;font-weight:650}
+.stat{overflow:hidden;background-image:radial-gradient(circle at 100% 0,var(--accsoft),transparent 62%)}
+.stat b{font-size:clamp(26px,4vw,32px);font-weight:800}
+.nm{font-weight:680}
+/* tabel: kaca halus */
+.tbw{background:var(--surface);box-shadow:var(--shadow);border-color:var(--line)}
+.tbl th{background:color-mix(in srgb,var(--surface2) 90%,transparent);backdrop-filter:blur(6px)}
+/* bilah atas (HP): kaca melayang */
+.akunbar{position:sticky;top:6px;z-index:15;padding:8px 10px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:var(--shadow)}
+/* login */
+#login .card,.login .card{box-shadow:0 40px 80px -30px rgba(60,40,160,.55),var(--shadow)}
+/* transisi halaman */
+main>*{animation:in .4s var(--ease) both}
+@media(prefers-reduced-motion:reduce){main>*{animation:none}}
 </style>
 </head>
 <body>
@@ -1413,6 +1456,17 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catc
 tombolPasang();
 if (token) enter(); else $("#login").hidden = false;
 setInterval(() => { if (token && !document.hidden) load(); }, 10000);
+</script>
+<script>
+/* sorot cahaya kartu mengikuti kursor (hanya hiasan; aman bila gagal) */
+try{
+  var _raf=0;
+  document.addEventListener("pointermove",function(e){
+    if(e.pointerType==="touch"||_raf)return;
+    var t=e.target&&e.target.closest&&e.target.closest(".card");if(!t)return;
+    _raf=requestAnimationFrame(function(){_raf=0;var r=t.getBoundingClientRect();t.style.setProperty("--mx",(e.clientX-r.left)+"px");t.style.setProperty("--my",(e.clientY-r.top)+"px");});
+  },{passive:true});
+}catch(_){}
 </script>
 </body>
 </html>
