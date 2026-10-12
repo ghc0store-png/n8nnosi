@@ -43,7 +43,9 @@ svg{width:1.15em;height:1.15em;flex:none;stroke:currentColor;fill:none;stroke-wi
 .shell{display:grid;grid-template-columns:1fr;min-height:100vh}
 .side{display:none}
 main{padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));max-width:1080px;width:100%;margin:0 auto}
+.akunbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.akunbar span{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.akunbar .btn{padding:7px 14px;flex:none}
 @media(min-width:900px){
+  .akunbar{display:none}
   .shell{grid-template-columns:240px 1fr}
   .side{display:flex;flex-direction:column;gap:6px;padding:22px 16px;position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(18px)}
   main{padding:26px 32px 48px}
@@ -234,6 +236,7 @@ details.alrt summary{cursor:pointer;font-weight:600}
     </div>
   </aside>
   <main>
+    <div class="akunbar"><span id="akunTxt" class="mut"></span><button class="btn" onclick="akunMenu()">Akun</button></div>
     <div id="offnote" class="banner" hidden></div>
     <div id="view"><div class="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
   </main>
@@ -283,13 +286,24 @@ async function api(path, body) {
   if (r.status === 401) { showLogin(); throw new Error("login"); }
   return r.json();
 }
-function showLogin() { try { localStorage.removeItem("tok"); } catch (e) {} token = ""; $("#app").hidden = true; $("#login").hidden = false; }
+function showLogin() { try { localStorage.removeItem("tok"); localStorage.removeItem("cacheS"); localStorage.removeItem("pil"); } catch (e) {} token = ""; S = null; USERS = null; EMAIL = ""; $("#layer").innerHTML = ""; $("#em").value = ""; $("#pw").value = ""; $("#app").hidden = true; $("#login").hidden = false; }
 function enter() {
   $("#login").hidden = true; $("#app").hidden = false; load();
   // peran/email resmi dari server (admin bisa mengubah peran kapan saja)
   api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") tab = "rq"; chatBuilt = false; render(); } }).catch(() => {});
 }
 let EMAIL = "";
+const akunNama = () => (EMAIL || "Admin") + (PERAN === "admin" ? (EMAIL ? " • Admin" : "") : " • " + (MENUS.map((k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama).join(", ") || "Staf"));
+// Menu akun untuk layar kecil (panel samping hanya tampil di layar lebar)
+window.akunMenu = () => {
+  $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Akun</h4><p>${esc(akunNama())}</p>
+    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn" id="am2">Ganti tema</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
+  const tutup = () => ($("#layer").innerHTML = "");
+  $("#amn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+  if (EMAIL) $("#am1").onclick = () => { tutup(); gantiPw(); };
+  $("#am2").onclick = () => $("#themeS").click();
+  $("#am3").onclick = () => { tutup(); $("#outS").click(); };
+};
 window.gantiPw = () => {
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Ganti password</h4><p>${esc(EMAIL)}</p>
     <div class="grid"><label>Password lama<input id="pw0" type="password" autocomplete="current-password"></label>
@@ -628,6 +642,7 @@ const stPill = (s) => s === "success" ? '<span class="pill ok">Sukses</span>' : 
 const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 
 function chrome() {
+  $("#akunTxt").textContent = akunNama();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
   setHtml($("#sidenav"), tabsBoleh().map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
   setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
