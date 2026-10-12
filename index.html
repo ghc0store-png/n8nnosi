@@ -528,7 +528,7 @@ function stView() {
 }
 function stPaint() {
   const el = $("#ulist"); if (!el) return;
-  if (!USERS) { setHtml(el, '<div class="card"><div class="mut" style="padding:12px">Memuat…</div></div>'); return; }
+  if (!USERS) { setHtml(el, '<div class="card"><div style="padding:12px">' + prgHtml(0, "muat", false) + '</div></div>'); return; }
   setHtml(el, USERS.length ? USERS.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(aksesTeks(u))}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
     <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
 }
@@ -1123,7 +1123,7 @@ const BP = {
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 /* ---------- animasi persentase proses (perkiraan berdasar waktu; 100% hanya saat benar-benar selesai) ---------- */
-const PRG_DUR = { rab: 170e3, kes: 130e3, tk: 130e3, gaji: 120e3, hasil: 90e3, bb: 120e3, chat: 45e3 };
+const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 170e3, kes: 130e3, tk: 130e3, gaji: 120e3, hasil: 90e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
@@ -1232,7 +1232,7 @@ async function bpTinjau() {
   const bulan = $("#bpbln").value, tahun = Number($("#bpth").value), tok = ++bpRevTok, k = bpKind;
   if (bulan === "semua") { bpRev = null; return setHtml(box, '<div class="mut">Pilih satu bulan untuk meninjau isi rekap dan sumber yang belum direkap.</div>'); }
   if (!(tahun >= 2024 && tahun <= 2040)) return setHtml(box, '<div class="mut">Tahun tidak valid.</div>');
-  setHtml(box, '<div class="mut">Membaca Google Sheets dan Drive…</div>');
+  setHtml(box, '<div class="card">' + prgHtml(0, "tinjau", false) + '</div>');
   try {
     const r = await api("/api/bpjs/tinjau", { kind: k, bulan: Number(bulan), tahun });
     if (r.error) return setHtml(box, `<div class="err">${esc(r.error)}</div>`);
@@ -1364,7 +1364,7 @@ window.bpBuka = async (i, dari) => {
   const b = bpRev && (dari === "s" ? bpRev.sumber : bpRev.belum)[i]; if (!b || !b.ref) return;
   const l = $("#layer");
   const tutup = () => { l.innerHTML = ""; bpSum = null; };
-  l.innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:980px;width:min(96vw,980px)"><h4>${esc(b.nama)}</h4><div class="mut" id="sumst">Membuka file dari Google Drive… biasanya 5 sampai 20 detik.</div><div id="sumbd"></div><div class="row" style="margin-top:10px" id="sumbtn"><button class="btn" id="mn">Tutup</button></div></div></div>`;
+  l.innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:980px;width:min(96vw,980px)"><h4>${esc(b.nama)}</h4><div class="mut" id="sumst">${prgHtml(0, "buka", false)}</div><div id="sumbd"></div><div class="row" style="margin-top:10px" id="sumbtn"><button class="btn" id="mn">Tutup</button></div></div></div>`;
   $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
   try {
     const r = await api("/api/bpjs/sumber", { ref: b.ref });
