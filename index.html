@@ -848,7 +848,9 @@ window.errDetail = (id) => {
   const fb = $("#dFix"); if (fb) fb.onclick = () => { close(); fixEx(e.id, e.wf_name); };
   const rb = $("#dRetry"); if (rb) rb.onclick = () => { close(); retryEx(e.id, e.wf_name); };
 };
-const openErrs = () => S.executions.filter((e) => isBad(e) && !resolvedBy(e));
+// eror dari workflow yang sudah tidak dipantau (mis. riwayat lama n8n laptop) tidak dihitung: tidak bisa diulang lagi
+const dipantau = (e) => (S.workflows || []).some((w) => String(w.id) === String(e.wf_id));
+const openErrs = () => S.executions.filter((e) => isBad(e) && !resolvedBy(e) && dipantau(e));
 const stPill = (s) => s === "success" ? '<span class="pill ok">Sukses</span>' : s === "error" || s === "crashed" ? '<span class="pill er">Eror</span>' : s === "waiting" ? '<span class="pill wa">Menunggu</span>' : s === "running" || s === "new" ? '<span class="pill wa">Berjalan</span>' : `<span class="pill mut">${esc(s)}</span>`;
 const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 
@@ -869,7 +871,7 @@ function chrome() {
 function ovView() {
   const now = S.now, ex = S.executions;
   const d24 = ex.filter((e) => now - new Date(e.started) < 864e5);
-  const errs = d24.filter((e) => isBad(e) && !resolvedBy(e));
+  const errs = d24.filter((e) => isBad(e) && !resolvedBy(e) && dipantau(e));
   const act = S.workflows.filter((w) => w.active).length;
   const online = now - S.agentSeen < 45000;
   const bad = errs.length > 0 || !online;
@@ -901,7 +903,7 @@ function wfView() {
 }
 
 function erView() {
-  const all = S.executions.filter(isBad);
+  const all = S.executions.filter((e) => isBad(e) && dipantau(e));
   const open = all.filter((e) => !resolvedBy(e)), done = all.filter((e) => resolvedBy(e));
   const card = (e, fixed) => `<div class="card item fade click" onclick="errDetail('${esc(e.id)}')" ${fixed ? 'style="opacity:.78"' : ""}><div class="h"><div><div class="nm">${esc(e.wf_name)}</div><div class="mut">#${esc(e.id)} • ${wib(e.started)} • ${esc(e.mode)}</div></div>${fixed ? '<span class="pill ok">Teratasi</span>' : stPill(e.status)}</div>
   <div class="err"><b>${ic("alert")}${esc(e.err_node || "Node tidak diketahui")}</b><br>${esc(e.err_msg || "Pesan eror belum terbaca")}</div>
@@ -1232,7 +1234,7 @@ function sehBaris() {
   const macet = [].concat(SEH.bpjs, SEH.bukti, SEH.claude).filter((j) => j.macet), jalan = [].concat(SEH.bpjs, SEH.bukti, SEH.claude).length - macet.length;
   if (macet.length) r.push({ s: "wa", t: macet.length + " proses menggantung", k: "Tidak ada kabar lebih dari 10 menit, tombol Jalankan bisa terkunci. Menutupnya aman: datanya tidak dihapus, hanya statusnya.", a: '<button class="btn pri" onclick="sehTutup()">Tutup proses menggantung</button>' });
   else r.push({ s: "ok", t: jalan ? jalan + " proses sedang berjalan" : "Tidak ada proses menggantung", k: jalan ? "Tunggu sampai selesai." : "Semua proses selesai atau tidak ada." });
-  const terbuka = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e)).length;
+  const terbuka = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e) && dipantau(e)).length;
   r.push(terbuka ? { s: "wa", t: terbuka + " eror workflow perlu perhatian", k: "Buka halaman Eror, tekan Perbaiki otomatis atau Coba ulang. Eror kuota Google akan pulih sendiri.", a: '<button class="btn" onclick="go(\'er\')">Buka halaman Eror</button>' } : { s: "ok", t: "Tidak ada eror workflow", k: "Semua berjalan normal." });
   return r;
 }
@@ -1268,7 +1270,7 @@ window.sehCache = async () => {
 function tiketIsi(sumber) {
   const bagian = [];
   try { if (SEH && !SEH.gagal && !SEH.error) bagian.push("## Hasil pemeriksaan sistem\n" + sehBaris().map((x) => "- [" + x.s + "] " + x.t + ": " + x.k).join("\n")); } catch (e) {}
-  const err = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e)).slice(0, 5).map((e) => "- #" + e.id + " " + e.wf_name + " (" + e.err_node + "): " + String(e.err_msg || "").slice(0, 160));
+  const err = ((S && S.executions) || []).filter((e) => isBad(e) && !resolvedBy(e) && dipantau(e)).slice(0, 5).map((e) => "- #" + e.id + " " + e.wf_name + " (" + e.err_node + "): " + String(e.err_msg || "").slice(0, 160));
   if (err.length) bagian.push("## Eror workflow terbuka\n" + err.join("\n"));
   bagian.push("## Waktu\n" + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB");
   return bagian.join("\n\n");
