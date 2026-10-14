@@ -33,8 +33,8 @@ svg.i{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .hide{display:none!important}
 
 /* ---- kerangka ---- */
-.side{position:fixed;inset:0 auto 0 0;width:256px;background:var(--bg2);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;z-index:10}
-.side .logo,.mlg{cursor:pointer;-webkit-tap-highlight-color:transparent}.mlg{display:none;width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--a1),var(--a2));place-items:center;font-weight:800;font-size:13px;color:#fff;border:0;flex:none}
+.side{position:fixed;inset:0 auto 0 0;width:256px;overflow-y:auto;overscroll-behavior:contain;background:var(--bg2);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;z-index:10}
+#menuback{display:none}.side .logo,.mlg{cursor:pointer;-webkit-tap-highlight-color:transparent}.mlg{display:none;width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--a1),var(--a2));place-items:center;font-weight:800;font-size:13px;color:#fff;border:0;flex:none}
 @media(min-width:901px){body.menuoff .side{width:76px;align-items:center;padding-left:8px;padding-right:8px}body.menuoff .side .logo{padding:4px 0 20px}body.menuoff .side .logo>div,body.menuoff .side .nv span,body.menuoff .side .me>div,body.menuoff .side .me .ib{display:none}body.menuoff .side .nv{justify-content:center;padding:11px 0}body.menuoff .wrap{margin-left:76px}}
 @media(max-width:900px){.mlg{display:grid}}
 .logo{display:flex;gap:11px;align-items:center;padding:4px 8px 20px}
