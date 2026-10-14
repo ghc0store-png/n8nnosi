@@ -609,25 +609,27 @@ const MENU_REQ = [
   { k: "lh", nama: "Laporan Harian Internal", ikon: "doc", ket: () => "Laporan harian, invoice, dan pembayaran PIC" },
 ];
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
-let USERS = null, stBuilt = false;
+let USERS = null, stBuilt = false, LHPICS = [];
 const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
-const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "")).join(", ") : "Belum ada menu");
-function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama) {
+const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? " (PIC: " + u.lhPic + ")" : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "")).join(", ") : "Belum ada menu");
+function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic) {
   const cb = "display:flex;align-items:center;gap:7px;font-weight:500;color:var(--tx);font-size:14px";
   const ip = "width:auto;padding:0;margin:0";
   return `<div id="${pre}box"><div class="mut" style="font-size:12.5px;font-weight:600;margin-bottom:6px">Boleh membuka (menu Permintaan)</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${MENU_REQ.map((m) => `<label style="${cb}"><input type="checkbox" class="${pre}m" value="${m.k}" style="${ip}" ${menus.includes(m.k) ? "checked" : ""}>${esc(m.nama)}</label>`).join("")}
   <label style="${cb}"><input type="checkbox" id="${pre}adm" style="${ip}" ${adm ? "checked" : ""}>Admin (semua menu, termasuk Pengaturan)</label></div>
+  <div id="${pre}lhbox" style="margin-top:12px;display:${menus.includes("lh") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Harian Internal: akun ini adalah PIC siapa?</div>
+  <select id="${pre}lhp"><option value="">Pilih PIC</option>${(LHPICS || []).map((n) => `<option value="${n}" ${lhPic === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>
   <div id="${pre}pjbox" style="margin-top:12px;display:${menus.includes("peng") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Pengeluaran Operasional: peran dalam alur persetujuan</div>
   <select id="${pre}pjp"><option value="">Pilih peran</option>${Object.entries(PGN).map(([k, n]) => `<option value="${k}" ${pjPeran === k ? "selected" : ""}>${n}</option>`).join("")}</select>
   <input id="${pre}pjn" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(pjNama || "")}" autocomplete="off"></div></div>`;
 }
 function bacaPilihan(pre) {
   const adm = $("#" + pre + "adm").checked;
-  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim() };
+  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim(), lhPic: ($("#" + pre + "lhp") || {}).value || "" };
 }
 const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); return [...b].map((x) => a[x % a.length]).join(""); };
-async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; stPaint(); } } catch (e) {} }
+async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; LHPICS = r.lhPics || []; stPaint(); } } catch (e) {} }
 function stView() {
   return `<div class="top"><div><h1>Pengaturan</h1><p>Tambah akun pekerja dan pilih menu Permintaan yang boleh mereka buka. Pekerja bisa mengganti password sendiri lewat tombol "Ganti password".</p></div></div>
   <div class="card item"><div class="nm" style="margin-bottom:6px">Kesehatan sistem dan perbaikan</div><div class="mut" style="margin-bottom:8px;font-size:12.5px">Periksa kondisi website, agen server, dan proses. Perbaikan umum bisa dilakukan sendiri dari sini.</div><div id="sehat"></div></div>
@@ -655,9 +657,10 @@ window.stSimpan = async () => {
   if (!email) return toast("Isi email dulu");
   if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
   if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
+  if (p.role === "staf" && p.menus.includes("lh") && !p.lhPic) return toast("Pilih PIC untuk Laporan Harian Internal");
   if (password.length < 8) return toast("Password awal minimal 8 karakter");
   $("#usv").disabled = true;
-  if (await stKirim({ email, role: p.role, menus: p.menus, password, pjPeran: p.pjPeran, pjNama: p.pjNama }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; $("#npjp").value = ""; $("#npjn").value = ""; $("#npjbox").style.display = "none"; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
+  if (await stKirim({ email, role: p.role, menus: p.menus, password, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; $("#npjp").value = ""; $("#npjn").value = ""; $("#npjbox").style.display = "none"; $("#nlhp").value = ""; $("#nlhbox").style.display = "none"; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
   $("#usv").disabled = false;
 };
 window.stAktif = (email) => { const u = stAkun(email); if (u) stKirim({ email, role: u.role, menus: u.menus, active: !u.active }, u.active ? "Akun dinonaktifkan" : "Akun diaktifkan"); };
@@ -670,11 +673,12 @@ function modalAkun(isi) {
 }
 window.stAkses = (email) => {
   const u = stAkun(email); if (!u) return;
-  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin", u.pjPeran, u.pjNama)}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
+  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin", u.pjPeran, u.pjNama, u.lhPic)}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
   $("#ry").onclick = async () => {
     const p = bacaPilihan("e"); if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
     if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
-    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama }, "Akses diperbarui")) tutup();
+    if (p.role === "staf" && p.menus.includes("lh") && !p.lhPic) return toast("Pilih PIC untuk Laporan Harian Internal");
+    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic }, "Akses diperbarui")) tutup();
   };
 };
 window.stReset = (email) => {
@@ -1979,7 +1983,7 @@ window.pgDetail = async (id) => {
   if (x.error) return toast(x.error);
   const peran = PGME && PGME.peran, giliran = x.giliran;
   const tl = x.log.map((l) => { const [t, k] = PG_AKSI[l.aksi] || [l.aksi, "mut"]; return '<div class="t"><i class="' + k + '"></i><div><b>' + esc(t) + "</b> · " + esc(l.nama || l.email) + ' <span class="mut">(' + esc(PGN[l.peran] || l.peran) + ')</span><div class="mut" style="font-size:12.5px">' + pgWaktu(l.ts) + "</div>" + (l.memo ? '<div style="font-size:13.5px">' + esc(l.memo) + "</div>" : "") + "</div></div>"; }).join("");
-  const lamp = (x.files || []).map((f) => '<button class="btn" onclick="pgBukaFile(' + f.id + ',\'' + esc(f.nama).replace(/'/g, "") + '\')">' + ic("doc") + (f.jenis === "bukti_bayar" ? "Bukti transfer: " : "") + esc(f.nama) + "</button>").join("");
+  const lamp = (x.files || []).map((f) => '<button class="btn" onclick="pgBukaFile(' + f.id + ',\'' + esc(f.nama).replace(/'/g, "") + '\')">' + ic("doc") + (f.jenis === "bukti_bayar" ? "Bukti transfer: " : "") + esc(f.nama) + "</button>" + (String(f.drive_link || "").startsWith("https://drive.google.com/") ? '<a class="btn" href="' + esc(f.drive_link) + '" target="_blank" rel="noopener">Buka di Drive</a>' : "")).join("");
   let aksi = "";
   if (giliran && TAHAP_PG.includes(peran) && peran !== "bendahara") {
     aksi = '<div class="form" style="margin-top:12px"><label>Catatan (wajib bila menolak atau meminta revisi)<textarea id="pa_memo" rows="2" maxlength="600"></textarea></label></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn pri" onclick="pgAksi(' + x.id + ',\'setuju\')">Setujui & lanjutkan</button><button class="btn" onclick="pgAksi(' + x.id + ',\'revisi\')">Minta revisi</button><button class="btn dg" onclick="pgAksi(' + x.id + ',\'tolak\')">Tolak</button></div>';
@@ -2024,7 +2028,8 @@ window.pgBatal = (id) => ask("Batalkan pengajuan?", "Pengajuan dibatalkan dan ti
   try { const r = await api("/api/pj/batal", { id }); if (r.error) { toast(r.error); pgMuat(); return; } $("#layer").innerHTML = ""; toast("Pengajuan dibatalkan"); pgMuat(); } catch (e) { if (e.message !== "login") toast("Gagal membatalkan"); }
 });
 
-document.addEventListener("change", (e) => { const t = e.target; if (t && t.matches && t.matches('input[type=checkbox][value="peng"]')) { const bx = t.closest("[id$=box]"), pj = bx && bx.querySelector("[id$=pjbox]"); if (pj) pj.style.display = t.checked ? "grid" : "none"; } });
+document.addEventListener("change", (e) => { const t0 = e.target; if (t0 && t0.matches && t0.matches('input[type=checkbox][value="lh"]')) { const bx0 = t0.closest("[id$=box]"), lb = bx0 && bx0.querySelector("[id$=lhbox]"); if (lb) lb.style.display = t0.checked ? "grid" : "none"; }
+  const t = e.target; if (t && t.matches && t.matches('input[type=checkbox][value="peng"]')) { const bx = t.closest("[id$=box]"), pj = bx && bx.querySelector("[id$=pjbox]"); if (pj) pj.style.display = t.checked ? "grid" : "none"; } });
 </script>
 <script>
 /* sorot cahaya kartu mengikuti kursor (hanya hiasan; aman bila gagal) */
