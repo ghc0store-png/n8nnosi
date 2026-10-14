@@ -833,6 +833,8 @@ function resolvedBy(e) {
   if (wf && wf.updated && new Date(wf.updated) > t && ex.some((x) => later(x) && new Date(x.started) > new Date(wf.updated) && x.status === "success")) return "sudah diperbaiki, berjalan normal lagi";
   // eror dari pemicu terjadwal/hasil ulang: kalau eksekusi berikutnya sukses, berarti sudah normal
   if (/^(trigger|cron|retry|manual)$/.test(e.mode) && ex.some((x) => later(x) && x.status === "success")) return "workflow sudah berjalan normal lagi";
+  // eror apa pun (termasuk lewat webhook): sudah lewat 5 menit, sesudahnya ada yang sukses dan tidak ada eror lagi -> sudah normal
+  if (S.now - t > 3e5 && ex.some((x) => later(x) && x.status === "success") && !ex.some((x) => later(x) && isBad(x))) return "pulih otomatis, berjalan normal lagi";
   return "";
 }
 const infoOf = (e) => { try { return e.info ? JSON.parse(e.info) : null; } catch (x) { return null; } };
