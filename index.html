@@ -569,7 +569,7 @@ window.fixEx = (id, name) => ask("Perbaiki otomatis?", "Sistem mendiagnosa penye
     let c = null;
     for (let i = 0; i < 40; i++) { await new Promise((z) => setTimeout(z, 3000)); await load(); c = (S.commands || []).find((x) => x.id === r.id); if (c && c.status !== "menunggu") break; }
     const l = $("#layer"); const good = c && c.status === "selesai";
-    l.innerHTML = '<div class="modal" id="mdl"><div class="sheet"><h4>' + (good ? "Berhasil diperbaiki" : c && c.status === "gagal" ? "Belum berhasil" : "Masih diproses") + "</h4><p>" + esc(c ? c.result || "-" : "Laptop belum merespons. Hasil akan muncul di tab Riwayat.") + '</p><div class="row"><button class="btn pri" id="mn">Tutup</button></div></div></div>';
+    l.innerHTML = '<div class="modal" id="mdl"><div class="sheet"><h4>' + (good ? "Berhasil diperbaiki" : c && c.status === "gagal" ? "Belum berhasil" : "Masih diproses") + "</h4><p>" + esc(c ? c.result || "-" : "Server belum merespons. Hasil akan muncul di tab Riwayat.") + '</p><div class="row"><button class="btn pri" id="mn">Tutup</button></div></div></div>';
     $("#mn").onclick = () => (l.innerHTML = ""); $("#mdl").onclick = (ev) => { if (ev.target.id === "mdl") l.innerHTML = ""; };
   } catch (e) { toast("Gagal menghubungi server"); }
 });
@@ -607,7 +607,7 @@ const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ
 async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; stPaint(); } } catch (e) {} }
 function stView() {
   return `<div class="top"><div><h1>Pengaturan</h1><p>Tambah akun pekerja dan pilih menu Permintaan yang boleh mereka buka. Pekerja bisa mengganti password sendiri lewat tombol "Ganti password".</p></div></div>
-  <div class="card item"><div class="nm" style="margin-bottom:6px">Kesehatan sistem dan perbaikan</div><div class="mut" style="margin-bottom:8px;font-size:12.5px">Periksa kondisi website, agen laptop, dan proses. Perbaikan umum bisa dilakukan sendiri dari sini.</div><div id="sehat"></div></div>
+  <div class="card item"><div class="nm" style="margin-bottom:6px">Kesehatan sistem dan perbaikan</div><div class="mut" style="margin-bottom:8px;font-size:12.5px">Periksa kondisi website, agen server, dan proses. Perbaikan umum bisa dilakukan sendiri dari sini.</div><div id="sehat"></div></div>
   <div class="card item" style="margin-top:12px"><div class="nm" style="margin-bottom:10px">Tambah / ubah akun</div>
   <label>Email<input id="ue" type="email" placeholder="nama@email.com" autocomplete="off"></label>
   <div style="margin-top:12px">${pilihMenuHtml("n", [], false)}</div>
@@ -722,7 +722,7 @@ window.formSlip = async () => {
   const now = new Date(), cur = NAMA_BLN[now.getMonth()] + " " + now.getFullYear();
   let ls = {}; try { ls = JSON.parse(localStorage.getItem("last_slip") || "{}"); } catch (e) {}
   const slip = (P && P.slip) || {}, lokasi = Object.keys(slip).sort();
-  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — pastikan laptop online"); return; }
+  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — coba lagi sebentar"); return; }
   const bulanOf = (l) => ((slip[l] && slip[l].periode) || []).map((p) => p.toUpperCase()).reverse();
   const namaOf = (l, b) => {
     const o = slip[l]; if (!o) return ["SEMUA"];
@@ -755,7 +755,7 @@ window.formInv = async () => {
   toast("Memuat daftar lokasi…");
   const P = await getPil();
   const lokasi = (P && P.invoice) || [];
-  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — pastikan laptop online"); return; }
+  if (!lokasi.length) { toast("Daftar lokasi belum tersedia — coba lagi sebentar"); return; }
   const now = new Date(), BL = NAMA_BLN.map((b) => b[0] + b.slice(1).toLowerCase());
   const per = [];
   for (let i = -11; i <= 1; i++) { const d = new Date(now.getFullYear(), now.getMonth() + i, 1); per.push(BL[d.getMonth()] + " " + d.getFullYear()); }
@@ -860,10 +860,10 @@ function chrome() {
   setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
   if (window._navTab !== aktif) { window._navTab = aktif; try { const b = $("#tabbar button.on"); if (b && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} }
   const online = S && !netOff && S.now - S.agentSeen < 45000;
-  const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Laptop online" : "Laptop offline") : "memuat";
+  const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Server online" : "Server offline") : "memuat";
   const on = $("#offnote");
   on.hidden = !S || online;
-  setHtml(on, netOff ? ic("alert") + `<div><b>Tidak ada koneksi internet.</b><br>Menampilkan data terakhir yang tersimpan. Akan menyambung sendiri begitu koneksi kembali.</div>` : S && !online ? ic("alert") + `<div><b>Laptop tidak terhubung.</b><br>${S.agentSeen ? "Terakhir terlihat " + wib(S.agentSeen) + ". " : ""}Data di bawah adalah data terakhir, dan perintah baru berjalan setelah laptop online.</div>` : "");
+  setHtml(on, netOff ? ic("alert") + `<div><b>Tidak ada koneksi internet.</b><br>Menampilkan data terakhir yang tersimpan. Akan menyambung sendiri begitu koneksi kembali.</div>` : S && !online ? ic("alert") + `<div><b>Server tidak terhubung.</b><br>${S.agentSeen ? "Terakhir terlihat " + wib(S.agentSeen) + ". " : ""}Data di bawah adalah data terakhir, dan perintah baru berjalan setelah server online.</div>` : "");
 }
 
 function ovView() {
@@ -878,8 +878,8 @@ function ovView() {
   const mx = Math.max(1, ...hrs.map((h) => h.t));
   const recent = ex.slice(0, 6).map((e) => `<div class="row" style="justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><div><div class="nm">${esc(e.wf_name)}</div><div class="mut">${ago(e.started, now)} • #${esc(e.id)}</div></div>${stPill(e.status)}</div>`).join("");
   return `<div class="top"><div><h1>Ringkasan</h1><p>Kondisi seluruh workflow saat ini</p></div></div>
-  <div class="hero ${bad ? "bad" : ""} fade"><h2>${!online ? "Laptop sedang offline" : errs.length ? errs.length + " eror perlu perhatian" : "Semua sistem berjalan normal"}</h2>
-  <p>${!online ? "Workflow tidak bisa dipantau sampai laptop kembali online." : errs.length ? "Buka tab Eror untuk melihat penyebab dan mencoba ulang." : `${act} workflow aktif dan ${d24.filter((e) => e.status === "success").length} eksekusi sukses dalam 24 jam terakhir.`}</p></div>
+  <div class="hero ${bad ? "bad" : ""} fade"><h2>${!online ? "Server sedang offline" : errs.length ? errs.length + " eror perlu perhatian" : "Semua sistem berjalan normal"}</h2>
+  <p>${!online ? "Workflow tidak bisa dipantau sampai server kembali online." : errs.length ? "Buka tab Eror untuk melihat penyebab dan mencoba ulang." : `${act} workflow aktif dan ${d24.filter((e) => e.status === "success").length} eksekusi sukses dalam 24 jam terakhir.`}</p></div>
   <div class="stats">
     <div class="card stat fade"><div class="ic">${ic("flow")}</div><b>${act}<small style="font-size:15px;color:var(--mut)">/${S.workflows.length}</small></b><span>Workflow aktif</span></div>
     <div class="card stat ok fade"><div class="ic">${ic("check")}</div><b>${d24.filter((e) => e.status === "success").length}</b><span>Sukses 24 jam</span></div>
@@ -1069,7 +1069,7 @@ function bbMenuView() {
 }
 let bbJenis = "kes", bbBulan = "", bbQ = "", bbData = null, bbFiles = [], bbPick = null, bbTimer = null, bbLoaded = "", bbBusy = false, bbMonSig = "";
 const kbs = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round((n || 0) / 1024)) + " KB";
-const bbSt = { mengunggah: ["Mengunggah…", "wa"], menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Gagal", "er"] };
+const bbSt = { mengunggah: ["Mengunggah…", "wa"], menunggu: ["Menunggu server", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Gagal", "er"] };
 const bbAktif = () => { const j = bbData && bbData.jobs[0]; return !!j && ["mengunggah", "menunggu", "diproses"].includes(j.status) && bbData.now - j.updated < 20 * 60e3; };
 
 function bbView() {
@@ -1141,7 +1141,7 @@ function bbPaintJob() {
   const [t, c] = bbSt[j.status] || [j.status, "mut"];
   setHtml(box, `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.filename)}</div><div class="mut">${wib(j.created)} • ${kbs(j.size)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
     (aktif && !lama ? prgHtml(bbData.now - (j.created || j.updated), "bb", j.status === "menunggu") : "") +
-    (lama ? `<div class="err">Laptop belum memberi kabar lebih dari 20 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
+    (lama ? `<div class="err">Server belum memberi kabar lebih dari 20 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
     (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}">${esc(j.result)}</div>` : "") + `</div>`);
 }
 function bbPaintToolbar() {
@@ -1225,8 +1225,8 @@ function sehBaris() {
   if (!SEH || SEH.gagal || SEH.error) { r.push({ s: "er", t: "Server website tidak menjawab", k: "Periksa koneksi internet Anda, lalu tekan Periksa sekarang. Bila tetap gagal, ada gangguan di Cloudflare atau server perlu dipasang ulang." }); return r; }
   r.push({ s: "ok", t: "Server website berjalan", k: "Login dan basis data berfungsi." });
   const umur = SEH.now - SEH.agentSeen;
-  if (SEH.agentSeen && umur < 90e3) r.push({ s: "ok", t: "Agen laptop online", k: "Terakhir terlihat " + sehMenit(umur) + " lalu.", a: '<button class="btn" onclick="sehAgen()">Mulai ulang agen</button>' });
-  else r.push({ s: "er", t: "Agen laptop OFFLINE", k: (SEH.agentSeen ? "Terakhir terlihat " + sehMenit(umur) + " lalu. " : "") + "Penarikan data dan perintah tidak berjalan. Pastikan laptop menyala, tidak tidur, terhubung internet, dan jendela hitam \"Kontrol RAYMP\" terbuka. Bila tidak ada, jalankan ikon Kontrol RAYMP di Startup atau desktop." });
+  if (SEH.agentSeen && umur < 90e3) r.push({ s: "ok", t: "Agen server online", k: "Terakhir terlihat " + sehMenit(umur) + " lalu.", a: '<button class="btn" onclick="sehAgen()">Mulai ulang agen</button>' });
+  else r.push({ s: "er", t: "Agen server OFFLINE", k: (SEH.agentSeen ? "Terakhir terlihat " + sehMenit(umur) + " lalu. " : "") + "Penarikan data dan perintah tidak berjalan. Coba tekan Mulai ulang agen; bila tetap offline, periksa server (VPS) atau hubungi admin sistem." });
   const wf = (S && S.workflows) || [], aktif = wf.filter((x) => x.active).length;
   r.push(wf.length ? { s: "ok", t: "n8n terhubung", k: aktif + " workflow aktif dari " + wf.length + "." } : { s: "wa", t: "Data n8n belum masuk", k: "Biasanya karena agen offline atau n8n belum menyala. Jalankan ikon Hidupkan n8n di desktop." });
   const macet = [].concat(SEH.bpjs, SEH.bukti, SEH.claude).filter((j) => j.macet), jalan = [].concat(SEH.bpjs, SEH.bukti, SEH.claude).length - macet.length;
@@ -1243,19 +1243,19 @@ function sehPaint() {
   const ring = bad ? bad + " masalah serius" : wa ? wa + " hal perlu dicek" : "Semua sehat";
   el.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="pill ' + (bad ? "er" : wa ? "wa" : "ok") + '">' + ring + '</span><button class="btn" onclick="sehMuat()"' + (sehBusy ? " disabled" : "") + '>' + ic("retry") + 'Periksa sekarang</button></div>' +
     baris.map((x) => '<div class="sh"><span class="shd ' + x.s + '"></span><div class="b"><div class="t">' + esc(x.t) + '</div><div class="k">' + esc(x.k) + "</div>" + (x.a ? '<div class="a">' + x.a + "</div>" : "") + "</div></div>").join("") +
-    '<div class="row" style="margin-top:12px"><button class="btn" onclick="sehCache()">Bersihkan cache dan muat ulang</button><button class="btn" onclick="tiketKirim(\'seh\')">Teruskan ke Claude Code</button></div>' +
+    '<div class="row" style="margin-top:12px"><button class="btn" onclick="sehCache()">Bersihkan cache dan muat ulang</button></div>' +
     '<details class="pand" style="margin-top:10px"><summary>Panduan cepat bila ada masalah</summary><ul>' +
     '<li><b>Loading tidak selesai-selesai:</b> tekan Periksa sekarang, lalu Tutup proses menggantung. Setelah itu coba lagi sekali saja.</li>' +
     '<li><b>Tampilan atau data tidak berubah:</b> tekan Bersihkan cache dan muat ulang. Di HP, hapus aplikasi dari layar utama lalu pasang lagi.</li>' +
-    '<li><b>Agen offline:</b> nyalakan laptop, pastikan internet, buka ikon Kontrol RAYMP. Bila sudah online tapi macet, tekan Mulai ulang agen.</li>' +
+    '<li><b>Agen offline:</b> agen berjalan di server (VPS) dan menyala sendiri. Bila macet, tekan Mulai ulang agen; bila tetap offline, hubungi admin sistem.</li>' +
     '<li><b>Eror too many requests (Google):</b> kuota baca Google Sheets sedang penuh. Tunggu 1 sampai 2 menit, jangan menekan tombol berulang.</li>' +
     '<li><b>Penarikan data BPJS/RAB menolak jalan:</b> proses sebelumnya masih berjalan (tunggu sekitar 1 menit) atau menggantung (Tutup proses menggantung).</li>' +
     '<li><b>Lupa password pekerja:</b> di daftar akun di bawah, tekan Atur ulang password.</li>' +
-    '<li><b>Masalah lain:</b> tekan Teruskan ke Claude Code agar Claude memeriksanya, atau minta Claude memeriksa lewat menu Claude.</li></ul></details>';
+    '<li><b>Masalah lain:</b> hubungi admin sistem dengan menyebut halaman dan pesan eror yang tampil.</li></ul></details>';
 }
 window.sehMuat = sehMuat;
 window.sehTutup = async () => { try { const r = await api("/api/sehat/perbaiki", { aksi: "tutup_macet" }); if (r.error) toast(r.error); else toast(r.ditutup + " proses ditutup"); } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); } sehMuat(); load && load(); };
-window.sehAgen = () => ask("Mulai ulang agen laptop?", "Agen akan mati sebentar dan menyala sendiri sekitar 15 detik. Proses yang sedang berjalan tetap dilanjutkan.", "Mulai ulang", false, async () => {
+window.sehAgen = () => ask("Mulai ulang agen server?", "Agen akan mati sebentar dan menyala sendiri sekitar 15 detik. Proses yang sedang berjalan tetap dilanjutkan.", "Mulai ulang", false, async () => {
   try { const r = await api("/api/sehat/perbaiki", { aksi: "restart_agen" }); if (r.error) return toast(r.error); toast("Perintah terkirim. Memeriksa lagi dalam 25 detik…"); setTimeout(sehMuat, 25000); } catch (e) { if (String(e.message) !== "login") toast("Gagal menghubungi server"); }
 });
 window.sehCache = async () => {
@@ -1289,7 +1289,7 @@ function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Ma
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
   const dur = PRG_DUR[kind] || 150e3, p = prgHitung(el, dur);
-  return '<div class="prg" data-el="' + Math.max(0, Math.round(el)) + '" data-t0="' + Date.now() + '" data-dur="' + dur + '"><div class="prg-top"><span class="prg-n">' + p + '%</span><span class="prg-cap">' + (menunggu ? "Menunggu laptop…" : prgCap(p, el, dur)) + '</span></div><div class="prg-track"><div class="prg-bar" style="width:' + p + '%"></div></div></div>';
+  return '<div class="prg" data-el="' + Math.max(0, Math.round(el)) + '" data-t0="' + Date.now() + '" data-dur="' + dur + '"><div class="prg-top"><span class="prg-n">' + p + '%</span><span class="prg-cap">' + (menunggu ? "Menunggu server…" : prgCap(p, el, dur)) + '</span></div><div class="prg-track"><div class="prg-bar" style="width:' + p + '%"></div></div></div>';
 }
 try {
   setInterval(function () {
@@ -1297,11 +1297,11 @@ try {
       var dur = +e.dataset.dur, el = +e.dataset.el + (Date.now() - +e.dataset.t0), p = prgHitung(el, dur);
       var n = e.querySelector(".prg-n"), b = e.querySelector(".prg-bar"), c = e.querySelector(".prg-cap");
       if (n) n.textContent = p + "%"; if (b) b.style.width = p + "%";
-      if (c && !/Menunggu laptop/.test(c.textContent)) c.textContent = prgCap(p, el, dur);
+      if (c && !/Menunggu server/.test(c.textContent)) c.textContent = prgCap(p, el, dur);
     });
   }, 300);
 } catch (_) {}
-const bpSt = { menunggu: ["Menunggu laptop", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Perlu dicek", "er"] };
+const bpSt = { menunggu: ["Menunggu server", "wa"], diproses: ["Diproses…", "wa"], selesai: ["Selesai", "ok"], gagal: ["Perlu dicek", "er"] };
 let bpData = null, bpKind = "", bpTimer = null, bpBusy = false, bpPrev = "", bpRev = null, bpRevTok = 0;
 const bpAktif = () => { const j = bpData && bpData.jobs[0]; return !!j && ["menunggu", "diproses"].includes(j.status) && bpData.now - j.updated < 45 * 60e3; };
 function rbMenuView() {
@@ -1381,7 +1381,7 @@ function bpPaint() {
     const aktif = ["menunggu", "diproses"].includes(j.status), lama = aktif && bpData.now - j.updated > 45 * 60e3;
     const [t, c] = bpSt[j.status] || [j.status, "mut"];
     return `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.label)}</div><div class="mut">${wib(j.created)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
-      (aktif && !lama ? prgHtml(bpData.now - (j.created || j.updated), j.kind || bpKind, j.status === "menunggu") + `<div class="mut">Boleh ditinggal, prosesnya tetap berjalan di laptop.</div>` : "") +
+      (aktif && !lama ? prgHtml(bpData.now - (j.created || j.updated), j.kind || bpKind, j.status === "menunggu") + `<div class="mut">Boleh ditinggal, prosesnya tetap berjalan di server.</div>` : "") +
       (lama ? `<div class="err">Tidak ada kabar lebih dari 45 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
       (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}" style="margin-top:6px">${bpLink(j.result)}</div>` : "") + `</div>`;
   }).join(""));
@@ -1405,7 +1405,7 @@ async function bpTinjau() {
       if (d.status === "gagal") return setHtml(box, `<div class="err">Gagal membaca: ${esc(d.error || "tidak diketahui")}</div><div class="row" style="margin-top:8px"><button class="btn" onclick="bpTinjau()">Coba lagi</button></div>`);
       if (d.status === "selesai") { bpRev = d.data; return bpPaintTinjau(); }
     }
-    setHtml(box, '<div class="err">Belum ada jawaban dari laptop. Pastikan laptop menyala, lalu coba lagi.</div><div class="row" style="margin-top:8px"><button class="btn" onclick="bpTinjau()">Coba lagi</button></div>');
+    setHtml(box, '<div class="err">Belum ada jawaban dari server. Coba lagi sebentar.</div><div class="row" style="margin-top:8px"><button class="btn" onclick="bpTinjau()">Coba lagi</button></div>');
   } catch (e) { if (String(e.message) !== "login") setHtml(box, '<div class="err">Gagal memuat tinjauan. Periksa koneksi.</div>'); }
 }
 window.bpTinjau = bpTinjau;
@@ -1538,7 +1538,7 @@ window.bpBuka = async (i, dari) => {
       if (x.status === "gagal") return ($("#sumst").innerHTML = `<span class="err">Gagal membuka: ${esc(x.error || "tidak diketahui")}</span>`);
       if (x.status === "selesai") d = x.data;
     }
-    if (!d) return ($("#sumst").innerHTML = '<span class="err">Belum ada jawaban dari laptop. Coba lagi nanti.</span>');
+    if (!d) return ($("#sumst").innerHTML = '<span class="err">Belum ada jawaban dari server. Coba lagi nanti.</span>');
     bpSum = d; bpSumTab = 0; bpSumB = b;
     if (d.jenis === "pdf") {
       const bin = atob(d.base64), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
