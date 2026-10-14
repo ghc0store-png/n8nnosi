@@ -796,7 +796,7 @@ window.formInv = async () => {
   sheet("Buat invoice dan kwitansi", `<div class="form"><label>Lokasi / client<select id="i_lokasi">${optHtml(lokasi, "", "Pilih lokasi…")}</select></label>
     <label>Tanggal pengiriman<input id="i_tgl" value="${now.getDate()} ${BL[now.getMonth()]} ${now.getFullYear()}"></label>
     <label>Periode<select id="i_per">${optHtml(per.slice().reverse(), curP)}</select></label>
-    <label>Nominal<input id="i_nom" inputmode="numeric" placeholder="Angka, atau FLAT untuk nominal terakhir lokasi ini"></label></div>`, "Kirim ke bot", () => {
+    <label>Nominal<input id="i_nom" type="text" inputmode="text" autocomplete="off" placeholder="Angka, atau FLAT untuk nominal terakhir lokasi ini"></label></div>`, "Kirim ke bot", () => {
     const d = { lokasi: $("#i_lokasi").value, tanggal: $("#i_tgl").value, periode: $("#i_per").value, nominal: $("#i_nom").value };
     if (!d.lokasi.trim() || !d.tanggal.trim() || !d.periode.trim() || !d.nominal.trim()) { toast("Lengkapi semua kolom"); return false; }
     chatSend("", { type: "invoice", data: d, echoText: "Buat invoice\nLokasi: " + d.lokasi + "\nTanggal Pengiriman: " + d.tanggal + "\nPeriode: " + d.periode + "\nNominal: " + d.nominal });
