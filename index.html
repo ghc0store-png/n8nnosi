@@ -1152,6 +1152,12 @@ async function bbLoad() {
     bbPaintList();
   } catch (e) {} finally { bbBusy = false; }
 }
+// progres nyata dari n8n ("PROGRES 120/226"): bilah mengikuti jumlah file yang sudah masuk Google Drive
+function bbProg(j) {
+  const m = /^PROGRES (\d+)\/(\d+)/.exec(j.result || ""); if (!m) return "";
+  const a = +m[1], b = Math.max(1, +m[2]), p = Math.min(100, Math.round(a / b * 100));
+  return '<div class="prg"><div class="prg-top"><span class="prg-n">' + p + '%</span><span class="prg-cap">Mengunggah ke Google Drive: ' + a + ' dari ' + b + ' file</span></div><div class="prg-track"><div class="prg-bar" style="width:' + p + '%"></div></div></div>';
+}
 function bbPaintJob() {
   const box = $("#bbjob"); if (!box || !bbData) return;
   const go_ = $("#bbgo"); if (go_ && go_.textContent === "Proses PDF") go_.disabled = !bbPick || bbAktif();
@@ -1160,9 +1166,9 @@ function bbPaintJob() {
   const aktif = ["mengunggah", "menunggu", "diproses"].includes(j.status), lama = aktif && bbData.now - j.updated > 20 * 60e3;
   const [t, c] = bbSt[j.status] || [j.status, "mut"];
   setHtml(box, `<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">${esc(j.filename)}</div><div class="mut">${wib(j.created)} • ${kbs(j.size)}</div></div><span class="pill ${lama ? "er" : c}">${lama ? "Tidak ada kabar" : t}</span></div>` +
-    (aktif && !lama ? prgHtml(bbData.now - (j.created || j.updated), "bb", j.status === "menunggu") : "") +
+    (aktif && !lama ? (bbProg(j) || prgHtml(bbData.now - (j.created || j.updated), "bb", j.status === "menunggu")) : "") +
     (lama ? `<div class="err">Server belum memberi kabar lebih dari 20 menit. Periksa tab Eror atau Riwayat.</div>` : "") +
-    (j.result ? `<div class="${j.status === "gagal" ? "err" : "mut"}">${esc(j.result)}</div>` : "") + `</div>`);
+    (j.result && !/^PROGRES /.test(j.result) ? `<div class="${j.status === "gagal" ? "err" : "mut"}">${esc(j.result)}</div>` : "") + `</div>`);
 }
 function bbPaintToolbar() {
   const box = $("#bbfiles"); if (!box || !bbData) return;
