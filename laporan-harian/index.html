@@ -390,6 +390,18 @@ function xform(id){const c=cl(id);
 
 /* drawer client */
 const NF=n=>n?Number(n).toLocaleString('id-ID'):'';
+/* nominal boleh diketik biasa atau rumus sederhana: 2.500.000+520.043, 3jt, 12,5%*8000000. Hasil dibulatkan; tidak memakai eval. */
+function calc(s){s=String(s==null?'':s).toLowerCase().replace(/rp\.?/g,'').replace(/\s+/g,'').replace(/[x×]/g,'*').replace(/:/g,'/');
+ s=s.replace(/(\d+(?:\.\d{3})+)(?!\d)/g,m=>m.replace(/\./g,'')).replace(/,/g,'.');
+ s=s.replace(/(\d+(?:\.\d+)?)jt/g,'($1*1000000)').replace(/(\d+(?:\.\d+)?)rb/g,'($1*1000)');
+ if(!s||/[^0-9+\-*/().%]/.test(s))return NaN;let i=0;
+ const P=()=>{let v=T();while(s[i]==='+'||s[i]==='-'){const o=s[i++],w=T();v=o==='+'?v+w:v-w}return v};
+ const T=()=>{let v=F();while(s[i]==='*'||s[i]==='/'){const o=s[i++],w=F();v=o==='*'?v*w:v/w}return v};
+ const F=()=>{if(s[i]==='-'){i++;return -F()}if(s[i]==='('){i++;const v=P();if(s[i]!==')')throw 0;i++;return pct(v)}const m=/^\d+(?:\.\d+)?/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return pct(+m[0])};
+ const pct=v=>{while(s[i]==='%'){i++;v=v/100}return v};
+ try{const v=P();if(i!==s.length||!isFinite(v))return NaN;return Math.round(v)}catch(e){return NaN}}
+const NOMIN=(el)=>{const v=calc(el.value),h=el.parentNode.querySelector('.nh');if(!h)return;const kosong=el.value.trim()==='';h.textContent=kosong?'':isNaN(v)?'Belum bisa dibaca. Contoh: 3020043 atau 2.500.000+520.043':'= Rp '+v.toLocaleString('id-ID');h.style.color=!kosong&&isNaN(v)?'#ef4444':''};
+
 const MASK=`oninput="this.value=this.value.replace(/\\D/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')"`;
 function cform(id){const m=S.bulan,c=id?cl(id):{name:'',sistem:'MANUAL',pejabat:'',berkas:'INVOICE, KWITANSI, RAB, FAKTUR PAJAK',dlText:''},o=id?c.ms[m]:{admin:S.user,dl:'',nom:0,ppn:0,pph:0,ket:''};
  const own=ADM()?S.fpic:S.user,admins=[...new Set([...DB.clients.filter(x=>x.owner===own&&x.ms[m]).map(x=>x.ms[m].admin).filter(Boolean),own])];
@@ -398,8 +410,9 @@ function cform(id){const m=S.bulan,c=id?cl(id):{name:'',sistem:'MANUAL',pejabat:
  <div class="g" style="grid-template-columns:1fr 1fr;gap:12px"><div class="fld"><label>PIC admin</label><select name="admin">${admins.map(a=>`<option ${o.admin===a?'selected':''}>${esc(a)}</option>`).join('')}</select></div><div class="fld"><label>Sistem penagihan</label><select name="sistem">${['MANUAL','INAPROC','INAPROC & MANUAL'].map(s=>`<option ${(c.sistem||'MANUAL')===s?'selected':''}>${s}</option>`).join('')}</select></div></div>
  <div class="g" style="grid-template-columns:1fr 1fr;gap:12px"><div class="fld"><label>Deadline tagih</label><input name="dl" value="${esc(c.dlText||o.dl)}" placeholder="mis. SETIAP TGL 25"></div><div class="fld"><label>Pejabat</label><input name="pejabat" value="${esc(c.pejabat||'')}"></div></div>
  <div class="fld"><label>Berkas yang harus disiapkan</label><textarea name="berkas" rows="2">${esc(c.berkas||'')}</textarea></div>
- <div class="fld"><label>Nominal invoice non PPN (Rp) — ${mLab(m)}</label><input name="nom" inputmode="numeric" value="${NF(o.nom)}" ${MASK}></div>
- <div class="g" style="grid-template-columns:1fr 1fr;gap:12px"><div class="fld"><label>PPN</label><input name="ppn" inputmode="numeric" value="${NF(o.ppn)}" ${MASK}></div><div class="fld"><label>PPh</label><input name="pph" inputmode="numeric" value="${NF(o.pph)}" ${MASK}></div></div>
+ <div class="fld"><label>Nominal invoice non PPN (Rp) — ${mLab(m)}</label><input name="nom" type="text" inputmode="text" autocomplete="off" placeholder="mis. 3020043 atau 2.500.000+520.043" value="${NF(o.nom)}" oninput="NOMIN(this)"><div class="nh hint" style="margin-top:4px;font-size:12.5px"></div></div>
+ <div class="g" style="grid-template-columns:1fr 1fr;gap:12px"><div class="fld"><label>PPN</label><input name="ppn" type="text" inputmode="text" autocomplete="off" value="${NF(o.ppn)}" oninput="NOMIN(this)"><div class="nh hint" style="margin-top:4px;font-size:12.5px"></div></div><div class="fld"><label>PPh</label><input name="pph" type="text" inputmode="text" autocomplete="off" value="${NF(o.pph)}" oninput="NOMIN(this)"><div class="nh hint" style="margin-top:4px;font-size:12.5px"></div></div></div>
+ <label class="fld" style="display:flex;gap:10px;align-items:flex-start;font-weight:500"><input type="checkbox" name="flat" value="1" ${c.flat?'checked':''} style="width:auto;margin-top:3px"><span>Nominal flat (sama setiap bulan)<small class="mut" style="display:block;font-weight:400">Bila dicentang, nominal, PPN, dan PPh ini dipakai juga untuk bulan-bulan berikutnya yang belum lunas. Kosongkan bila nominalnya berubah-ubah tiap bulan.</small></span></label>
  <div class="fld"><label>Keterangan</label><textarea name="ket" rows="2">${esc(o.ket||'')}</textarea></div>
  ${id?`<button class="btn ghost" type="button" data-act="xedit" data-id="${id}" style="width:100%;margin-bottom:12px">Kelola ceklis berkas client ini</button>`:''}
  <button class="btn" type="submit" style="width:100%">Simpan</button></form>`;$('#dr').classList.add('on');$('#ov').classList.add('on')}
@@ -486,10 +499,11 @@ document.addEventListener('click',ev=>{if(ev.target.id==='ov'){closeAll();return
  const b=ev.target.closest('[data-act]');if(!b||['INPUT','SELECT','TEXTAREA'].includes(b.tagName))return;ACT[b.dataset.act]?.(b)});
 document.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target;
  if(f.id==='xf'){addExtra(f.dataset.id,new FormData(f).get('x')||'');return}
- if(f.id!=='cf')return;const d=Object.fromEntries(new FormData(f)),n=s=>+String(s||'').replace(/\D/g,''),m=S.bulan;
+ if(f.id!=='cf')return;const d=Object.fromEntries(new FormData(f)),n=s=>String(s||'').trim()===''?0:calc(s),m=S.bulan;
+ const bad=['nom','ppn','pph'].filter(k=>isNaN(n(d[k])));if(bad.length){toast('Nominal belum bisa dibaca. Isi angka atau rumus sederhana, contoh 2.500.000+520.043');return}
  const mo={admin:d.admin,dl:d.dl,nom:n(d.nom),ppn:n(d.ppn),pph:n(d.pph),ket:d.ket};
- if(f.dataset.id){const c=cl(f.dataset.id);Object.assign(c,{name:d.name.trim(),sistem:d.sistem,pejabat:d.pejabat,berkas:d.berkas,dlText:d.dl});Object.assign(c.ms[m],mo);c.admin=d.admin}
- else{const c={id:'c'+uid(),owner:ADM()?S.fpic:S.user,key:norm(d.name),name:d.name.trim(),admin:d.admin,sistem:d.sistem,pejabat:d.pejabat,berkas:d.berkas,dlText:d.dl,extra:deriveExtras(d.berkas),ms:{},pay:{}};c.ms[m]={inv:false,kwt:false,faktur:false,kirim:false,tgl:'',chk:{},...mo};DB.clients.push(c)}
+ if(f.dataset.id){const c=cl(f.dataset.id);Object.assign(c,{name:d.name.trim(),sistem:d.sistem,pejabat:d.pejabat,berkas:d.berkas,dlText:d.dl});Object.assign(c.ms[m],mo);c.admin=d.admin;c.flat=!!d.flat;if(c.flat)Object.keys(c.ms).filter(k=>k>m&&c.pay[k]!=='LUNAS').forEach(k=>Object.assign(c.ms[k],{nom:mo.nom,ppn:mo.ppn,pph:mo.pph}))}
+ else{const c={id:'c'+uid(),owner:ADM()?S.fpic:S.user,key:norm(d.name),name:d.name.trim(),admin:d.admin,sistem:d.sistem,pejabat:d.pejabat,berkas:d.berkas,dlText:d.dl,extra:deriveExtras(d.berkas),flat:!!d.flat,ms:{},pay:{}};c.ms[m]={inv:false,kwt:false,faktur:false,kirim:false,tgl:'',chk:{},...mo};DB.clients.push(c)}
  save();closeAll();render();toast('Client tersimpan')});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape')closeAll()});
 
