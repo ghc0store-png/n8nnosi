@@ -365,6 +365,20 @@ body:after{content:"";position:fixed;right:-4vw;bottom:-3vh;width:min(62vw,640px
   body:has(.modal) main,body:has(.modal) .side{display:none!important}
   .sk,.skel,.prg{display:none!important}
 }
+/* ---- menu datar + halaman dokumen ---- */
+.navgrp{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);opacity:.85;padding:16px 12px 4px}
+.navgrp:first-child{padding-top:4px}
+@media(max-width:899px){.tabbar{justify-content:flex-start;overflow-x:auto;scrollbar-width:none;gap:2px;scroll-snap-type:x proximity}
+  .tabbar::-webkit-scrollbar{display:none}.tabbar button{flex:0 0 auto;min-width:82px;scroll-snap-align:center}}
+a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.drop{position:relative;display:grid;place-items:center;gap:6px;min-height:112px;border:1.5px dashed var(--line);border-radius:16px;background:var(--surface2);color:var(--mut);text-align:center;padding:14px;cursor:pointer;font-weight:500;transition:border-color .2s,background .2s,color .2s}
+.drop:hover,.drop.on{border-color:var(--acc);background:var(--accsoft);color:var(--tx)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop img{max-height:150px;max-width:100%;border-radius:10px;display:block}
+.hasilimg{display:block;width:100%;height:auto;border-radius:16px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.doc2{align-items:start}.doc2>.card{padding:18px}
+.kosong{display:grid;place-items:center;gap:8px;padding:34px 12px;text-align:center;color:var(--mut)}.kosong svg{width:34px;height:34px;opacity:.6}
+.fstat{min-height:22px;font-size:13.5px}.fstat.er{color:var(--er)}.fstat.ok{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -381,7 +395,6 @@ body:after{content:"";position:fixed;right:-4vw;bottom:-3vh;width:min(62vw,640px
       <button class="btn pri full" id="go">Masuk</button>
       <div id="lerr" class="err" hidden></div>
     </div>
-    <button class="btn pasangBtn" onclick="pasangApp()" style="margin-top:12px" hidden>Pasang aplikasi di perangkat ini</button>
   </div>
 </div>
 
@@ -393,10 +406,6 @@ body:after{content:"";position:fixed;right:-4vw;bottom:-3vh;width:min(62vw,640px
     <div class="sidefoot">
       <div id="akunSide" class="mut" style="font-size:12.5px;overflow-wrap:anywhere;padding:0 4px"></div>
       <span id="agentS" class="pill mut"><i class="live"></i><span>memuat</span></span>
-      <button class="btn pasangBtn" onclick="pasangApp()" hidden>Pasang aplikasi</button>
-      <button class="btn" id="themeS">Ganti tema</button>
-      <button class="btn" onclick="gantiPalet()">Ganti warna (RAY / Ungu)</button>
-      <button class="btn" onclick="window.print()">Cetak halaman</button>
       <button class="btn" id="pwS" onclick="gantiPw()" hidden>Ganti password</button>
       <button class="btn" id="outS">Keluar</button>
     </div>
@@ -421,7 +430,8 @@ try { token = localStorage.getItem("tok") || ""; } catch (e) {}
 function peranDariToken(t) { try { const p = t.split("."); if (p[0] === "v2" && p.length === 3) { const x = p[1].replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(decodeURIComponent(escape(atob(x + "=".repeat((4 - (x.length % 4)) % 4))))).role || "admin"; } } catch (e) {} return "admin"; }
 let PERAN = peranDariToken(token);
 let MENUS = PERAN === "slip" || PERAN === "bpjs" ? [PERAN] : []; // daftar resmi diambil dari server lewat /api/me
-if (PERAN !== "admin") tab = "rq";
+let builtTab = null, pendingTop = "";
+if (PERAN !== "admin") { tab = "rq"; pendingTop = "__first"; }
 
 const I = {
   home: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
@@ -437,10 +447,17 @@ const I = {
   ai: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 I.cog = '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>';
+I.idc = '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.5 16c.6-1.6 1.7-2.2 2.5-2.2s1.9.6 2.5 2.2"/><path d="M14 10h4M14 13h3"/>';
+I.img = '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 4 4 3-3 4 4"/>';
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
-const TABS_ALL = [["ov", "Ringkasan", "home"], ["wf", "Workflow", "flow"], ["er", "Eror", "alert"], ["rq", "Permintaan", "doc"], ["hi", "Riwayat", "clock"], ["cl", "Claude", "ai"], ["st", "Pengaturan", "cog"]];
-const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => t[0] === "rq"));
+// Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
+const TABS_ALL = [["ov", "Ringkasan", "home", "Pantau"], ["wf", "Workflow", "flow", "Pantau"], ["er", "Eror", "alert", "Pantau"], ["hi", "Riwayat", "clock", "Pantau"],
+  ["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"],
+  ["st", "Pengaturan", "cog", "Sistem"]];
+const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer"];
+const topOf = () => (tab === "rq" ? (rqSub === "slip" || rqSub === "inv" ? rqSub : rqSub ? "bpjs" : "") : tab);
+const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => MENU_KEYS.includes(t[0]) && MENUS.includes(t[0])));
 
 /*anti-kedip*/ const _last = new WeakMap();
 function setHtml(el, html) { if (!el) return false; if (_last.get(el) === html) return false; _last.set(el, html); el.innerHTML = html; return true; }
@@ -458,7 +475,7 @@ function showLogin() { try { localStorage.removeItem("tok"); localStorage.remove
 function enter() {
   $("#login").hidden = true; $("#app").hidden = false; load();
   // peran/email resmi dari server (admin bisa mengubah peran kapan saja)
-  api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") tab = "rq"; chatBuilt = false; render(); } }).catch(() => {});
+  api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") { tab = "rq"; rqSub = ""; pendingTop = "__first"; } chatBuilt = false; render(); } }).catch(() => {});
 }
 let EMAIL = "";
 /* ---------- pasang sebagai aplikasi (PWA) ---------- */
@@ -481,11 +498,10 @@ const akunNama = () => (EMAIL || "Admin") + (PERAN === "admin" ? (EMAIL ? " • 
 // Menu akun untuk layar kecil (panel samping hanya tampil di layar lebar)
 window.akunMenu = () => {
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Akun</h4><p>${esc(akunNama())}</p>
-    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn pasangBtn" onclick="pasangApp()" ${sudahTerpasang() ? "hidden" : ""}>Pasang aplikasi</button><button class="btn" id="am2">Ganti tema</button><button class="btn" onclick="gantiPalet()">Ganti warna (RAY / Ungu)</button><button class="btn" onclick="window.print()">Cetak halaman</button><button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
+    <div class="grid">${EMAIL ? '<button class="btn" id="am1">Ganti password</button>' : ""}<button class="btn dg" id="am3">Keluar dari akun</button><button class="btn" id="amn">Tutup</button></div></div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
   $("#amn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
   if (EMAIL) $("#am1").onclick = () => { tutup(); gantiPw(); };
-  $("#am2").onclick = () => $("#themeS").click();
   $("#am3").onclick = () => { tutup(); $("#outS").click(); };
 };
 window.gantiPw = () => {
@@ -513,17 +529,22 @@ $("#go").onclick = async () => {
   try {
     const r = await fetch(API + "/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: $("#em").value.trim(), password: $("#pw").value }) });
     const d = await r.json();
-    if (d.ok) { token = d.token; PERAN = d.role || "admin"; tab = PERAN === "admin" ? "ov" : "rq"; rqSub = ""; S = null; try { localStorage.setItem("tok", token); localStorage.removeItem("cacheS"); } catch (e) {} $("#pw").value = ""; enter(); }
+    if (d.ok) { token = d.token; PERAN = d.role || "admin"; tab = PERAN === "admin" ? "ov" : "rq"; rqSub = ""; pendingTop = PERAN === "admin" ? "" : "__first"; S = null; try { localStorage.setItem("tok", token); localStorage.removeItem("cacheS"); } catch (e) {} $("#pw").value = ""; enter(); }
     else { $("#lerr").hidden = false; $("#lerr").textContent = d.error || "Gagal masuk"; }
   } catch (e) { $("#lerr").hidden = false; $("#lerr").textContent = "Tidak bisa menghubungi server."; }
   $("#go").disabled = false;
 };
 $("#pw").onkeydown = (e) => { if (e.key === "Enter") $("#go").click(); };
 $("#outS").onclick = showLogin;
-$("#themeS").onclick = () => { const r = document.documentElement, d = r.dataset.theme === "dark" || (!r.dataset.theme && matchMedia("(prefers-color-scheme:dark)").matches); r.dataset.theme = d ? "light" : "dark"; try { localStorage.setItem("theme", r.dataset.theme); } catch (e) {} };
 try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 
-function go(t) { if (PERAN !== "admin") t = "rq"; if (t === "rq" && tab === "rq") rqSub = ""; tab = t; try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {} chatBuilt = false; clBuilt = false; stBuilt = false; render(); window.scrollTo({ top: 0 }); }
+function go(t) {
+  if (PERAN !== "admin" && !tabsBoleh().some((x) => x[0] === t)) { const f = (tabsBoleh()[0] || [])[0]; if (!f) return; t = f; }
+  try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {}
+  chatBuilt = false; clBuilt = false; stBuilt = false; builtTab = null; pendingTop = "";
+  if (REQ_TOP.includes(t)) { tab = "rq"; rqSub = ""; window.scrollTo({ top: 0 }); if (!S) { pendingTop = t; render(); return; } window.bukaSub(t); return; }
+  tab = t; render(); window.scrollTo({ top: 0 });
+}
 window.go = go;
 
 /* ---------- modal konfirmasi ---------- */
@@ -564,6 +585,8 @@ const MENU_REQ = [
   { k: "slip", nama: "Slip Gaji", ikon: "money", ket: (cnt) => `Buat slip gaji karyawan • ${cnt("slip")} dokumen` },
   { k: "inv", nama: "Invoice", ikon: "doc", ket: (cnt) => `Buat invoice dan kwitansi • ${cnt("inv")} dokumen` },
   { k: "bpjs", nama: "BPJS", ikon: "shield", ket: () => "Bukti bayar dan pengolahan BPJS" },
+  { k: "idcard", nama: "ID Card", ikon: "idc", ket: () => "Buat ID Card karyawan" },
+  { k: "flyer", nama: "Flyer Lowongan", ikon: "img", ket: () => "Buat flyer lowongan kerja" },
 ];
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
 let USERS = null, stBuilt = false;
@@ -832,8 +855,10 @@ const empty = (i, t) => `<div class="empty">${ic(i)}<div>${t}</div></div>`;
 function chrome() {
   $("#akunTxt").textContent = $("#akunSide").textContent = akunNama(); tombolPasang();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
-  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i]) => `<button class="nav ${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
-  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${tab === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
+  const aktif = topOf();
+  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i, g], x, arr) => (g && (x === 0 || arr[x - 1][3] !== g) ? `<div class="navgrp">${g}</div>` : "") + `<button class="nav ${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
+  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
+  if (window._navTab !== aktif) { window._navTab = aktif; try { const b = $("#tabbar button.on"); if (b && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} }
   const online = S && !netOff && S.now - S.agentSeen < 45000;
   const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Laptop online" : "Laptop offline") : "memuat";
   const on = $("#offnote");
@@ -972,7 +997,7 @@ window.bukaSub = async (k) => {
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rabM" || rqSub === "rabH" ? "rab" : rqSub === "gajiM" || rqSub === "gajiH" ? "gaji" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : ""; chatBuilt = false; render(); };
+window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rabM" || rqSub === "rabH" ? "rab" : rqSub === "gajiM" || rqSub === "gajiH" ? "gaji" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : rqSub; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 /* ---------- Pusat BPJS: panduan bulanan + status tiap menu ---------- */
@@ -1258,7 +1283,6 @@ window.tiketKirim = (sumber) => ask("Teruskan ke Claude Code?", "Laporan (percak
 
 /* ---------- palet warna & tanggal cetak ---------- */
 try { const p = localStorage.getItem("palet"); if (p) document.documentElement.dataset.palet = p; } catch (e) {}
-window.gantiPalet = () => { const r = document.documentElement, n = r.dataset.palet === "ungu" ? "ray" : "ungu"; r.dataset.palet = n; try { localStorage.setItem("palet", n); } catch (e) {} toast(n === "ray" ? "Warna RAY (biru dan emas)" : "Warna ungu"); };
 window.addEventListener("beforeprint", () => { const e = document.getElementById("printTgl"); if (e) e.innerHTML = "Dicetak<br>" + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long", timeStyle: "short" }) + " WIB"; });
 const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
@@ -1574,18 +1598,27 @@ window.bpSumPilih = (i) => { bpSumTab = i; bpSumPaint(bpSumB || { nama: "" }); }
 function render() {
   chrome();
   if (!S) return;
+  if (pendingTop === "__first") { const f = (tabsBoleh()[0] || [])[0]; if (!f) return; pendingTop = f; }
+  if (pendingTop) { const k = pendingTop; pendingTop = ""; go(k); return; }
   if (tab === "rq") {
     if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (BP[rqSub]) bpInit(); else if (rqSub === "bpjs") pjInit(); }
-    if (!BP[rqSub]) paintChat(); return;
+    if (!BP[rqSub]) paintChat();
+    if (REQ_TOP.includes(rqSub)) document.querySelectorAll('#view button[onclick="tutupSub()"]').forEach((b) => (b.hidden = true));
+    return;
   }
   chatBuilt = false;
+  if (tab === "idcard" || tab === "flyer") {
+    if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = tab === "idcard" ? idView() : flView(); builtTab = tab; (tab === "idcard" ? idWire : flWire)(); }
+    return;
+  }
+  builtTab = null;
   if (tab === "cl") {
     if (!clBuilt || !$("#clbox")) { $("#view").innerHTML = clView(); clBuilt = true; clStart(); }
     clPaint(); return;
   }
   clBuilt = false;
   if (tab === "st") {
-    if (PERAN !== "admin") { tab = "rq"; return render(); }
+    if (PERAN !== "admin") { tab = "rq"; pendingTop = "__first"; return render(); }
     if (!stBuilt || !$("#ulist")) { $("#view").innerHTML = stView(); stBuilt = true; stMuat(); sehMuat(); }
     stPaint(); return;
   }
@@ -1620,6 +1653,107 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catc
 tombolPasang();
 if (token) enter(); else $("#login").hidden = false;
 setInterval(() => { if (token && !document.hidden) load(); }, 10000);
+
+/* ---------- ID Card & Flyer Lowongan (diteruskan lewat Worker ke n8n) ---------- */
+function fileB64(file, maks) {
+  return new Promise((ok, gagal) => {
+    const fr = new FileReader();
+    fr.onerror = () => gagal(new Error("Berkas tidak bisa dibaca"));
+    fr.onload = () => {
+      const data = String(fr.result);
+      if (!maks) return ok({ b64: data.split(",")[1] || "", mime: file.type });
+      const im = new Image();
+      im.onerror = () => gagal(new Error("Gambar tidak valid"));
+      im.onload = () => {
+        const k = Math.min(1, maks / Math.max(im.width, im.height));
+        const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+        const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+        ok({ b64: c.toDataURL("image/jpeg", 0.9).split(",")[1], mime: "image/jpeg" });
+      };
+      im.src = data;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+const slugNama = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "hasil";
+function setStat(el, teks, jenis) { el.className = "fstat" + (jenis ? " " + jenis : ""); el.textContent = teks || ""; }
+function hasilGambar(el, j, nama) {
+  const jpg = /jpe?g/.test(j.content_type || ""), ext = jpg ? "jpg" : "png";
+  const src = "data:" + (jpg ? "image/jpeg" : "image/png") + ";base64," + j.image_b64;
+  el.innerHTML = '<img class="hasilimg" alt="Hasil" src="' + src + '"><div class="row" style="margin-top:12px"><a class="btn pri" href="' + src + '" download="' + esc(nama) + "." + ext + '">Unduh ' + ext.toUpperCase() + "</a></div>";
+}
+function dropWire(id, label, teks) {
+  const inp = $("#" + id), box = inp.parentElement;
+  inp.addEventListener("change", () => {
+    const f = inp.files[0];
+    if (!f) { box.querySelector("span").textContent = teks; return; }
+    box.querySelector("span").textContent = f.name + " (" + Math.max(1, Math.round(f.size / 1024)) + " KB)";
+    const old = box.querySelector("img"); if (old) old.remove();
+    if (/^image\//.test(f.type)) { const im = document.createElement("img"); im.alt = ""; im.src = URL.createObjectURL(f); box.appendChild(im); }
+  });
+  ["dragenter", "dragover"].forEach((e) => box.addEventListener(e, (ev) => { ev.preventDefault(); box.classList.add("on"); }));
+  ["dragleave", "drop"].forEach((e) => box.addEventListener(e, () => box.classList.remove("on")));
+  box.addEventListener("drop", (ev) => { ev.preventDefault(); if (ev.dataTransfer && ev.dataTransfer.files[0]) { inp.files = ev.dataTransfer.files; inp.dispatchEvent(new Event("change")); } });
+}
+function idView() {
+  return '<div data-doc="idcard"><div class="top"><div><h1>ID Card</h1><p>Unggah foto karyawan dan isi data. Kartu disusun otomatis.</p></div></div>' +
+    '<div class="grid two doc2"><div class="card"><div class="form">' +
+    '<label>Foto karyawan (JPG / PNG)<div class="drop"><input type="file" id="id_foto" accept="image/png,image/jpeg"><span>Pilih atau tarik foto ke sini</span></div></label>' +
+    '<label>Nomor ID Card<input type="text" id="id_nomor" placeholder="Contoh: 0007/RAYMP/PAM/IX/2026" autocomplete="off"></label>' +
+    '<label>Nama karyawan<input type="text" id="id_nama" placeholder="Contoh: Budi Santoso" autocomplete="off"></label>' +
+    '<label>Posisi / bagian kerja<input type="text" id="id_posisi" placeholder="Contoh: Security" autocomplete="off"></label>' +
+    '<div class="fstat" id="id_st"></div><div class="row"><button class="btn pri" id="id_go">Buat ID Card</button></div></div>' +
+    '<div class="mut" style="font-size:12.5px;margin-top:12px">Gunakan foto wajah menghadap depan dengan latar polos (biru) agar hasil rapi.</div></div>' +
+    '<div class="card" id="id_res"><div class="kosong">' + ic("idc") + "<div>Hasil ID Card muncul di sini</div></div></div></div></div>";
+}
+function idWire() {
+  dropWire("id_foto", "", "Pilih atau tarik foto ke sini");
+  $("#id_go").onclick = async () => {
+    const f = $("#id_foto").files[0], nomor_id = $("#id_nomor").value.trim(), nama = $("#id_nama").value.trim(), posisi = $("#id_posisi").value.trim(), st = $("#id_st"), btn = $("#id_go");
+    if (!f) return setStat(st, "Pilih foto karyawan dulu.", "er");
+    if (!nomor_id) return setStat(st, "Nomor ID Card wajib diisi.", "er");
+    if (!nama) return setStat(st, "Nama karyawan wajib diisi.", "er");
+    if (!posisi) return setStat(st, "Posisi / bagian kerja wajib diisi.", "er");
+    btn.disabled = true; setStat(st, "Menyusun ID Card…");
+    try {
+      const foto = await fileB64(f, 1600);
+      const j = await api("/api/idcard/generate", { nomor_id, nama, posisi, foto_b64: foto.b64, foto_mime: foto.mime });
+      if (j.error) throw new Error(j.error);
+      hasilGambar($("#id_res"), j, "idcard-" + slugNama(nama)); setStat(st, "ID Card berhasil dibuat.", "ok");
+    } catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal membuat ID Card", "er"); }
+    finally { btn.disabled = false; }
+  };
+}
+const FLY = [["posisi", "Posisi", "Contoh: Sales Motoris PT Ray Mitra Perkasa"], ["lokasi_penempatan", "Lokasi penempatan", "Contoh: Kabupaten Semarang"], ["kualifikasi", "Kualifikasi", "Wanita | Usia 18-40 tahun | Pendidikan minimal SMA"], ["benefit", "Benefit", "Gaji pokok | Tunjangan makan | BPJS"], ["syarat_tambahan", "Syarat tambahan", "Jujur dan bertanggung jawab | Berdomisili setempat"], ["batas_lamaran", "Batas lamaran", "Contoh: 5 September 2026"], ["kontak", "Kontak", "081234567890"], ["nama_pic", "Nama PIC", "Nama penanggung jawab lowongan"]];
+function flView() {
+  return '<div data-doc="flyer"><div class="top"><div><h1>Flyer Lowongan</h1><p>Unggah template PNG kosong dan isi data lowongan. Proses sekitar 30 sampai 80 detik.</p></div></div>' +
+    '<div class="grid two doc2"><div class="card"><div class="form">' +
+    '<label>Template lowongan kosong (PNG)<div class="drop"><input type="file" id="fl_tpl" accept="image/png"><span>Pilih atau tarik template PNG ke sini</span></div></label>' +
+    FLY.map(([k, n, ph]) => '<label>' + n + '<input type="text" id="fl_' + k + '" placeholder="' + esc(ph) + '" autocomplete="off"></label>').join("") +
+    '<div class="mut" style="font-size:12.5px">Untuk isian yang punya beberapa poin, pisahkan dengan tanda <b>|</b>. Semua kolom wajib diisi.</div>' +
+    '<div class="fstat" id="fl_st"></div><div class="row"><button class="btn pri" id="fl_go">Buat flyer</button></div></div></div>' +
+    '<div class="card" id="fl_res"><div class="kosong">' + ic("img") + "<div>Hasil flyer muncul di sini</div></div></div></div></div>";
+}
+function flWire() {
+  dropWire("fl_tpl", "", "Pilih atau tarik template PNG ke sini");
+  $("#fl_go").onclick = async () => {
+    const f = $("#fl_tpl").files[0], st = $("#fl_st"), btn = $("#fl_go"), d = {};
+    if (!f) return setStat(st, "Pilih template PNG dulu.", "er");
+    if (f.type !== "image/png") return setStat(st, "Template harus berformat PNG.", "er");
+    if (f.size > 8e6) return setStat(st, "Template terlalu besar (maksimal 8 MB).", "er");
+    for (const [k, n] of FLY) { d[k] = $("#fl_" + k).value.trim(); if (!d[k]) return setStat(st, n + " wajib diisi.", "er"); }
+    btn.disabled = true; const t0 = Date.now();
+    const tik = setInterval(() => setStat(st, "Membuat flyer… " + Math.round((Date.now() - t0) / 1000) + " detik (biasanya 30–80 detik)"), 1000); setStat(st, "Membuat flyer…");
+    try {
+      const tpl = await fileB64(f);
+      d.template_b64 = tpl.b64;
+      const j = await api("/api/flyer/generate", d);
+      if (j.error) throw new Error(j.error);
+      hasilGambar($("#fl_res"), j, "flyer-" + slugNama(d.posisi)); setStat(st, "Flyer berhasil dibuat.", "ok");
+    } catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal membuat flyer", "er"); }
+    finally { clearInterval(tik); btn.disabled = false; }
+  };
+}
 </script>
 <script>
 /* sorot cahaya kartu mengikuti kursor (hanya hiasan; aman bila gagal) */
