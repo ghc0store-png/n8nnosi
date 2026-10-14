@@ -55,6 +55,9 @@ main{padding:calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-are
 .brand{display:flex;align-items:center;gap:11px;padding:4px 8px 18px;font-weight:700;letter-spacing:-.01em}
 .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;box-shadow:0 8px 20px -6px var(--acc)}
 .logo svg{width:20px;height:20px;stroke-width:2.2}
+.brand .logotile,.mlogo{cursor:pointer;-webkit-tap-highlight-color:transparent}.mlogo{display:inline-grid;vertical-align:middle;margin-right:8px;padding:3px 6px;border-radius:10px}.mlogo img{height:20px;width:auto;display:block}
+body.menuoff #sidenav,body.menuoff .tabbar{display:none!important}
+@media(min-width:900px){body.menuoff .shell{grid-template-columns:92px 1fr}body.menuoff .side .brand>div:not(.logotile),body.menuoff .sidefoot{display:none}body.menuoff .side .brand{justify-content:center;padding-left:0;padding-right:0}}
 .brand small{display:block;font-weight:500;color:var(--mut);font-size:11.5px;margin-top:-2px}
 .nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;border:0;background:none;color:var(--mut);font:inherit;font-weight:600;cursor:pointer;text-align:left;width:100%;transition:.15s}
 .nav:hover{background:var(--accsoft);color:var(--tx)}
@@ -416,7 +419,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 <!-- ============ APLIKASI ============ -->
 <div id="app" class="shell" hidden>
   <aside class="side">
-    <div class="brand"><div class="logotile"><img src="logo.png" alt="RAY Mitra Perkasa" width="720" height="493"></div><div>Pusat Kontrol<small>PT Ray Mitra Perkasa</small></div></div>
+    <div class="brand"><div class="logotile" title="Tampilkan / sembunyikan menu"><img src="logo.png" alt="RAY Mitra Perkasa" width="720" height="493"></div><div>Pusat Kontrol<small>PT Ray Mitra Perkasa</small></div></div>
     <div id="sidenav"></div>
     <div class="sidefoot">
       <div id="akunSide" class="mut" style="font-size:12.5px;overflow-wrap:anywhere;padding:0 4px"></div>
@@ -427,7 +430,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
   </aside>
   <main>
     <div class="printhead" aria-hidden="true"><img src="logo.png" alt="RAY"><div><div class="pn">PT Ray Mitra Perkasa</div><div class="ps" id="printAlamat">Pusat Kontrol RAYMP</div></div><div class="pd" id="printTgl"></div></div>
-    <div class="akunbar"><span id="akunTxt" class="mut"></span><button class="btn" onclick="akunMenu()">Akun</button></div>
+    <div class="akunbar"><div style="display:flex;align-items:center;min-width:0"><div class="logotile mlogo" title="Tampilkan / sembunyikan menu"><img src="logo.png" alt="RAY" width="720" height="493"></div><span id="akunTxt" class="mut"></span></div><button class="btn" onclick="akunMenu()">Akun</button></div>
     <div id="offnote" class="banner" hidden></div>
     <div id="view"><div class="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
   </main>
@@ -609,7 +612,7 @@ const MENU_REQ = [
   { k: "lh", nama: "Laporan Harian Internal", ikon: "doc", ket: () => "Laporan harian, invoice, dan pembayaran PIC" },
 ];
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
-let USERS = null, stBuilt = false, LHPICS = [];
+let USERS = null, stBuilt = false, LHPICS = ["OPAL", "HITA", "ADI", "PAK TOHAR", "ZAHRA", "MIDAN", "DINI", "IFA", "RIKI", "KARIN"];
 const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
 const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? " (PIC: " + u.lhPic + ")" : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "")).join(", ") : "Belum ada menu");
 function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic) {
@@ -629,7 +632,7 @@ function bacaPilihan(pre) {
   return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim(), lhPic: ($("#" + pre + "lhp") || {}).value || "" };
 }
 const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); return [...b].map((x) => a[x % a.length]).join(""); };
-async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; LHPICS = r.lhPics || []; stPaint(); } } catch (e) {} }
+async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; if (r.lhPics && r.lhPics.length) LHPICS = r.lhPics; stPaint(); } } catch (e) {} }
 function stView() {
   return `<div class="top"><div><h1>Pengaturan</h1><p>Tambah akun pekerja dan pilih menu Permintaan yang boleh mereka buka. Pekerja bisa mengganti password sendiri lewat tombol "Ganti password".</p></div></div>
   <div class="card item"><div class="nm" style="margin-bottom:6px">Kesehatan sistem dan perbaikan</div><div class="mut" style="margin-bottom:8px;font-size:12.5px">Periksa kondisi website, agen server, dan proses. Perbaikan umum bisa dilakukan sendiri dari sini.</div><div id="sehat"></div></div>
@@ -2028,6 +2031,10 @@ window.pgBatal = (id) => ask("Batalkan pengajuan?", "Pengajuan dibatalkan dan ti
   try { const r = await api("/api/pj/batal", { id }); if (r.error) { toast(r.error); pgMuat(); return; } $("#layer").innerHTML = ""; toast("Pengajuan dibatalkan"); pgMuat(); } catch (e) { if (e.message !== "login") toast("Gagal membatalkan"); }
 });
 
+(function () {
+  const ap = () => document.body.classList.toggle("menuoff", localStorage.getItem("menuoff") === "1"); ap();
+  document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest(".brand .logotile,.mlogo"); if (!t) return; localStorage.setItem("menuoff", localStorage.getItem("menuoff") === "1" ? "0" : "1"); ap(); });
+})();
 document.addEventListener("change", (e) => { const t0 = e.target; if (t0 && t0.matches && t0.matches('input[type=checkbox][value="lh"]')) { const bx0 = t0.closest("[id$=box]"), lb = bx0 && bx0.querySelector("[id$=lhbox]"); if (lb) lb.style.display = t0.checked ? "grid" : "none"; }
   const t = e.target; if (t && t.matches && t.matches('input[type=checkbox][value="peng"]')) { const bx = t.closest("[id$=box]"), pj = bx && bx.querySelector("[id$=pjbox]"); if (pj) pj.style.display = t.checked ? "grid" : "none"; } });
 </script>
