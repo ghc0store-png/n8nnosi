@@ -470,8 +470,9 @@ const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 // Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
 const TABS_ALL = [["ov", "Ringkasan", "home", "Pantau"], ["wf", "Workflow", "flow", "Pantau"], ["er", "Eror", "alert", "Pantau"], ["hi", "Riwayat", "clock", "Pantau"],
   ["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Pengajuan 86", "kas", "Dokumen"],
+  ["lh", "Laporan Harian Internal", "doc", "Dokumen"], ["peng", "Pengeluaran Operasional", "money", "Keuangan"],
   ["st", "Pengaturan", "cog", "Sistem"]];
-const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer"];
+const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer", "lh", "peng"];
 const topOf = () => (tab === "rq" ? (rqSub === "slip" || rqSub === "inv" ? rqSub : rqSub ? "bpjs" : "") : tab);
 const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => MENU_KEYS.includes(t[0]) && MENUS.includes(t[0])));
 
@@ -556,6 +557,7 @@ try { const t = localStorage.getItem("theme"); if (t) document.documentElement.d
 
 function go(t) {
   if (PERAN !== "admin" && !tabsBoleh().some((x) => x[0] === t)) { const f = (tabsBoleh()[0] || [])[0]; if (!f) return; t = f; }
+  if (t === "lh") { location.href = "laporan-harian/"; return; } // Laporan Harian Internal = halaman tersendiri (memakai login yang sama)
   try { const v = $("#view"); v.classList.remove("still"); _last.delete(v); v.dataset.tab = ""; } catch (e) {}
   chatBuilt = false; clBuilt = false; stBuilt = false; builtTab = null; pendingTop = "";
   if (REQ_TOP.includes(t)) { tab = "rq"; rqSub = ""; window.scrollTo({ top: 0 }); if (!S) { pendingTop = t; render(); return; } window.bukaSub(t); return; }
@@ -603,21 +605,26 @@ const MENU_REQ = [
   { k: "bpjs", nama: "BPJS", ikon: "shield", ket: () => "Bukti bayar dan pengolahan BPJS" },
   { k: "idcard", nama: "ID Card", ikon: "idc", ket: () => "Buat ID Card karyawan" },
   { k: "flyer", nama: "Flyer Lowongan", ikon: "img", ket: () => "Buat flyer lowongan kerja" },
+  { k: "peng", nama: "Laporan Pengeluaran Operasional", ikon: "money", ket: () => "Ajukan dan setujui pengeluaran" },
+  { k: "lh", nama: "Laporan Harian Internal", ikon: "doc", ket: () => "Laporan harian, invoice, dan pembayaran PIC" },
 ];
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
 let USERS = null, stBuilt = false;
 const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
-const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map(namaMenu).join(", ") : "Belum ada menu");
-function pilihMenuHtml(pre, menus, adm) {
+const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "")).join(", ") : "Belum ada menu");
+function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama) {
   const cb = "display:flex;align-items:center;gap:7px;font-weight:500;color:var(--tx);font-size:14px";
   const ip = "width:auto;padding:0;margin:0";
   return `<div id="${pre}box"><div class="mut" style="font-size:12.5px;font-weight:600;margin-bottom:6px">Boleh membuka (menu Permintaan)</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${MENU_REQ.map((m) => `<label style="${cb}"><input type="checkbox" class="${pre}m" value="${m.k}" style="${ip}" ${menus.includes(m.k) ? "checked" : ""}>${esc(m.nama)}</label>`).join("")}
-  <label style="${cb}"><input type="checkbox" id="${pre}adm" style="${ip}" ${adm ? "checked" : ""}>Admin (semua menu, termasuk Pengaturan)</label></div></div>`;
+  <label style="${cb}"><input type="checkbox" id="${pre}adm" style="${ip}" ${adm ? "checked" : ""}>Admin (semua menu, termasuk Pengaturan)</label></div>
+  <div id="${pre}pjbox" style="margin-top:12px;display:${menus.includes("peng") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Pengeluaran Operasional: peran dalam alur persetujuan</div>
+  <select id="${pre}pjp"><option value="">Pilih peran</option>${Object.entries(PGN).map(([k, n]) => `<option value="${k}" ${pjPeran === k ? "selected" : ""}>${n}</option>`).join("")}</select>
+  <input id="${pre}pjn" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(pjNama || "")}" autocomplete="off"></div></div>`;
 }
 function bacaPilihan(pre) {
   const adm = $("#" + pre + "adm").checked;
-  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value) };
+  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim() };
 }
 const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); return [...b].map((x) => a[x % a.length]).join(""); };
 async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; stPaint(); } } catch (e) {} }
@@ -647,9 +654,10 @@ window.stSimpan = async () => {
   const email = $("#ue").value.trim(), password = $("#up").value, p = bacaPilihan("n");
   if (!email) return toast("Isi email dulu");
   if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
+  if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
   if (password.length < 8) return toast("Password awal minimal 8 karakter");
   $("#usv").disabled = true;
-  if (await stKirim({ email, role: p.role, menus: p.menus, password }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
+  if (await stKirim({ email, role: p.role, menus: p.menus, password, pjPeran: p.pjPeran, pjNama: p.pjNama }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; $("#npjp").value = ""; $("#npjn").value = ""; $("#npjbox").style.display = "none"; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
   $("#usv").disabled = false;
 };
 window.stAktif = (email) => { const u = stAkun(email); if (u) stKirim({ email, role: u.role, menus: u.menus, active: !u.active }, u.active ? "Akun dinonaktifkan" : "Akun diaktifkan"); };
@@ -662,10 +670,11 @@ function modalAkun(isi) {
 }
 window.stAkses = (email) => {
   const u = stAkun(email); if (!u) return;
-  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin")}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
+  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin", u.pjPeran, u.pjNama)}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
   $("#ry").onclick = async () => {
     const p = bacaPilihan("e"); if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
-    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active }, "Akses diperbarui")) tutup();
+    if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
+    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama }, "Akses diperbarui")) tutup();
   };
 };
 window.stReset = (email) => {
@@ -876,8 +885,8 @@ function chrome() {
   $("#akunTxt").textContent = $("#akunSide").textContent = akunNama(); tombolPasang();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
   const aktif = topOf();
-  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i, g], x, arr) => (g && (x === 0 || arr[x - 1][3] !== g) ? `<div class="navgrp">${g}</div>` : "") + `<button class="nav ${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : ""}</button>`).join(""));
-  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : ""}</button>`).join(""));
+  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i, g], x, arr) => (g && (x === 0 || arr[x - 1][3] !== g) ? `<div class="navgrp">${g}</div>` : "") + `<button class="nav ${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : k === "peng" && pgBadge ? `<span class="cnt">${pgBadge}</span>` : ""}</button>`).join(""));
+  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : k === "peng" && pgBadge ? `<b class="dotc">${pgBadge}</b>` : ""}</button>`).join(""));
   if (window._navTab !== aktif) { window._navTab = aktif; try { const b = $("#tabbar button.on"); if (b && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} }
   const online = S && !netOff && S.now - S.agentSeen < 45000;
   const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Server online" : "Server offline") : "memuat";
@@ -1637,6 +1646,10 @@ function render() {
     if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = tab === "idcard" ? idView() : flView(); builtTab = tab; (tab === "idcard" ? idWire : flWire)(); }
     return;
   }
+  if (tab === "peng") {
+    if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = pgView(); builtTab = tab; pgWire(); pgMuat(); }
+    return;
+  }
   if (tab === "anggaran") {
     if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = agView(); builtTab = tab; agWire(); agMuat(); }
     return;
@@ -1848,6 +1861,170 @@ window.agDetail = (id) => {
     '<div class="agtl">' + tl + '</div><div class="row" style="margin-top:12px">' + tautan(r["Link Bukti"], "Buka bukti") + tautan(r["Link Bukti Tambahan"], "Bukti tambahan") + '<button class="btn pri" id="mn">Tutup</button></div></div></div>';
   const tutup = () => ($("#layer").innerHTML = ""); $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
 };
+
+/* ---------- Pengajuan Pengeluaran: Korlap -> HRD -> Direktur Operasional -> Direktur Utama -> Bendahara ---------- */
+let PG = null, PGME = null, pgFilter = "giliran", pgCari = "", pgTimer = null, pgBadge = 0, pgSalah = "";
+const PGN = { korlap: "Korlap", hrd: "HRD", dirops: "Direktur Operasional", dirut: "Direktur Utama", bendahara: "Bendahara" };
+const PG_ST = { hrd: ["Menunggu HRD", "wa"], dirops: ["Menunggu Dir. Operasional", "wa"], dirut: ["Menunggu Dir. Utama", "wa"], bendahara: ["Menunggu pembayaran", "wa"], revisi: ["Perlu revisi", "wa"], dibayar: ["Dibayar", "ok"], ditolak: ["Ditolak", "er"], batal: ["Dibatalkan", "mut"] };
+const PG_ALUR = [["hrd", "HRD"], ["dirops", "Dir. Operasional"], ["dirut", "Dir. Utama"], ["bendahara", "Bendahara"], ["dibayar", "Dibayar"]];
+const PG_AKSI = { ajukan: ["Diajukan", "ok"], ajukan_ulang: ["Diajukan ulang", "ok"], setuju: ["Disetujui", "ok"], tolak: ["Ditolak", "er"], revisi: ["Diminta revisi", "wa"], bayar: ["Dibayar", "ok"], batal: ["Dibatalkan", "mut"] };
+const pgWaktu = (t) => new Date(t).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const pgHariIni = () => new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+const pgTgl = (s) => { const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + "/" + m[2] + "/" + m[1] : "-"; };
+const pgPill = (s) => { const [t, k] = PG_ST[s] || [s, "mut"]; return '<span class="pill ' + k + '">' + esc(t) + "</span>"; };
+
+function pgView() {
+  return '<div data-doc="peng"><div class="top"><div><h1>Laporan Pengeluaran Operasional</h1><p id="pg_sub">Memuat…</p></div><div class="row"><button class="btn" id="pg_seg">' + ic("retry") + 'Muat ulang</button><button class="btn pri" id="pg_baru" hidden>Buat pengajuan</button></div></div>' +
+    '<div id="pg_alur"></div><div class="agbar" id="pg_bar"></div><div class="grid" id="pg_list"><div class="sk"></div><div class="sk"></div></div></div>';
+}
+function pgWire() {
+  $("#pg_seg").onclick = () => pgMuat(true); $("#pg_baru").onclick = () => pgForm(null);
+  clearInterval(pgTimer); pgTimer = setInterval(() => { if (tab !== "peng") return clearInterval(pgTimer); if (!document.hidden) pgMuat(); }, 30000);
+}
+async function pgMuat(paksa) {
+  try {
+    const me = await api("/api/pj/me"); if (me.error) throw new Error(me.error);
+    const dl = await api("/api/pj/daftar"); if (dl.error) throw new Error(dl.error);
+    PGME = me; PG = dl.items; pgSalah = ""; pgBadge = me.perluTindakan || 0; if (paksa) toast("Diperbarui");
+  } catch (e) { if (e.message === "login") return; pgSalah = e.message || "Gagal memuat"; }
+  pgGambar(); try { chrome(); } catch (e) {}
+}
+async function pgCekBadge() {
+  if (document.hidden || !token || !(PERAN === "admin" || MENUS.includes("peng"))) return;
+  try { const me = await api("/api/pj/me"); if (!me.error && (me.perluTindakan || 0) !== pgBadge) { pgBadge = me.perluTindakan || 0; chrome(); } } catch (e) {}
+}
+setInterval(pgCekBadge, 60000);
+function pgGambar() {
+  if (!$("#pg_list")) return;
+  if (pgSalah) { $("#pg_sub").textContent = ""; $("#pg_alur").innerHTML = ""; $("#pg_bar").innerHTML = ""; $("#pg_list").innerHTML = '<div class="card"><div class="kosong">' + ic("alert") + "<div>" + esc(pgSalah) + "</div></div></div>"; return; }
+  if (!PG || !PGME) return;
+  const peran = PGME.peran, ko = peran === "korlap";
+  $("#pg_sub").textContent = "Peran Anda: " + PGME.label + (PGME.nama ? " • " + PGME.nama : "") + (ko ? ". Ajukan kebutuhan dana dan pantau persetujuannya." : peran === "admin" ? ". Admin hanya melihat; persetujuan dilakukan oleh peran masing-masing." : ". Anda memberi keputusan pada pengajuan yang menunggu tahap Anda.");
+  $("#pg_baru").hidden = !ko;
+  const hit = (s) => PG.filter((x) => x.status === s).length;
+  $("#pg_alur").innerHTML = '<div class="agkpi">' + PG_ALUR.map(([k, n]) => '<div class="card k"><b>' + hit(k) + "</b><span>" + (k === "dibayar" ? "Sudah dibayar" : "Menunggu " + n) + "</span></div>").join("") + (hit("revisi") ? '<div class="card k"><b>' + hit("revisi") + "</b><span>Perlu revisi Korlap</span></div>" : "") + "</div>";
+  const F = [["giliran", ko ? "Perlu revisi saya" : "Perlu tindakan saya", PG.filter((x) => x.giliran).length], ["proses", "Dalam proses", PG.filter((x) => ["hrd", "dirops", "dirut", "bendahara", "revisi"].includes(x.status)).length], ["dibayar", "Dibayar", hit("dibayar")], ["tutup", "Ditolak / batal", hit("ditolak") + hit("batal")], ["all", "Semua", PG.length]];
+  if (peran === "admin") F.shift();
+  if (!F.some((f) => f[0] === pgFilter)) pgFilter = F[0][0];
+  if (!$("#pg_cari")) $("#pg_bar").innerHTML = '<input type="search" id="pg_cari" placeholder="Cari kode, judul, nama, atau lokasi…" autocomplete="off"><span id="pg_chips" class="row" style="gap:6px;flex-wrap:wrap"></span>';
+  $("#pg_chips").innerHTML = F.map(([k, n, c]) => '<button class="btn' + (pgFilter === k ? " pri" : "") + '" onclick="pgPilih(\'' + k + '\')">' + n + " (" + c + ")</button>").join("");
+  const cari = pgCari.toLowerCase();
+  const ok = (x) => pgFilter === "all" || (pgFilter === "giliran" && x.giliran) || (pgFilter === "proses" && ["hrd", "dirops", "dirut", "bendahara", "revisi"].includes(x.status)) || (pgFilter === "dibayar" && x.status === "dibayar") || (pgFilter === "tutup" && ["ditolak", "batal"].includes(x.status));
+  const daftar = PG.filter((x) => ok(x) && (!cari || [x.kode, x.judul, x.nama_pemohon, x.lokasi, x.kategori].join(" ").toLowerCase().includes(cari)));
+  $("#pg_list").innerHTML = daftar.map((x) => '<div class="card agrow fade" onclick="pgDetail(' + x.id + ')"' + (x.giliran ? ' style="border-color:var(--acc)"' : "") + '><div class="h"><div><div class="nm">' + esc(x.judul) + '</div><div class="mut" style="font-size:12.5px">' + esc(x.kode) + " · " + esc(x.nama_pemohon || "") + " · " + pgTgl(new Date(x.created + 7 * 36e5).toISOString().slice(0, 10)) + '</div></div><div style="text-align:right"><div class="nom">' + rp(x.nominal) + "</div>" + pgPill(x.status) + "</div></div>" +
+    '<div class="u">' + esc(x.kategori) + " · " + esc(x.lokasi) + " · dibutuhkan " + pgTgl(x.tgl_butuh) + (x.putaran > 1 ? " · revisi ke-" + (x.putaran - 1) : "") + "</div>" + (x.giliran ? '<div class="agsteps"><span><i class="wa"></i>Menunggu keputusan Anda</span></div>' : "") + "</div>").join("") ||
+    '<div class="card"><div class="kosong">' + ic("kas") + "<div>" + (PG.length ? "Tidak ada pengajuan yang cocok" : ko ? "Belum ada pengajuan. Tekan Buat pengajuan." : "Belum ada pengajuan.") + "</div></div></div>";
+}
+window.pgPilih = (k) => { pgFilter = k; pgGambar(); };
+document.addEventListener("input", (e) => { if (e.target && e.target.id === "pg_cari") { pgCari = e.target.value; pgGambar(); } });
+
+function pgModal(isi) {
+  $("#layer").innerHTML = '<div class="modal" id="mdl"><div class="sheet" style="max-height:92vh;overflow:auto">' + isi + "</div></div>";
+  const tutup = () => ($("#layer").innerHTML = ""); $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+  return tutup;
+}
+function pgBacaBerkas(f) {
+  return new Promise((ok, no) => {
+    if (!f) return no(new Error("Berkas kosong"));
+    const kirim = (blob, mime, nama) => { const r = new FileReader(); r.onload = () => { const d = String(r.result).split(",")[1] || ""; d.length > 2.8e6 ? no(new Error(nama + " terlalu besar (maksimal sekitar 2 MB)")) : ok({ nama, mime, data: d }); }; r.onerror = () => no(new Error("Gagal membaca " + nama)); r.readAsDataURL(blob); };
+    if (f.type === "application/pdf") return f.size > 2.1e6 ? no(new Error(f.name + " terlalu besar (maksimal sekitar 2 MB)")) : kirim(f, "application/pdf", f.name);
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return no(new Error(f.name + ": hanya foto JPG/PNG/WebP atau PDF"));
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => { // foto dikecilkan agar muat dan cepat terkirim
+      const s = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      c.toBlob((b) => (b ? kirim(b, "image/jpeg", f.name.replace(/\.\w+$/, "") + ".jpg") : no(new Error("Gagal memproses foto"))), "image/jpeg", 0.82);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); no(new Error(f.name + ": foto tidak bisa dibaca")); };
+    im.src = u;
+  });
+}
+const pgOpt = (arr, v) => arr.map((k) => '<option value="' + esc(k) + '"' + (k === v ? " selected" : "") + ">" + esc(k) + "</option>").join("");
+function pgForm(x) {
+  const ubah = !!x, kat = (PGME && PGME.kategori) || [];
+  const tutup = pgModal('<h4>' + (ubah ? "Ubah & ajukan ulang" : "Buat pengajuan pengeluaran") + "</h4><p>" + (ubah ? "Perbaiki sesuai catatan, lalu ajukan ulang. Persetujuan dimulai lagi dari HRD." : "Setelah dikirim, pengajuan diperiksa HRD, Direktur Operasional, Direktur Utama, lalu dibayar Bendahara.") + "</p>" +
+    '<div class="form"><label>Judul / keperluan<input id="pf_judul" maxlength="120" placeholder="Contoh: BBM kendaraan operasional" value="' + esc(x ? x.judul : "") + '"></label>' +
+    '<div class="two-in"><label>Kategori biaya<select id="pf_kat"><option value="">Pilih kategori</option>' + pgOpt(kat, x && x.kategori) + '</select></label><label>Lokasi / client<input id="pf_lok" maxlength="120" placeholder="Contoh: DPU Kota Semarang" value="' + esc(x ? x.lokasi : "") + '"></label></div>' +
+    '<div class="two-in"><label>Nominal (Rp)<input id="pf_nom" inputmode="numeric" placeholder="350000" value="' + (x ? x.nominal : "") + '"></label><label>Tanggal dibutuhkan<input id="pf_tgl" type="date" min="' + pgHariIni() + '" value="' + esc(x ? x.tgl_butuh : "") + '"></label></div>' +
+    '<label>Uraian kebutuhan<textarea id="pf_ura" rows="3" maxlength="1000" placeholder="Jelaskan untuk apa dana ini">' + esc(x ? x.uraian : "") + "</textarea></label>" +
+    '<div class="mut" style="font-size:12.5px;font-weight:600;margin-top:4px">Rekening tujuan pembayaran</div>' +
+    '<div class="two-in"><label>Bank<input id="pf_bank" maxlength="40" placeholder="BCA / BRI / Mandiri…" value="' + esc(x ? x.bank : "") + '"></label><label>Nomor rekening<input id="pf_rek" inputmode="numeric" maxlength="40" value="' + esc(x ? x.norek : "") + '"></label></div>' +
+    '<label>Atas nama<input id="pf_an" maxlength="80" value="' + esc(x ? x.atas_nama : "") + '"></label>' +
+    '<label>Lampiran (nota / foto / PDF, maksimal 3 berkas)<input id="pf_file" type="file" accept="image/*,application/pdf" multiple></label></div>' +
+    '<div class="row" style="margin-top:14px"><button class="btn" id="pf_batal">Batal</button><button class="btn pri" id="pf_kirim">' + (ubah ? "Ajukan ulang" : "Kirim pengajuan") + "</button></div>");
+  $("#pf_batal").onclick = tutup;
+  $("#pf_kirim").onclick = async () => {
+    const b = $("#pf_kirim"); b.disabled = true; b.textContent = "Mengirim…";
+    try {
+      const fs = [...$("#pf_file").files].slice(0, 3), lampiran = []; for (const f of fs) lampiran.push(await pgBacaBerkas(f));
+      const body = { judul: $("#pf_judul").value, kategori: $("#pf_kat").value, lokasi: $("#pf_lok").value, nominal: String($("#pf_nom").value).replace(/[^0-9]/g, ""), tgl_butuh: $("#pf_tgl").value, uraian: $("#pf_ura").value, bank: $("#pf_bank").value, norek: $("#pf_rek").value, atas_nama: $("#pf_an").value, lampiran };
+      if (ubah) body.id = x.id;
+      const r = await api(ubah ? "/api/pj/ubah" : "/api/pj/ajukan", body);
+      if (r.error) { toast(r.error); b.disabled = false; b.textContent = ubah ? "Ajukan ulang" : "Kirim pengajuan"; return; }
+      tutup(); toast(ubah ? "Diajukan ulang ke HRD" : "Pengajuan terkirim ke HRD"); pgMuat();
+    } catch (e) { if (e.message !== "login") toast(e.message || "Gagal mengirim"); b.disabled = false; b.textContent = ubah ? "Ajukan ulang" : "Kirim pengajuan"; }
+  };
+}
+window.pgBukaFile = async (id, nama) => {
+  try {
+    const f = await api("/api/pj/file?id=" + id); if (f.error) return toast(f.error);
+    const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([u8], { type: f.mime }));
+    if (/^image\//.test(f.mime)) { const box = $("#pg_prev"); if (box) box.innerHTML = '<img src="' + url + '" alt="' + esc(nama) + '" style="max-width:100%;border-radius:12px;margin-top:8px">'; }
+    else { const a = document.createElement("a"); a.href = url; a.download = f.nama || nama || "lampiran.pdf"; document.body.appendChild(a); a.click(); a.remove(); }
+  } catch (e) { if (e.message !== "login") toast("Gagal membuka berkas"); }
+};
+window.pgDetail = async (id) => {
+  let x; try { x = await api("/api/pj/detail?id=" + id); } catch (e) { return; }
+  if (x.error) return toast(x.error);
+  const peran = PGME && PGME.peran, giliran = x.giliran;
+  const tl = x.log.map((l) => { const [t, k] = PG_AKSI[l.aksi] || [l.aksi, "mut"]; return '<div class="t"><i class="' + k + '"></i><div><b>' + esc(t) + "</b> · " + esc(l.nama || l.email) + ' <span class="mut">(' + esc(PGN[l.peran] || l.peran) + ')</span><div class="mut" style="font-size:12.5px">' + pgWaktu(l.ts) + "</div>" + (l.memo ? '<div style="font-size:13.5px">' + esc(l.memo) + "</div>" : "") + "</div></div>"; }).join("");
+  const lamp = (x.files || []).map((f) => '<button class="btn" onclick="pgBukaFile(' + f.id + ',\'' + esc(f.nama).replace(/'/g, "") + '\')">' + ic("doc") + (f.jenis === "bukti_bayar" ? "Bukti transfer: " : "") + esc(f.nama) + "</button>").join("");
+  let aksi = "";
+  if (giliran && TAHAP_PG.includes(peran) && peran !== "bendahara") {
+    aksi = '<div class="form" style="margin-top:12px"><label>Catatan (wajib bila menolak atau meminta revisi)<textarea id="pa_memo" rows="2" maxlength="600"></textarea></label></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn pri" onclick="pgAksi(' + x.id + ',\'setuju\')">Setujui & lanjutkan</button><button class="btn" onclick="pgAksi(' + x.id + ',\'revisi\')">Minta revisi</button><button class="btn dg" onclick="pgAksi(' + x.id + ',\'tolak\')">Tolak</button></div>';
+  } else if (giliran && peran === "bendahara") {
+    aksi = '<div class="form" style="margin-top:12px"><div class="mut" style="font-size:12.5px;font-weight:600">Pembayaran</div><div class="two-in"><label>Tanggal bayar<input id="pa_tgl" type="date" value="' + pgHariIni() + '"></label><label>No. referensi transfer<input id="pa_ref" maxlength="60"></label></div>' +
+      '<label>Catatan<textarea id="pa_memo" rows="2" maxlength="600" placeholder="Wajib diisi bila menolak atau meminta revisi"></textarea></label><label>Bukti transfer (opsional, foto atau PDF)<input id="pa_file" type="file" accept="image/*,application/pdf"></label></div>' +
+      '<div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn pri" id="pa_bayar" onclick="pgBayar(' + x.id + ')">Tandai sudah dibayar</button><button class="btn" onclick="pgAksi(' + x.id + ',\'revisi\')">Minta revisi</button><button class="btn dg" onclick="pgAksi(' + x.id + ',\'tolak\')">Tolak</button></div>';
+  } else if (peran === "korlap") {
+    if (x.status === "revisi") aksi += '<div class="row" style="margin-top:12px"><button class="btn pri" onclick="pgUbah(' + x.id + ')">Ubah & ajukan ulang</button><button class="btn dg" onclick="pgBatal(' + x.id + ')">Batalkan pengajuan</button></div>';
+    else if (["hrd", "dirops", "dirut"].includes(x.status)) aksi += '<div class="row" style="margin-top:12px"><button class="btn dg" onclick="pgBatal(' + x.id + ')">Batalkan pengajuan</button></div>';
+  }
+  window._pgX = x;
+  const tutup = pgModal('<h4>' + esc(x.judul) + '</h4><p>' + esc(x.kode) + " · " + pgPill(x.status) + " · <b>" + rp(x.nominal) + "</b></p>" +
+    '<div class="form" style="gap:6px;margin:6px 0 10px"><div><b>' + esc(x.nama_pemohon) + '</b> · ' + esc(x.lokasi) + '</div><div class="mut">' + esc(x.kategori) + " · dibutuhkan " + pgTgl(x.tgl_butuh) + (x.putaran > 1 ? " · diajukan ulang " + (x.putaran - 1) + "×" : "") + "</div><div>" + esc(x.uraian) + "</div>" +
+    '<div class="mut">Rekening tujuan: ' + esc(x.bank) + " · " + esc(x.norek) + " a.n. " + esc(x.atas_nama) + "</div>" +
+    (x.status === "dibayar" ? '<div class="mut">Dibayar ' + pgTgl(x.bayar_tgl) + (x.bayar_ref ? " · Ref " + esc(x.bayar_ref) : "") + (x.bayar_oleh ? " · oleh " + esc(x.bayar_oleh) : "") + "</div>" : "") + "</div>" +
+    (lamp ? '<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px">' + lamp + '</div><div id="pg_prev"></div>' : "") +
+    '<div class="agtl" style="margin-top:10px">' + tl + "</div>" + aksi + '<div class="row" style="margin-top:12px"><button class="btn" id="mn">Tutup</button></div>');
+  $("#mn").onclick = tutup;
+};
+const TAHAP_PG = ["hrd", "dirops", "dirut", "bendahara"];
+window.pgAksi = async (id, aksi) => {
+  const memo = ($("#pa_memo") || {}).value || "";
+  if ((aksi === "tolak" || aksi === "revisi") && !memo.trim()) return toast(aksi === "tolak" ? "Tulis alasan penolakan" : "Tulis bagian yang harus direvisi");
+  const kata = { setuju: "Setujui pengajuan ini dan teruskan ke tahap berikutnya?", tolak: "Tolak pengajuan ini? Korlap harus membuat pengajuan baru.", revisi: "Kembalikan ke Korlap untuk direvisi?" }[aksi];
+  ask(aksi === "setuju" ? "Setujui pengajuan?" : aksi === "tolak" ? "Tolak pengajuan?" : "Minta revisi?", kata, aksi === "setuju" ? "Setujui" : aksi === "tolak" ? "Tolak" : "Minta revisi", aksi === "tolak", async () => {
+    try { const r = await api("/api/pj/aksi", { id, aksi, memo }); if (r.error) { toast(r.error); pgMuat(); return; } $("#layer").innerHTML = ""; toast(aksi === "setuju" ? "Disetujui, diteruskan ke tahap berikutnya" : aksi === "tolak" ? "Pengajuan ditolak" : "Dikembalikan ke Korlap untuk revisi"); pgMuat(); }
+    catch (e) { if (e.message !== "login") toast("Gagal menyimpan keputusan"); }
+  });
+};
+window.pgBayar = async (id) => {
+  const b = $("#pa_bayar"); b.disabled = true;
+  try {
+    const f = $("#pa_file").files[0], bukti = f ? await pgBacaBerkas(f) : null;
+    const r = await api("/api/pj/aksi", { id, aksi: "bayar", tgl: $("#pa_tgl").value, ref: $("#pa_ref").value, memo: $("#pa_memo").value, bukti });
+    if (r.error) { toast(r.error); b.disabled = false; return; }
+    $("#layer").innerHTML = ""; toast(r.peringatan || "Pembayaran tercatat"); pgMuat();
+  } catch (e) { if (e.message !== "login") toast(e.message || "Gagal mencatat pembayaran"); b.disabled = false; }
+};
+window.pgUbah = (id) => { const x = window._pgX; if (x && x.id === id) pgForm(x); };
+window.pgBatal = (id) => ask("Batalkan pengajuan?", "Pengajuan dibatalkan dan tidak diproses lagi.", "Batalkan", true, async () => {
+  try { const r = await api("/api/pj/batal", { id }); if (r.error) { toast(r.error); pgMuat(); return; } $("#layer").innerHTML = ""; toast("Pengajuan dibatalkan"); pgMuat(); } catch (e) { if (e.message !== "login") toast("Gagal membatalkan"); }
+});
+
+document.addEventListener("change", (e) => { const t = e.target; if (t && t.matches && t.matches('input[type=checkbox][value="peng"]')) { const bx = t.closest("[id$=box]"), pj = bx && bx.querySelector("[id$=pjbox]"); if (pj) pj.style.display = t.checked ? "grid" : "none"; } });
 </script>
 <script>
 /* sorot cahaya kartu mengikuti kursor (hanya hiasan; aman bila gagal) */
