@@ -379,6 +379,21 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .doc2{align-items:start}.doc2>.card{padding:18px}
 .kosong{display:grid;place-items:center;gap:8px;padding:34px 12px;text-align:center;color:var(--mut)}.kosong svg{width:34px;height:34px;opacity:.6}
 .fstat{min-height:22px;font-size:13.5px}.fstat.er{color:var(--er)}.fstat.ok{color:var(--ok)}
+/* ---- Pengajuan 86 ---- */
+.agkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.agkpi .k{padding:14px 16px}.agkpi .k b{display:block;font-size:clamp(18px,5.2vw,24px);line-height:1.1;letter-spacing:-.02em;white-space:nowrap}.agkpi .k span{color:var(--mut);font-size:12.5px}
+.agbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}.agbar input{flex:1;min-width:180px}
+.agrow{display:grid;gap:8px;padding:14px 16px;cursor:pointer}.agrow:hover{border-color:var(--acc)}
+.agrow .h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.agrow .nm{font-weight:700}.agrow .nom{font-weight:700;white-space:nowrap}
+.agrow .u{color:var(--mut);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.agsteps{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--mut)}
+.agsteps i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line);margin-right:4px;vertical-align:middle}
+.agsteps i.ok{background:var(--ok)}.agsteps i.er{background:var(--er)}.agsteps i.wa{background:var(--wa)}
+.aglama{color:var(--er);font-weight:600}
+#ag_seg{white-space:nowrap;flex:none}
+@media(max-width:560px){.agrow .h{flex-direction:column;gap:6px}.agrow .h>div:last-child{text-align:left!important;display:flex;gap:10px;align-items:center;flex-wrap:wrap}}
+.agtl{display:grid;gap:10px;margin:8px 0 4px}.agtl .t{display:grid;grid-template-columns:12px 1fr;gap:10px}.agtl .t i{width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--line)}
+.agtl .t i.ok{background:var(--ok)}.agtl .t i.er{background:var(--er)}.agtl .t i.wa{background:var(--wa)}
 </style>
 </head>
 <body>
@@ -449,11 +464,12 @@ const I = {
 I.cog = '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>';
 I.idc = '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.5 16c.6-1.6 1.7-2.2 2.5-2.2s1.9.6 2.5 2.2"/><path d="M14 10h4M14 13h3"/>';
 I.img = '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 4 4 3-3 4 4"/>';
+I.kas = '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/>';
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 // Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
 const TABS_ALL = [["ov", "Ringkasan", "home", "Pantau"], ["wf", "Workflow", "flow", "Pantau"], ["er", "Eror", "alert", "Pantau"], ["hi", "Riwayat", "clock", "Pantau"],
-  ["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"],
+  ["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Pengajuan 86", "kas", "Dokumen"],
   ["st", "Pengaturan", "cog", "Sistem"]];
 const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer"];
 const topOf = () => (tab === "rq" ? (rqSub === "slip" || rqSub === "inv" ? rqSub : rqSub ? "bpjs" : "") : tab);
@@ -1613,6 +1629,10 @@ function render() {
     if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = tab === "idcard" ? idView() : flView(); builtTab = tab; (tab === "idcard" ? idWire : flWire)(); }
     return;
   }
+  if (tab === "anggaran") {
+    if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = agView(); builtTab = tab; agWire(); agMuat(); }
+    return;
+  }
   builtTab = null;
   if (tab === "cl") {
     if (!clBuilt || !$("#clbox")) { $("#view").innerHTML = clView(); clBuilt = true; clStart(); }
@@ -1756,6 +1776,70 @@ function flWire() {
     finally { clearInterval(tik); btn.disabled = false; }
   };
 }
+
+/* ---------- Pengajuan 86 (hanya-baca; data dari Sheet Pak Yasir lewat n8n, tanpa rekening) ---------- */
+let AG = null, agFilter = "all", agCari = "", agTimer = null;
+const AG_ST = {
+  WAITING_CHECKER1: ["Menunggu Checker 1 (Keuangan)", "wa", "tunggu"], WAITING_CHECKER2: ["Menunggu Direktur Operasional", "wa", "tunggu"],
+  WAITING_FINAL_APPROVAL: ["Menunggu Direktur Utama", "wa", "tunggu"], APPROVED_READY_TO_MAKE: ["Disetujui, menunggu dimaker Keuangan", "wa", "tunggu"],
+  PAID: ["Sudah dimaker", "ok", "selesai"], REJECTED: ["Ditolak", "er", "tolak"], REVISION_REQUESTED: ["Minta revisi", "er", "tolak"],
+};
+const agSt = (r) => AG_ST[r.Status] || [r.Status || "-", "mut", "lain"];
+const rp = (n) => "Rp " + (Number(String(n).replace(/[^0-9]/g, "")) || 0).toLocaleString("id-ID");
+function agWaktu(t) { const m = String(t || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[.:](\d{2})[.:](\d{2})/); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4] - 7, +m[5], +m[6]) : 0; }
+const agTerakhir = (r) => Math.max(...["Timestamp Submit", "Checker1 Timestamp", "Checker2 Timestamp", "Final Approver Timestamp", "Maker Timestamp"].map((k) => agWaktu(r[k])));
+const agLama = (r) => { if (agSt(r)[2] !== "tunggu") return 0; const t = agTerakhir(r); return t ? Math.round((Date.now() - t) / 36e5) : 0; };
+const agLamaTeks = (j) => (j >= 48 ? Math.round(j / 24) + " hari" : j + " jam");
+const agLangkah = (r) => [["Checker 1", r["Checker1 Aksi"]], ["Direktur Ops", r["Checker2 Aksi"]], ["Dir. Utama", r["Final Approver Aksi"]], ["Maker", r["Maker Status"] === "PAID" ? "APPROVE" : ""]];
+const agTitik = (a) => (/APPROVE/.test(a || "") ? "ok" : /REJECT/.test(a || "") ? "er" : /REVISI/.test(a || "") ? "wa" : "");
+function agView() {
+  return '<div data-doc="anggaran"><div class="top"><div><h1>Pengajuan 86</h1><p>Daftar dan status pengajuan anggaran. Hanya-baca; persetujuan tetap lewat bot Telegram.</p></div><button class="btn" id="ag_seg">' + ic("retry") + 'Muat ulang</button></div>' +
+    '<div id="ag_kpi"></div><div class="agbar" id="ag_bar"></div><div class="grid" id="ag_list"><div class="sk"></div><div class="sk"></div></div><div class="mut" id="ag_info" style="margin-top:10px;font-size:12.5px"></div></div>';
+}
+function agWire() { $("#ag_seg").onclick = () => agMuat(true); clearInterval(agTimer); agTimer = setInterval(() => { if (tab !== "anggaran") return clearInterval(agTimer); if (!document.hidden) agMuat(); }, 60000); }
+async function agMuat(paksa) {
+  try { const j = await api("/api/anggaran86"); if (j.error) throw new Error(j.error); AG = j; if (paksa) toast("Diperbarui"); }
+  catch (e) { if (e.message === "login") return; if (!$("#ag_list")) return; $("#ag_list").innerHTML = '<div class="card"><div class="kosong">' + ic("alert") + "<div>" + esc(e.message || "Gagal memuat") + "</div></div></div>"; return; }
+  agGambar();
+}
+function agGambar() {
+  if (!$("#ag_list") || !AG) return;
+  const b = AG.baris || [];
+  const hit = (g) => b.filter((r) => agSt(r)[2] === g), nominal = (a) => a.reduce((x, r) => x + (Number(String(r.Nominal).replace(/[^0-9]/g, "")) || 0), 0);
+  const tunggu = hit("tunggu"), selesai = hit("selesai"), tolak = hit("tolak"), lama = tunggu.filter((r) => agLama(r) >= 24);
+  $("#ag_kpi").innerHTML = '<div class="agkpi">' +
+    '<div class="card k"><b>' + b.length + "</b><span>Total pengajuan</span></div>" +
+    '<div class="card k"><b>' + tunggu.length + "</b><span>Menunggu persetujuan" + (lama.length ? ' · <span class="aglama">' + lama.length + " lewat 24 jam</span>" : "") + "</span></div>" +
+    '<div class="card k"><b>' + selesai.length + "</b><span>Sudah dimaker · " + rp(nominal(selesai)) + "</span></div>" +
+    '<div class="card k"><b>' + tolak.length + "</b><span>Ditolak / minta revisi</span></div>" +
+    '<div class="card k"><b>' + rp(nominal(b)) + "</b><span>Total nominal diajukan</span></div></div>";
+  const F = [["all", "Semua", b.length], ["tunggu", "Menunggu", tunggu.length], ["selesai", "Sudah dimaker", selesai.length], ["tolak", "Ditolak / revisi", tolak.length]];
+  if (!$("#ag_cari")) $("#ag_bar").innerHTML = '<input type="search" id="ag_cari" placeholder="Cari nama, ID, client, atau uraian…" autocomplete="off"><span id="ag_chips" class="row" style="gap:6px;flex-wrap:wrap"></span>';
+  $("#ag_chips").innerHTML = F.map(([k, n, c]) => '<button class="btn' + (agFilter === k ? " pri" : "") + '" onclick="agPilih(\'' + k + '\')">' + n + " (" + c + ")</button>").join("");
+  const cari = agCari.toLowerCase();
+  const daftar = b.filter((r) => (agFilter === "all" || agSt(r)[2] === agFilter) && (!cari || [r["ID Pengajuan"], r["Nama Karyawan"], r["Client Lokasi"], r["Uraian Kebutuhan"], r["Kategori Biaya"]].join(" ").toLowerCase().includes(cari)))
+    .sort((x, y) => agWaktu(y["Timestamp Submit"]) - agWaktu(x["Timestamp Submit"]));
+  $("#ag_list").innerHTML = daftar.map((r) => { const [lb, kl] = agSt(r), jam = agLama(r);
+    return '<div class="card agrow fade" onclick="agDetail(\'' + esc(r["ID Pengajuan"]) + '\')"><div class="h"><div><div class="nm">' + esc(r["Nama Karyawan"] || "-") + ' <span class="mut" style="font-weight:500">· ' + esc(r["Bagian Divisi"] || "") + '</span></div><div class="mut" style="font-size:12.5px">' + esc(r["ID Pengajuan"]) + " · " + esc(r["Timestamp Submit"]) + '</div></div><div style="text-align:right"><div class="nom">' + rp(r.Nominal) + '</div><span class="pill ' + kl + '">' + esc(lb) + "</span></div></div>" +
+      '<div class="u">' + esc(r["Kategori Biaya"]) + " · " + esc(r["Client Lokasi"]) + " — " + esc(r["Uraian Kebutuhan"]) + "</div>" +
+      '<div class="agsteps">' + agLangkah(r).map(([n, a]) => "<span><i class=\"" + agTitik(a) + "\"></i>" + n + "</span>").join("") + (jam >= 24 ? ' <span class="aglama">· menunggu ' + agLamaTeks(jam) + "</span>" : "") + "</div></div>"; }).join("") ||
+    '<div class="card"><div class="kosong">' + ic("kas") + "<div>" + (b.length ? "Tidak ada pengajuan yang cocok" : "Belum ada data. Agen akan menarik daftar dalam beberapa menit.") + "</div></div></div>";
+  const m = AG.simpan ? Math.max(0, Math.round((Date.now() - AG.simpan) / 60000)) : null;
+  $("#ag_info").textContent = m === null ? "" : "Diperbarui " + (m < 1 ? "baru saja" : m + " menit lalu") + " · sumber: Sheet Alur2_Anggaran86 · nomor rekening dan data pribadi tidak ditampilkan";
+}
+window.agPilih = (k) => { agFilter = k; agGambar(); };
+document.addEventListener("input", (e) => { if (e.target && e.target.id === "ag_cari") { agCari = e.target.value; agGambar(); } });
+window.agDetail = (id) => {
+  const r = ((AG && AG.baris) || []).find((x) => x["ID Pengajuan"] === id); if (!r) return;
+  const [lb, kl] = agSt(r);
+  const langkah = [["Pengajuan dikirim", "", r["Timestamp Submit"], "", "ok"], ["Checker 1 (Keuangan)", r["Checker1 Aksi"], r["Checker1 Timestamp"], r["Checker1 Memo"]], ["Checker 2 (Direktur Operasional)", r["Checker2 Aksi"], r["Checker2 Timestamp"], r["Checker2 Memo"]], ["Final (Direktur Utama)", r["Final Approver Aksi"], r["Final Approver Timestamp"], r["Final Approver Memo"]], ["Dimaker Keuangan", r["Maker Status"], r["Maker Timestamp"], ""]];
+  const tl = langkah.map(([n, a, w, memo, paksa]) => { const k = paksa || agTitik(a === "PAID" ? "APPROVE" : a); return '<div class="t"><i class="' + k + '"></i><div><b>' + esc(n) + "</b>" + (a ? ' · <span class="mut">' + esc(a) + "</span>" : ' · <span class="mut">belum</span>') + (w ? '<div class="mut" style="font-size:12.5px">' + esc(w) + "</div>" : "") + (memo ? '<div style="font-size:13.5px">Memo: ' + esc(memo) + "</div>" : "") + "</div></div>"; }).join("");
+  const tautan = (u, t) => (/^https?:\/\//.test(u || "") ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener">' + t + "</a>" : "");
+  $("#layer").innerHTML = '<div class="modal" id="mdl"><div class="sheet"><h4>' + esc(r["ID Pengajuan"]) + '</h4><p><span class="pill ' + kl + '">' + esc(lb) + "</span> · " + rp(r.Nominal) + "</p>" +
+    '<div class="form" style="gap:6px;margin:6px 0 10px"><div><b>' + esc(r["Nama Karyawan"]) + "</b> · " + esc(r["Bagian Divisi"]) + '</div><div class="mut">' + esc(r["Kategori Biaya"]) + " · " + esc(r["Client Lokasi"]) + '</div><div>' + esc(r["Uraian Kebutuhan"]) + '</div><div class="mut">Tanggal kebutuhan: ' + esc(r["Tanggal Kebutuhan"] || "-") + "</div></div>" +
+    '<div class="agtl">' + tl + '</div><div class="row" style="margin-top:12px">' + tautan(r["Link Bukti"], "Buka bukti") + tautan(r["Link Bukti Tambahan"], "Bukti tambahan") + '<button class="btn pri" id="mn">Tutup</button></div></div></div>';
+  const tutup = () => ($("#layer").innerHTML = ""); $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+};
 </script>
 <script>
 /* sorot cahaya kartu mengikuti kursor (hanya hiasan; aman bila gagal) */
