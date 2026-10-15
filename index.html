@@ -419,6 +419,18 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .agtl{display:grid;gap:10px;margin:8px 0 4px}.agtl .t{display:grid;grid-template-columns:12px 1fr;gap:10px}.agtl .t i{width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--line)}
 .agtl .t i.ok{background:var(--ok)}.agtl .t i.er{background:var(--er)}.agtl .t i.wa{background:var(--wa)}
 .top>.btn{white-space:nowrap;flex:none}
+/* Pusat BPJS: empat area; halaman dua kolom memakai lebar layar */
+.hub{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:18px;align-items:start}
+.hub>div{min-width:0;display:flex;flex-direction:column;gap:14px}.hub .card{margin-bottom:0}.h-bwh{display:flex;flex-direction:column;gap:14px}.h-bwh .sec{margin:4px 0 0}
+.pjhero .bbtools{display:flex;flex-wrap:nowrap;gap:8px;margin-top:10px}.pjhero .bbtools select{flex:1;min-width:0}
+@media(max-width:1000px){.hub{grid-template-columns:minmax(0,1fr)}}
+main:has(.hub),main:has(.duo){max-width:1560px}
+/* halaman dalam BPJS: form + tutorial di atas, hasil dan riwayat selebar layar */
+.duo3{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:18px;align-items:start}
+.duo3>div{min-width:0}.duo3 .card{margin-bottom:0}.d-lebar{grid-column:1/-1;display:flex;flex-direction:column;gap:14px}.d-lebar .sec{margin:4px 0 0}
+.d-lebar .hisbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:10px;max-height:none}.d-lebar .hisbody>.mut{grid-column:1/-1}
+@media(max-width:1000px){.duo3{grid-template-columns:minmax(0,1fr)}.d-lebar .hisbody{grid-template-columns:minmax(0,1fr)}}
+main:has(.duo3){max-width:1560px}
 /* menu samping ringkas: lebih kecil, tetap terbaca */
 @media(min-width:900px){
   .shell{grid-template-columns:196px 1fr}
@@ -1066,15 +1078,15 @@ function paintChat() {
 const TUT = {
   slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
   inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>bawah formulir</b>.", "Tekan <b>Review</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>. Setelah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
-  bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kanan bawah).", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> (kiri) dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di bagian atas kiri. Tekan Selesai bila sudah tidak dipakai, atau Review untuk melihat hasilnya." },
+  bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas).", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> (kiri bawah) dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Tekan Review untuk melihat hasilnya." },
   idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar.", "Hasil tampil di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa nama dan fotonya.", "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi kapan saja."], t: "Foto yang gelap atau buram membuat kartu kurang rapi. Pakai foto yang terang." },
-  bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: ["Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).", "Di halaman berikutnya, unggah <b>PDF bulk</b> dari BPJS.", "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.", "Hasilnya muncul <b>di bawah formulir</b>. Tekan <b>Review</b> untuk melihat atau <b>Unduh</b> per lokasi."], t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya." },
-  bbup: { j: "Cara mengunggah PDF bulk", s: ["Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah (maksimal sekitar 17 MB), atau ketuk untuk memilih berkas.", "Tekan <b>Proses PDF</b>.", "Tunggu. Bilah progres menunjukkan berapa file sudah masuk Google Drive.", "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.", "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
+  bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: ["Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).", "Di halaman berikutnya, unggah <b>PDF bulk</b> dari BPJS.", "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.", "Hasilnya muncul <b>di bawah formulir</b>. Tekan <b>Review</b> untuk melihat atau <b>Unduh</b> per lokasi."], t: "Unggahan sebelumnya tersimpan di Riwayat hasil (bagian paling bawah) pada halaman berikutnya." },
+  bbup: { j: "Cara mengunggah PDF bulk", s: ["Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah (maksimal sekitar 17 MB), atau ketuk untuk memilih berkas.", "Tekan <b>Proses PDF</b>.", "Tunggu. Bilah progres menunjukkan berapa file sudah masuk Google Drive.", "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.", "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (bagian paling bawah)."], t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
   rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: ["Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.", "Pilih <b>Data Mentah</b> untuk melihat file aslinya, atau <b>Data Hasil</b> untuk data yang sudah rapi.", "Pilih <b>bulan</b> dan <b>tahun</b> di halaman berikutnya."], t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
   rdmenu: { j: "Cara memakai menu ini", s: ["Pilih <b>Data Mentah</b> untuk melihat dan mengunduh file asli di Google Drive.", "Pilih <b>Data Hasil</b> untuk data rapi di Google Sheets: bisa dilihat, dicari, dan diunduh.", "Di Data Hasil, tombol <b>Jalankan</b> menarik data baru bila ada perubahan."], t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
   bpmentah: { j: "Cara melihat data mentah", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Daftar file asli di Google Drive muncul <b>di bawah formulir</b>.", "Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b>.", "Periksa mana yang <b>belum masuk rekap</b> bila ada."], t: "Halaman ini hanya untuk melihat. Tidak ada tombol Jalankan di sini." },
-  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Data rapi muncul <b>di bawah formulir</b>. Gunakan kotak cari bila perlu, lalu <b>Unduh</b>.", "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai.", "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
-  bphitung: { j: "Cara melihat Hasil BPJS", s: ["Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.", "Pilih <b>bulan</b> dan <b>tahun</b>.", "Tekan <b>Jalankan</b> untuk menghitung selisih.", "Untung atau rugi per lokasi muncul <b>di bawah formulir</b>. Proses sebelumnya ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hitungan memakai data yang sudah ada di Sheets. Perbarui langkah 1 sampai 4 dulu bila datanya belum terbaru." },
+  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Data rapi muncul <b>di bawah formulir</b>. Gunakan kotak cari bila perlu, lalu <b>Unduh</b>.", "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai.", "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (bagian paling bawah)."], t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
+  bphitung: { j: "Cara melihat Hasil BPJS", s: ["Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.", "Pilih <b>bulan</b> dan <b>tahun</b>.", "Tekan <b>Jalankan</b> untuk menghitung selisih.", "Untung atau rugi per lokasi muncul <b>di bawah formulir</b>. Proses sebelumnya ada di <b>Riwayat hasil</b> (bagian paling bawah)."], t: "Hitungan memakai data yang sudah ada di Sheets. Perbarui langkah 1 sampai 4 dulu bila datanya belum terbaru." },
   flyer: { j: "Cara membuat Flyer Lowongan", s: ["Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan).", "Isi <b>8 kolom</b> lowongan. Untuk banyak poin, pisahkan dengan tanda <b>|</b>.", "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.", "Hasil muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh</b>.", "Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi."], t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
 };
 const tutHtml = (k) => { const t = TUT[k], buka = typeof matchMedia === "function" && matchMedia("(max-width:1000px)").matches ? "" : " open"; return '<div class="card tut"><details' + buka + '><summary><span class="ti">?</span>' + t.j + '</summary><ol class="tsteps">' + t.s.map((x, i) => "<li><i>" + (i + 1) + "</i><span>" + x + "</span></li>").join("") + '</ol><div class="ttip">💡 ' + t.t + "</div></details></div>"; };
@@ -1104,7 +1116,7 @@ window.hisLihat = async (id, jenis) => {
 };
 let pjTunda = 0;
 function pjHis() {
-  const ak = $("#pj_aktif"), wrap = $("#pj_aktifwrap"); if (!ak || !pjData) return;
+  const ak = $("#pj_aktif"), wrap = $("#pj_aktifwrap"), his = $("#pj_his"); if (!ak || !pjData) return;
   const NM = { gaji: "Rekap Gaji", kes: "Rincian BPJS KES", tk: "Rincian BPJS TK", rab: "Rekap RAB", hasil: "Hasil BPJS" }, BK = { gaji: "gaji", kes: "rkes", tk: "rtk", rab: "rab", hasil: "hasil" };
   const r = pjData.riwayat || [], arsip = arsipBpjs(), kini = Date.now(), kunci = (j) => j.kind + "|" + j.label + "|" + j.updated;
   const jalan = (j) => j.status !== "selesai" && j.status !== "gagal";
@@ -1113,6 +1125,7 @@ function pjHis() {
   const baris = (j, selesai) => { const [t, c] = pjSt(j); return '<div class="hrow"><div class="fic">' + ic("shield") + '</div><div class="hb"><b>' + esc(NM[j.kind] || j.kind) + "</b><small>" + esc(j.label || "") + ' · <span class="pill ' + c + '">' + esc(t) + '</span></small></div><div class="hact">' + (BK[j.kind] ? '<button class="btn" onclick="pjBuka(\'' + BK[j.kind] + '\')">Review</button>' : "") + (selesai && !jalan(j) ? '<button class="btn" data-k="' + esc(kunci(j)) + '" onclick="pjSelesai(this.dataset.k)">✓ Selesai</button>' : "") + "</div></div>"; };
   if (wrap) wrap.style.display = aktif.length ? "" : "none";
   setHtml(ak, aktif.map((j) => baris(j, true)).join(""));
+  if (his) setHtml(his, lama.length ? lama.map((j) => baris(j, false)).join("") : '<div class="mut" style="padding:8px 4px">Belum ada riwayat. Proses yang sudah selesai dipakai pindah ke sini.</div>');
   if (r.some((j) => jalan(j) && !arsip.includes(kunci(j))) && !pjTunda) { pjTunda = setTimeout(() => { pjTunda = 0; if ($("#pj_aktif")) pjLoad(); }, 8000); }
 }
 const arsipBaca = () => { try { return JSON.parse(localStorage.getItem("arsipHasil") || "{}"); } catch (e) { return {}; } };
@@ -1169,8 +1182,10 @@ const pjLabel = () => BLN[bpPer.b] + " " + bpPer.t;
 function bpjsView() {
   const kartu = (id, ikon, judul, ket, rk) => `<div class="card item fade click" onclick="bukaSub('${id}')"><div class="h"><div style="display:flex;gap:12px;align-items:center;min-width:0"><div class="fic">${ic(ikon)}</div><div style="min-width:0"><div class="nm">${judul}</div><div class="mut">${ket}</div>${rk ? `<div class="rk mut" data-rk="${rk}"></div>` : ""}</div></div></div></div>`;
   return `<div class="top"><div><h1>Pusat BPJS</h1><p>Ikuti langkah bulanan, pantau statusnya, lalu buka data mentah maupun hasilnya</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
-  <div class="duo"><div class="main">
-  <div class="card" id="pj_aktifwrap" style="display:none;margin-bottom:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Sedang diproses / baru selesai</h3><span class="mut">pindah ke riwayat setelah ditekan Selesai</span></div><div class="hisbody" id="pj_aktif" style="max-height:none"></div></div>
+  <div class="hub"><div class="h-kiri"><div class="card fade pjhero"><div class="h"><div><div class="nm">Panduan bulanan</div><div class="mut">Status diambil otomatis dari proses yang sudah dijalankan untuk periode ini</div></div>
+      <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
+    <div class="pjbar"><div id="pjfill"></div></div><div class="mut" id="pjtxt" style="margin-top:6px">Memuat status…</div>
+    <div id="pjsteps"><div class="skel" style="height:44px;margin-top:12px"></div><div class="skel" style="height:44px;margin-top:8px"></div><div class="skel" style="height:44px;margin-top:8px"></div></div></div><div class="h-bwh"><div class="card" id="pj_aktifwrap" style="display:none;margin-bottom:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Sedang diproses / baru selesai</h3><span class="mut">pindah ke riwayat setelah ditekan Selesai</span></div><div class="hisbody" id="pj_aktif" style="max-height:none"></div></div>
   <div class="sec"><h3>Semua menu</h3></div>
   <div class="grid two">
     ${kartu("bb", "doc", "Bukti Bayar BPJS", "Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh", "")}
@@ -1178,10 +1193,7 @@ function bpjsView() {
     ${kartu("rab", "doc", "Rekap RAB BPJS", "REKAP RAB 2026 yang sudah rapi, bisa dilihat, dicari, dan diunduh", "rab")}
     ${kartu("gaji", "money", "Rekap Gaji BPJS", "Rekap gaji rapi per bulan, bisa dilihat, dicari, dan diunduh", "gaji")}
     ${kartu("hasil", "check", "Hasil BPJS", "Selisih untung/rugi per lokasi", "hasil")}
-  </div></div><aside class="aside">${tutHtml("bpjs")}<div class="card fade pjhero"><div class="h"><div><div class="nm">Panduan bulanan</div><div class="mut">Status diambil otomatis dari proses yang sudah dijalankan untuk periode ini</div></div>
-      <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
-    <div class="pjbar"><div id="pjfill"></div></div><div class="mut" id="pjtxt" style="margin-top:6px">Memuat status…</div>
-    <div id="pjsteps"><div class="skel" style="height:44px;margin-top:12px"></div><div class="skel" style="height:44px;margin-top:8px"></div><div class="skel" style="height:44px;margin-top:8px"></div></div></div></aside></div>`;
+  </div></div></div><div class="h-kanan">${tutHtml("bpjs")}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div class="hisbody" id="pj_his"></div></div></div></div>`;
 }
 function pjInit() {
   const b = $("#pjbln"), t = $("#pjth"); if (!b || !t) return;
@@ -1232,14 +1244,12 @@ const bbAktif = () => { const j = bbData && bbData.jobs[0]; return !!j && ["meng
 
 function bbView() {
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Unggah PDF bulk dari BPJS. Sistem memisahkannya menjadi satu PDF per lokasi, lalu menyimpannya di Google Drive dan di halaman ini.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
-  <div class="duo"><div class="main">
-  <div class="card item fade"><div class="nm">Unggah PDF bulk</div>
+  <div class="duo3"><div class="d-form"><div class="card item fade"><div class="nm">Unggah PDF bulk</div>
     <div class="bbdrop" id="bbdrop" tabindex="0" role="button" aria-label="Pilih berkas PDF">${ic("doc")}<b id="bbt">Tarik PDF ke sini atau ketuk untuk memilih</b><small id="bbs">PDF Bill Payment dari BPJS, maksimal sekitar 17 MB</small></div>
     <input type="file" id="bbfile" accept="application/pdf,.pdf" hidden>
-    <div class="row" style="margin-top:10px"><button class="btn pri" id="bbgo" disabled>Proses PDF</button></div></div>
-  <div id="bbjob"></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="bbgo" disabled>Proses PDF</button></div></div></div><div class="d-tut">${tutHtml("bbup")}</div><div class="d-lebar"><div id="bbjob"></div>
   <div class="sec"><h3>Berkas per lokasi</h3></div>
-  <div class="card fade" id="bbfiles"></div></div><aside class="aside">${tutHtml("bbup")}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">unggahan sebelumnya</span></div><div class="hisbody" id="bb_his"></div></div></aside></div>`;
+  <div class="card fade" id="bbfiles"></div></div><div class="d-lebar"><div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">unggahan sebelumnya</span></div><div class="hisbody" id="bb_his"></div></div></div></div>`;
 }
 function bbInit() {
   bbJenis = rqSub === "bbtk" ? "tk" : "kes";
@@ -1500,15 +1510,12 @@ function rdMenuView() {
 function bpView() {
   const th = bpPer.t, mode = (BP[rqSub] || {}).mode || "";
   return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><div class="row" style="flex:none;flex-wrap:nowrap;gap:8px"><button class="btn" onclick="tutupSub()">← Kembali</button></div></div>
-  <div class="duo"><div class="main">
-  <div class="card item fade"><div class="nm">Pilih periode</div>
+  <div class="duo3"><div class="d-form"><div class="card item fade"><div class="nm">Pilih periode</div>
     <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}${mode ? "" : '<option value="semua">Semua bulan</option>'}</select>
       <input id="bpth" type="number" min="2024" max="2040" value="${th}" aria-label="Tahun" style="flex:0 1 110px">
       ${mode === "mentah" ? "" : '<button class="btn pri" id="bpgo">Jalankan</button>'}</div>
-    ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div>
-  <div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
-  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div>
-  </div><aside class="aside">${tutHtml(rqSub === "hasil" ? "bphitung" : mode === "mentah" ? "bpmentah" : "bphasil")}${mode === "mentah" ? "" : '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div>'}</aside></div>`;
+    ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div></div><div class="d-tut">${tutHtml(rqSub === "hasil" ? "bphitung" : mode === "mentah" ? "bpmentah" : "bphasil")}</div><div class="d-lebar"><div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
+  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div></div>${mode === "mentah" ? "" : '<div class="d-lebar"><div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div></div>'}</div>`;
 }
 function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
