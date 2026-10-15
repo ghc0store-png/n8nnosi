@@ -393,7 +393,7 @@ function xform(id){const c=cl(id);
 const NF=n=>n?Number(n).toLocaleString('id-ID'):'';
 const MASK=`oninput="this.value=this.value.replace(/\\D/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')"`;
 function cform(id){const m=S.bulan,c=id?cl(id):{name:'',sistem:'MANUAL',pejabat:'',berkas:'INVOICE, KWITANSI, RAB, FAKTUR PAJAK',dlText:''},o=id?c.ms[m]:{admin:S.user,dl:'',nom:0,ppn:0,pph:0,ket:''};
- const own=ADM()?S.fpic:S.user,admins=[...new Set([...DB.clients.filter(x=>x.owner===own&&x.ms[m]).map(x=>x.ms[m].admin).filter(Boolean),own])];
+ const own=ADM()?S.fpic:S.user,admins=[...new Set([...DB.clients.filter(x=>x.owner===own&&x.ms[m]).map(x=>x.ms[m].admin).filter(Boolean),own,...AREA])];
  $('#dr').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:16px"><h2 style="margin:0">${id?'Detail client':'Client baru'} · ${mLab(m)}</h2><button class="ib" data-act="close">${ic('x')}</button></div>
  <form id="cf" data-id="${id||''}"><div class="fld"><label>Nama client</label><input name="name" required value="${esc(c.name)}"></div>
  <div class="g" style="grid-template-columns:1fr 1fr;gap:12px"><div class="fld"><label>PIC admin</label><select name="admin">${admins.map(a=>`<option ${o.admin===a?'selected':''}>${esc(a)}</option>`).join('')}</select></div><div class="fld"><label>Sistem penagihan</label><select name="sistem">${['MANUAL','INAPROC','INAPROC & MANUAL'].map(s=>`<option ${(c.sistem||'MANUAL')===s?'selected':''}>${s}</option>`).join('')}</select></div></div>
