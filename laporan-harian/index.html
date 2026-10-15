@@ -232,6 +232,14 @@ button.stat.on{border-color:var(--c,var(--a1));box-shadow:0 0 0 1px var(--c,var(
 <div id="root"></div>
 <div class="ov" id="ov"></div><aside class="drawer" id="dr"></aside><div class="modal" id="md"></div><div class="modal pal" id="pal"></div><div class="toast" id="toast"></div>
 <script>
+/* Pembaruan otomatis: saat halaman dibuka, bila versi di server berbeda dari yang terakhir dimuat, muat ulang SEKALI (tanpa Ctrl+Shift+R). Hanya saat dibuka, supaya isian yang sedang diketik tidak hilang. */
+(function () { try {
+  const KEY = "ver:" + location.pathname, h = (t) => { let x = 5381; for (let i = 0; i < t.length; i++) x = ((x << 5) + x + t.charCodeAt(i)) | 0; return String(x); };
+  fetch(location.pathname, { cache: "no-store" }).then((r) => (r.ok ? r.text() : null)).then((t) => {
+    if (!t) return; const v = h(t), lama = localStorage.getItem(KEY); localStorage.setItem(KEY, v);
+    if (lama && lama !== v) { const t0 = Number(sessionStorage.getItem("verReload") || 0); if (Date.now() - t0 > 30000) { sessionStorage.setItem("verReload", String(Date.now())); location.reload(); } }
+  }).catch(() => {});
+} catch (e) {} })();
 /* ============ KONSTANTA ============ */
 const PICS=[{n:'OPAL',a:'Area Pantura Barat',k:'area'},{n:'IZZAR',a:'Area Pantura Barat (Izzar)',k:'area'},{n:'HITA',a:'Area Kedu Raya',k:'area'},{n:'ADI',a:'Area ADI',k:'area'},{n:'PAK TOHAR',a:'Area Client Lama',k:'area'},{n:'ZAHRA',a:'Area Timur',k:'area'},{n:'MIDAN',a:'Area Kalimantan',k:'area'},{n:'DINI',a:'Area BPS & Swasta',k:'area'},{n:'IFA',a:'BPJS Kesehatan & TK',k:'ifa'},{n:'RIKI',a:'BPJS (rekap & progres)',k:'riki'},{n:'KARIN',a:'Laporan bulanan & absensi',k:'karin'},{n:'PAK BAYU',a:'Laporan harian',k:'umum'},{n:'LAILI',a:'Laporan harian',k:'umum'},{n:'NIKEN',a:'Laporan harian',k:'umum'},{n:'YAYA',a:'Laporan harian',k:'umum'},{n:'ELA',a:'Laporan harian',k:'umum'}];
 const AREA=PICS.filter(p=>p.k==='area').map(p=>p.n);
