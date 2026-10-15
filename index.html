@@ -1073,7 +1073,7 @@ const TUT = {
   rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: ["Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.", "Pilih <b>Data Mentah</b> untuk melihat file aslinya, atau <b>Data Hasil</b> untuk data yang sudah rapi.", "Pilih <b>bulan</b> dan <b>tahun</b> di halaman berikutnya."], t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
   rdmenu: { j: "Cara memakai menu ini", s: ["Pilih <b>Data Mentah</b> untuk melihat dan mengunduh file asli di Google Drive.", "Pilih <b>Data Hasil</b> untuk data rapi di Google Sheets: bisa dilihat, dicari, dan diunduh.", "Di Data Hasil, tombol <b>Jalankan</b> menarik data baru bila ada perubahan."], t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
   bpmentah: { j: "Cara melihat data mentah", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Daftar file asli di Google Drive muncul <b>di bawah formulir</b>.", "Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b>.", "Periksa mana yang <b>belum masuk rekap</b> bila ada."], t: "Halaman ini hanya untuk melihat. Tidak ada tombol Jalankan di sini." },
-  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Data rapi muncul <b>di bawah formulir</b>. Gunakan kotak cari bila perlu, lalu <b>Unduh</b>.", "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai.", "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
+  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Data rapi muncul <b>di bawah formulir</b>. Gunakan kotak cari bila perlu, lalu <b>Unduh</b>.", "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai.", "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."], t: "File asli di Google Drive ada di tombol Lihat data mentah (kanan atas). Hasil proses juga dikirim ke Telegram admin." },
   bphitung: { j: "Cara melihat Hasil BPJS", s: ["Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.", "Pilih <b>bulan</b> dan <b>tahun</b>.", "Tekan <b>Jalankan</b> untuk menghitung selisih.", "Untung atau rugi per lokasi muncul <b>di bawah formulir</b>. Proses sebelumnya ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hitungan memakai data yang sudah ada di Sheets. Perbarui langkah 1 sampai 4 dulu bila datanya belum terbaru." },
   flyer: { j: "Cara membuat Flyer Lowongan", s: ["Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan).", "Isi <b>8 kolom</b> lowongan. Untuk banyak poin, pisahkan dengan tanda <b>|</b>.", "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.", "Hasil muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh</b>.", "Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi."], t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
 };
@@ -1144,14 +1144,16 @@ function rqView() {
   <div class="duo"><div class="main"><div id="formbox"></div><div class="card" id="aktifwrap" style="margin-top:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Hasil terbaru</h3><span class="mut">sedang berjalan atau baru selesai</span></div><div id="aktif" class="grid still"></div></div></div>
   <aside class="aside">${tutHtml(rqSub)}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">yang sudah selesai dipakai</span></div><div id="hasil" class="grid still hisbody"></div></div></aside></div>`;
 }
+const LANGSUNG = { rkes: "rkesH", rtk: "rtkH", rab: "rabH", gaji: "gajiH" };   // langsung ke Data Hasil
 window.bukaSub = async (k) => {
-  rqSub = k; chatBuilt = false; render();
+  rqSub = LANGSUNG[k] || k; chatBuilt = false; render();
   if (k !== "slip" && k !== "inv") { window.scrollTo({ top: 0 }); return; }
   window._inline = $("#formbox");
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-window.tutupSub = () => { rqSub = rqSub === "bbtk" || rqSub === "bbkes" ? "bb" : rqSub === "rkesM" || rqSub === "rkesH" ? "rkes" : rqSub === "rtkM" || rqSub === "rtkH" ? "rtk" : rqSub === "rabM" || rqSub === "rabH" ? "rab" : rqSub === "gajiM" || rqSub === "gajiH" ? "gaji" : rqSub === "rkes" || rqSub === "rtk" ? "rb" : rqSub === "bb" || rqSub === "rb" || rqSub === "rab" || rqSub === "gaji" || rqSub === "hasil" ? "bpjs" : rqSub; chatBuilt = false; render(); };
+const BALIK = { bbtk: "bb", bbkes: "bb", rkesH: "rb", rtkH: "rb", rabH: "bpjs", gajiH: "bpjs", rkesM: "rkesH", rtkM: "rtkH", rabM: "rabH", gajiM: "gajiH", rkes: "rb", rtk: "rb", rab: "bpjs", gaji: "bpjs", bb: "bpjs", rb: "bpjs", hasil: "bpjs" };
+window.tutupSub = () => { rqSub = BALIK[rqSub] || rqSub; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
 /* ---------- Pusat BPJS: panduan bulanan + status tiap menu ---------- */
@@ -1172,9 +1174,9 @@ function bpjsView() {
   <div class="sec"><h3>Semua menu</h3></div>
   <div class="grid two">
     ${kartu("bb", "doc", "Bukti Bayar BPJS", "Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh", "")}
-    ${kartu("rb", "doc", "Rincian Bukti Bayar BPJS", "KES dan TK: data mentah di Drive dan data rapi di Sheets", "kes,tk")}
-    ${kartu("rab", "doc", "Rekap RAB BPJS", "File RAB mentah dan REKAP RAB 2026", "rab")}
-    ${kartu("gaji", "money", "Rekap Gaji BPJS", "File rekap gaji tiap PIC dan rekap rapi per bulan", "gaji")}
+    ${kartu("rb", "doc", "Rincian Bukti Bayar BPJS", "KES dan TK: data rapi hasil tarikan di Google Sheets", "kes,tk")}
+    ${kartu("rab", "doc", "Rekap RAB BPJS", "REKAP RAB 2026 yang sudah rapi, bisa dilihat, dicari, dan diunduh", "rab")}
+    ${kartu("gaji", "money", "Rekap Gaji BPJS", "Rekap gaji rapi per bulan, bisa dilihat, dicari, dan diunduh", "gaji")}
     ${kartu("hasil", "check", "Hasil BPJS", "Selisih untung/rugi per lokasi", "hasil")}
   </div></div><aside class="aside">${tutHtml("bpjs")}<div class="card fade pjhero"><div class="h"><div><div class="nm">Panduan bulanan</div><div class="mut">Status diambil otomatis dari proses yang sudah dijalankan untuk periode ini</div></div>
       <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
@@ -1497,7 +1499,7 @@ function rdMenuView() {
 }
 function bpView() {
   const th = bpPer.t, mode = (BP[rqSub] || {}).mode || "";
-  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>${esc(BP[rqSub].ket)}</p></div><div class="row" style="flex:none;flex-wrap:nowrap;gap:8px">${rqSub.endsWith("H") && rqSub !== "hasil" ? `<button class="btn" onclick="bukaSub('${rqSub.slice(0, -1)}M')">Lihat data mentah</button>` : rqSub.endsWith("M") ? `<button class="btn" onclick="bukaSub('${rqSub.slice(0, -1)}H')">Ke data hasil</button>` : ""}<button class="btn" onclick="tutupSub()">← Kembali</button></div></div>
   <div class="duo"><div class="main">
   <div class="card item fade"><div class="nm">Pilih periode</div>
     <div class="bbtools" style="margin-top:10px"><select id="bpbln" aria-label="Pilih bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}${mode ? "" : '<option value="semua">Semua bulan</option>'}</select>
