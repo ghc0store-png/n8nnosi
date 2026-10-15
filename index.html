@@ -508,6 +508,44 @@ main:has(.duo3){max-width:1560px}
   .sidefoot .pill{font-size:11px;padding:3px 9px}
   body.menuoff .shell{grid-template-columns:72px 1fr}
 }
+/* ===== Tampilan HP: lebih ringkas ===== */
+@media(max-width:620px){
+body{font-size:14px;line-height:1.45}
+main{padding-left:11px;padding-right:11px;padding-top:calc(10px + env(safe-area-inset-top))}
+.top{gap:8px;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
+.top h1{font-size:21px!important}
+.top p{font-size:12.5px;margin:3px 0 0;line-height:1.4}
+.top .btn{padding:7px 12px;font-size:13px}
+.card{padding:11px 12px;border-radius:16px}
+.card.item,.agrow{padding:10px 12px}
+.btn{padding:8px 13px;font-size:13.5px;border-radius:11px}
+input,textarea,select{padding:9px 11px;font-size:14.5px;border-radius:10px}
+label{font-size:12.5px}
+.form{gap:9px}
+.sec h3{font-size:15px}
+.nm{font-size:14.5px}.mut{font-size:12.5px}
+.pill{font-size:11.5px;padding:2px 8px}
+/* Slip / Invoice: satu kolom */
+#formbox .form{grid-template-columns:minmax(0,1fr)}
+#formbox>.card>.row .btn{width:100%}
+/* kartu ringkasan (Pengajuan) 3 kolom */
+.agkpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.agkpi .card{padding:8px 9px;border-radius:13px}.agkpi .card b{font-size:19px}.agkpi .card span{font-size:11px;line-height:1.25}
+.agbar{gap:7px}
+/* Pusat BPJS: baris langkah boleh turun baris, judul tidak terpotong */
+.pjstep{flex-wrap:wrap!important;row-gap:6px}
+.pjstep .pjbody{flex:1 1 calc(100% - 44px);min-width:0}
+.pjstep .pjbody .nm,.pjstep .pjbody .mut{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.pjstep>:nth-child(n+3){margin-left:auto}
+/* tutorial */
+.tut summary{font-size:14px}.tsteps{gap:8px}.tsteps li{font-size:13.5px}.tu{font-size:12.5px}
+.tcr>div{grid-template-columns:96px 1fr;font-size:12.5px;padding:6px 11px}.tcx{font-size:12.5px}.ttip{font-size:12.5px}
+/* hasil / riwayat */
+.hasilimg{max-height:60vh}
+.hisbody{max-height:none}
+.modal .sheet,.sheet{padding:14px;border-radius:18px}
+.tabbar button{font-size:10.5px}
+}
 </style>
 </head>
 <body>
