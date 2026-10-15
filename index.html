@@ -1023,7 +1023,7 @@ function hasilHtml(o, aksi) {
   const fmt = (t) => esc(t).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
   const kb = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
   if (o.kind === "user") return `<div class="card item fade"><div class="h"><div><div class="nm">Permintaan Anda</div><div class="mut">${esc(o.text).slice(0, 200)}</div></div><span class="pill mut">${wib(o.created)}</span></div></div>`;
-  if (o.kind === "file") return `<div class="card item fade"><div class="h"><div style="display:flex;gap:10px;align-items:center;min-width:0"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(o.filename || "Dokumen")}</div><div class="mut">${esc(o.caption || "")} ${kb(o.size || 0)} • ${wib(o.created)}</div></div></div></div><div class="row" style="margin-top:8px"><button class="btn" onclick="lihatFile(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Lihat</button><button class="btn ok" onclick="dl(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Unduh PDF</button></div></div>`;
+  if (o.kind === "file") return `<div class="card item fade"><div class="h"><div style="display:flex;gap:10px;align-items:center;min-width:0"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(o.filename || "Dokumen")}</div><div class="mut">${esc(o.caption || "")} ${kb(o.size || 0)} • ${wib(o.created)}</div></div></div></div><div class="row" style="margin-top:8px"><button class="btn" onclick="lihatFile(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Review</button><button class="btn ok" onclick="dl(${o.id},'${esc(o.filename || "dokumen.pdf").replace(/'/g, "")}')">Unduh PDF</button></div></div>`;
   return `<div class="card item fade"><div class="mut" style="margin-bottom:6px">${wib(o.created)}</div><div>${fmt(o.text)}</div>${aksi ? '<div class="row" style="margin-top:10px"><button class="btn ok" onclick="quick(\'SETUJU\')">SETUJU</button><button class="btn" onclick="quick(\'BATAL\')">BATAL</button></div>' : ""}</div>`;
 }
 function paintChat() {
@@ -1035,17 +1035,23 @@ function paintChat() {
   const proses = last && last.kind === "user" && Date.now() - (last.created || 0) < 90000;
   const lastOb = ob.length ? ob[ob.length - 1] : null;
   const needOk = lastOb && lastOb.kind === "text" && /SETUJU/.test(lastOb.text || "") && !echo.length && mine.includes(lastOb);
-  const rev = mine.slice().reverse().slice(0, 25);
-  setHtml(box, (proses ? '<div class="card item">' + prgHtml(Date.now() - (last.created || Date.now()), "chat", false) + '</div>' : "") +
-    (rev.map((o) => hasilHtml(o, needOk && o === lastOb)).join("") || `<div class="card">${empty("doc", "Belum ada hasil. Isi formulir di atas untuk membuat permintaan.")}</div>`));
+  const arsip = arsipTs(rqSub); let ia = -1;
+  for (let i = mine.length - 1; i >= 0; i--) if (mine[i].kind === "user") { ia = i; break; }
+  let act = ia >= 0 ? mine.slice(ia) : [];
+  if (act.length && (act[act.length - 1].created || 0) <= arsip && !needOk && !proses) act = [];          // sudah ditandai Selesai
+  const lama = mine.slice(0, act.length ? ia : mine.length).reverse().slice(0, 25);
+  const aktifBox = $("#aktif");
+  if (aktifBox) setHtml(aktifBox, (proses ? '<div class="card item">' + prgHtml(Date.now() - (last.created || Date.now()), "chat", false) + "</div>" : "") +
+    (act.length ? act.slice().reverse().map((o) => hasilHtml(o, needOk && o === lastOb)).join("") + (!proses && !needOk ? '<div class="row"><button class="btn" onclick="arsipkan(\'' + rqSub + '\')">✓ Selesai — pindahkan ke riwayat</button></div>' : "") : (proses ? "" : '<div class="mut" style="padding:6px 2px">Belum ada permintaan. Isi formulir di atas, lalu hasilnya muncul di sini.</div>')));
+  setHtml(box, lama.map((o) => hasilHtml(o, false)).join("") || '<div class="mut" style="padding:6px 2px">Belum ada riwayat. Hasil yang sudah selesai dipakai pindah ke sini.</div>');
 }
 /* ---------- Tutorial singkat tiap bagian (kanan atas) ---------- */
 const TUT = {
-  slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>Riwayat hasil</b> (kanan bawah). Tekan <b>Lihat</b> untuk memeriksa, lalu <b>Unduh PDF</b>."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
-  inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>Riwayat hasil</b> (kanan bawah).", "Tekan <b>Lihat</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
-  bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel Panduan bulanan.", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Riwayat proses terakhir ada di kanan bawah. Tekan Buka untuk melihat hasilnya." },
-  idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar.", "Hasil tampil di bawah. Periksa nama dan fotonya.", "Tekan <b>Unduh</b>. Semua hasil tersimpan di <b>Riwayat hasil</b> sehingga bisa dilihat lagi nanti."], t: "Foto yang gelap atau buram membuat kartu kurang rapi. Pakai foto yang terang." },
-  flyer: { j: "Cara membuat Flyer Lowongan", s: ["Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan).", "Isi <b>8 kolom</b> lowongan. Untuk banyak poin, pisahkan dengan tanda <b>|</b>.", "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.", "Periksa hasilnya di kanan, lalu tekan <b>Unduh</b>.", "Semua hasil tersimpan di <b>Riwayat hasil</b> (kanan bawah) dan bisa dibuka lagi."], t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
+  slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
+  inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>bawah formulir</b>.", "Tekan <b>Review</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>. Setelah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
+  bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel Panduan bulanan.", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di bawah panduan. Yang sudah selesai dipakai pindah ke Riwayat (kanan bawah). Tekan Review untuk melihat hasilnya." },
+  idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar.", "Hasil tampil di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa nama dan fotonya.", "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi kapan saja."], t: "Foto yang gelap atau buram membuat kartu kurang rapi. Pakai foto yang terang." },
+  flyer: { j: "Cara membuat Flyer Lowongan", s: ["Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan).", "Isi <b>8 kolom</b> lowongan. Untuk banyak poin, pisahkan dengan tanda <b>|</b>.", "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.", "Hasil muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh</b>.", "Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi."], t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
 };
 const tutHtml = (k) => { const t = TUT[k], buka = typeof matchMedia === "function" && matchMedia("(max-width:1000px)").matches ? "" : " open"; return '<div class="card tut"><details' + buka + '><summary><span class="ti">?</span>' + t.j + '</summary><ol class="tsteps">' + t.s.map((x, i) => "<li><i>" + (i + 1) + "</i><span>" + x + "</span></li>").join("") + '</ol><div class="ttip">💡 ' + t.t + "</div></details></div>"; };
 const hisCard = (jenis) => '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">terbaru di atas</span></div><div class="hisbody" id="his_' + jenis + '"><div class="skel" style="height:46px"></div></div></div>';
@@ -1065,19 +1071,36 @@ async function hisMuat(jenis) {
   const el = $("#his_" + jenis); if (!el) return;
   try {
     const r = await api("/api/hasil?jenis=" + jenis); if (r.error) throw new Error(r.error);
-    const it = r.items || [];
-    setHtml(el, it.length ? it.map((o) => '<div class="hrow"><div class="fic">' + ic(jenis === "idcard" ? "idc" : "img") + '</div><div class="hb"><b>' + esc(o.judul) + "</b><small>" + wib(o.ts) + (PERAN === "admin" && o.oleh ? " · " + esc(o.oleh.split("@")[0]) : "") + '</small></div><div class="hact"><button class="btn" onclick="hisLihat(\'' + o.id + "','" + jenis + '\')">Lihat</button></div></div>').join("") : '<div class="mut" style="padding:8px 4px">Belum ada hasil. Hasil yang Anda buat akan tersimpan di sini dan bisa dibuka lagi.</div>');
+    const it = (r.items || []).filter((o) => o.id !== HASIL_AKTIF[jenis]);
+    setHtml(el, it.length ? it.map((o) => '<div class="hrow"><div class="fic">' + ic(jenis === "idcard" ? "idc" : "img") + '</div><div class="hb"><b>' + esc(o.judul) + "</b><small>" + wib(o.ts) + (PERAN === "admin" && o.oleh ? " · " + esc(o.oleh.split("@")[0]) : "") + '</small></div><div class="hact"><button class="btn" onclick="hisLihat(\'' + o.id + "','" + jenis + '\')">Review</button></div></div>').join("") : '<div class="mut" style="padding:8px 4px">Belum ada hasil. Hasil yang Anda buat akan tersimpan di sini dan bisa dibuka lagi.</div>');
   } catch (e) { setHtml(el, '<div class="mut" style="padding:8px 4px">Riwayat belum bisa dimuat.</div>'); }
 }
 window.hisLihat = async (id, jenis) => {
   try { toast("Membuka hasil…"); const r = await api("/api/hasil/" + id); if (r.error) return toast(r.error); const jpg = /jpe?g/.test(r.content_type || ""); window.pratinjau("img", "data:" + (jpg ? "image/jpeg" : "image/png") + ";base64," + r.image_b64, r.judul, (jenis + "-" + slugNama(r.judul)) + "." + (jpg ? "jpg" : "png")); } catch (e) { toast("Gagal membuka hasil"); }
 };
+let pjTunda = 0;
 function pjHis() {
-  const el = $("#pj_his"); if (!el || !pjData) return;
+  const el = $("#pj_his"), ak = $("#pj_aktif"); if (!el || !pjData) return;
   const NM = { gaji: "Rekap Gaji", kes: "Rincian BPJS KES", tk: "Rincian BPJS TK", rab: "Rekap RAB", hasil: "Hasil BPJS" }, BK = { gaji: "gaji", kes: "rkes", tk: "rtk", rab: "rab", hasil: "hasil" };
-  const r = pjData.riwayat || [];
-  setHtml(el, r.length ? r.map((j) => { const [t, c] = pjSt(j); return '<div class="hrow"><div class="fic">' + ic("shield") + '</div><div class="hb"><b>' + esc(NM[j.kind] || j.kind) + "</b><small>" + esc(j.label || "") + ' · <span class="pill ' + c + '">' + esc(t) + '</span></small></div><div class="hact">' + (BK[j.kind] ? '<button class="btn" onclick="pjBuka(\'' + BK[j.kind] + '\')">Buka</button>' : "") + "</div></div>"; }).join("") : '<div class="mut" style="padding:8px 4px">Belum ada proses BPJS. Mulai dari langkah 1.</div>');
+  const r = pjData.riwayat || [], arsip = arsipBpjs(), kini = Date.now(), kunci = (j) => j.kind + "|" + j.label + "|" + j.updated;
+  const jalan = (j) => j.status !== "selesai" && j.status !== "gagal";
+  const aktif = r.filter((j) => !arsip.includes(kunci(j)) && (jalan(j) || kini - Number(j.updated || 0) < 15 * 60e3));
+  const lama = r.filter((j) => !aktif.includes(j));
+  const baris = (j, selesai) => { const [t, c] = pjSt(j); return '<div class="hrow"><div class="fic">' + ic("shield") + '</div><div class="hb"><b>' + esc(NM[j.kind] || j.kind) + "</b><small>" + esc(j.label || "") + ' · <span class="pill ' + c + '">' + esc(t) + '</span></small></div><div class="hact">' + (BK[j.kind] ? '<button class="btn" onclick="pjBuka(\'' + BK[j.kind] + '\')">Review</button>' : "") + (selesai && !jalan(j) ? '<button class="btn" data-k="' + esc(kunci(j)) + '" onclick="pjSelesai(this.dataset.k)">✓ Selesai</button>' : "") + "</div></div>"; };
+  if (ak) setHtml(ak, aktif.length ? aktif.map((j) => baris(j, true)).join("") : '<div class="mut" style="padding:6px 2px">Tidak ada proses yang sedang berjalan. Mulai dari panduan di atas.</div>');
+  setHtml(el, lama.length ? lama.map((j) => baris(j, false)).join("") : '<div class="mut" style="padding:8px 4px">Belum ada riwayat. Proses yang sudah selesai dipakai pindah ke sini.</div>');
+  if (r.some((j) => jalan(j) && !arsip.includes(kunci(j))) && !pjTunda) { pjTunda = setTimeout(() => { pjTunda = 0; if ($("#pj_aktif")) pjLoad(); }, 8000); }
 }
+const arsipBaca = () => { try { return JSON.parse(localStorage.getItem("arsipHasil") || "{}"); } catch (e) { return {}; } };
+const arsipTs = (k) => Number(arsipBaca()[k] || 0);
+window.arsipkan = (k) => { const o = arsipBaca(); o[k] = Date.now(); try { localStorage.setItem("arsipHasil", JSON.stringify(o)); } catch (e) {} paintChat(); toast("Dipindahkan ke riwayat"); };
+const HASIL_AKTIF = { idcard: null, flyer: null }, HASIL_MEM = {};
+const kosongHasil = (jenis, teks) => '<div class="kosong">' + ic(jenis === "idcard" ? "idc" : "img") + "<div>" + (teks || (jenis === "idcard" ? "Hasil ID Card muncul di sini" : "Hasil flyer muncul di sini")) + "</div></div>";
+window.hasilMulai = (jenis) => { HASIL_AKTIF[jenis] = null; const el = $(jenis === "idcard" ? "#id_res" : "#fl_res"); if (el) el.innerHTML = kosongHasil(jenis, "Sedang disusun…"); hisMuat(jenis); };
+window.hasilReview = (jenis) => { const m = HASIL_MEM[jenis]; if (m) window.pratinjau("img", m.src, m.judul, m.nama); };
+window.hasilSelesai = (jenis) => { HASIL_AKTIF[jenis] = null; delete HASIL_MEM[jenis]; const el = $(jenis === "idcard" ? "#id_res" : "#fl_res"); if (el) el.innerHTML = kosongHasil(jenis); hisMuat(jenis); toast("Dipindahkan ke riwayat"); };
+const arsipBpjs = () => { try { return JSON.parse(localStorage.getItem("arsipBpjs") || "[]"); } catch (e) { return []; } };
+window.pjSelesai = (k) => { const a = arsipBpjs(); if (!a.includes(k)) a.push(k); try { localStorage.setItem("arsipBpjs", JSON.stringify(a.slice(-200))); } catch (e) {} pjHis(); toast("Dipindahkan ke riwayat"); };
 function rqView() {
   if (rqSub === "bpjs") return bpjsView();
   if (rqSub === "bb") return bbMenuView();
@@ -1093,9 +1116,9 @@ function rqView() {
       ${MENU_REQ.filter((m) => bolehMenu(m.k)).map((m) => `<div class="card item fade click" onclick="bukaSub('${m.k}')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic(m.ikon)}</div><div><div class="nm">${esc(m.nama)}</div><div class="mut">${m.ket(cnt)}</div></div></div></div></div>`).join("")}
     </div>`;
   }
-  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan di kiri. Hasil dan konfirmasi muncul di Riwayat hasil (kanan bawah).</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
-  <div class="duo"><div class="main"><div id="formbox"></div></div>
-  <aside class="aside">${tutHtml(rqSub)}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">hasil dan konfirmasi, terbaru di atas</span></div><div id="hasil" class="grid still hisbody"></div></div></aside></div>`;
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan di kiri. Hasilnya muncul di bawah formulir, lalu pindah ke Riwayat (kanan bawah) setelah selesai dipakai.</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
+  <div class="duo"><div class="main"><div id="formbox"></div><div class="card" id="aktifwrap" style="margin-top:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Hasil terbaru</h3><span class="mut">sedang berjalan atau baru selesai</span></div><div id="aktif" class="grid still"></div></div></div>
+  <aside class="aside">${tutHtml(rqSub)}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">yang sudah selesai dipakai</span></div><div id="hasil" class="grid still hisbody"></div></div></aside></div>`;
 }
 window.bukaSub = async (k) => {
   rqSub = k; chatBuilt = false; render();
@@ -1125,6 +1148,7 @@ function bpjsView() {
       <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
     <div class="pjbar"><div id="pjfill"></div></div><div class="mut" id="pjtxt" style="margin-top:6px">Memuat status…</div>
     <div id="pjsteps"><div class="skel" style="height:44px;margin-top:12px"></div><div class="skel" style="height:44px;margin-top:8px"></div><div class="skel" style="height:44px;margin-top:8px"></div></div></div>
+  <div class="card" id="pj_aktifwrap" style="margin-top:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Sedang diproses / baru selesai</h3><span class="mut">pindah ke riwayat setelah ditekan Selesai</span></div><div class="hisbody" id="pj_aktif" style="max-height:none"></div></div>
   <div class="sec"><h3>Semua menu</h3></div>
   <div class="grid two">
     ${kartu("bb", "doc", "Bukti Bayar BPJS", "Unggah PDF bulk, dipisah per lokasi, lalu lihat dan unduh", "")}
@@ -1801,9 +1825,10 @@ function fileB64(file, maks) {
 const slugNama = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "hasil";
 function setStat(el, teks, jenis) { el.className = "fstat" + (jenis ? " " + jenis : ""); el.textContent = teks || ""; }
 function hasilGambar(el, j, nama) {
-  const jpg = /jpe?g/.test(j.content_type || ""), ext = jpg ? "jpg" : "png";
+  const jpg = /jpe?g/.test(j.content_type || ""), ext = jpg ? "jpg" : "png", jenis = el.id === "fl_res" ? "flyer" : "idcard";
   const src = "data:" + (jpg ? "image/jpeg" : "image/png") + ";base64," + j.image_b64;
-  el.innerHTML = '<img class="hasilimg" alt="Hasil" src="' + src + '"><div class="row" style="margin-top:12px"><a class="btn pri" href="' + src + '" download="' + esc(nama) + "." + ext + '">Unduh ' + ext.toUpperCase() + "</a></div>";
+  HASIL_AKTIF[jenis] = j.riwayat_id || null; HASIL_MEM[jenis] = { src, judul: nama, nama: nama + "." + ext };
+  el.innerHTML = '<div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Hasil terbaru</h3><span class="mut">belum masuk riwayat</span></div><img class="hasilimg" alt="Hasil" src="' + src + '"><div class="row" style="margin-top:12px"><button class="btn" onclick="hasilReview(\'' + jenis + '\')">Review</button><a class="btn pri" href="' + src + '" download="' + esc(nama) + "." + ext + '">Unduh ' + ext.toUpperCase() + '</a><button class="btn" onclick="hasilSelesai(\'' + jenis + '\')">✓ Selesai — pindahkan ke riwayat</button></div>';
 }
 function dropWire(id, label, teks) {
   const inp = $("#" + id), box = inp.parentElement;
@@ -1820,14 +1845,14 @@ function dropWire(id, label, teks) {
 }
 function idView() {
   return '<div data-doc="idcard"><div class="top"><div><h1>ID Card</h1><p>Unggah foto karyawan dan isi data. Kartu disusun otomatis.</p></div></div>' +
-    '<div class="duo doc2"><div class="card main"><div class="form">' +
+    '<div class="duo doc2"><div class="main"><div class="card"><div class="form">' +
     '<label>Foto karyawan (JPG / PNG)<div class="drop"><input type="file" id="id_foto" accept="image/png,image/jpeg"><span>Pilih atau tarik foto ke sini</span></div></label>' +
     '<label>Nomor ID Card<input type="text" id="id_nomor" placeholder="Contoh: 0007/RAYMP/PAM/IX/2026" autocomplete="off"></label>' +
     '<label>Nama karyawan<input type="text" id="id_nama" placeholder="Contoh: Budi Santoso" autocomplete="off"></label>' +
     '<label>Posisi / bagian kerja<input type="text" id="id_posisi" placeholder="Contoh: Security" autocomplete="off"></label>' +
     '<div class="fstat" id="id_st"></div><div class="row"><button class="btn pri" id="id_go">Buat ID Card</button></div></div>' +
     '<div class="mut" style="font-size:12.5px;margin-top:12px">Gunakan foto wajah menghadap depan dengan latar polos (biru) agar hasil rapi.</div></div>' +
-    '<aside class="aside">' + tutHtml("idcard") + '<div class="card" id="id_res"><div class="kosong">' + ic("idc") + "<div>Hasil ID Card muncul di sini</div></div></div>" + hisCard("idcard") + "</aside></div></div>";
+    '<div class="card" id="id_res" style="margin-top:16px">' + kosongHasil("idcard") + '</div></div><aside class="aside">' + tutHtml("idcard") + hisCard("idcard") + "</aside></div></div>";
 }
 function idWire() {
   dropWire("id_foto", "", "Pilih atau tarik foto ke sini"); hisMuat("idcard");
@@ -1837,7 +1862,7 @@ function idWire() {
     if (!nomor_id) return setStat(st, "Nomor ID Card wajib diisi.", "er");
     if (!nama) return setStat(st, "Nama karyawan wajib diisi.", "er");
     if (!posisi) return setStat(st, "Posisi / bagian kerja wajib diisi.", "er");
-    btn.disabled = true; setStat(st, "Menyusun ID Card…");
+    btn.disabled = true; hasilMulai("idcard"); setStat(st, "Menyusun ID Card…");
     try {
       const foto = await fileB64(f, 1600);
       const j = await api("/api/idcard/generate", { nomor_id, nama, posisi, foto_b64: foto.b64, foto_mime: foto.mime });
@@ -1850,12 +1875,12 @@ function idWire() {
 const FLY = [["posisi", "Posisi", "Contoh: Sales Motoris PT Ray Mitra Perkasa"], ["lokasi_penempatan", "Lokasi penempatan", "Contoh: Kabupaten Semarang"], ["kualifikasi", "Kualifikasi", "Wanita | Usia 18-40 tahun | Pendidikan minimal SMA"], ["benefit", "Benefit", "Gaji pokok | Tunjangan makan | BPJS"], ["syarat_tambahan", "Syarat tambahan", "Jujur dan bertanggung jawab | Berdomisili setempat"], ["batas_lamaran", "Batas lamaran", "Contoh: 5 September 2026"], ["kontak", "Kontak", "081234567890"], ["nama_pic", "Nama PIC", "Nama penanggung jawab lowongan"]];
 function flView() {
   return '<div data-doc="flyer"><div class="top"><div><h1>Flyer Lowongan</h1><p>Unggah template PNG kosong dan isi data lowongan. Proses sekitar 30 sampai 80 detik.</p></div></div>' +
-    '<div class="duo doc2"><div class="card main"><div class="form">' +
+    '<div class="duo doc2"><div class="main"><div class="card"><div class="form">' +
     '<label>Template lowongan kosong (PNG)<div class="drop"><input type="file" id="fl_tpl" accept="image/png"><span>Pilih atau tarik template PNG ke sini</span></div></label>' +
     FLY.map(([k, n, ph]) => '<label>' + n + '<input type="text" id="fl_' + k + '" placeholder="' + esc(ph) + '" autocomplete="off"></label>').join("") +
     '<div class="mut" style="font-size:12.5px">Untuk isian yang punya beberapa poin, pisahkan dengan tanda <b>|</b>. Semua kolom wajib diisi.</div>' +
     '<div class="fstat" id="fl_st"></div><div class="row"><button class="btn pri" id="fl_go">Buat flyer</button></div></div></div>' +
-    '<aside class="aside">' + tutHtml("flyer") + '<div class="card" id="fl_res"><div class="kosong">' + ic("img") + "<div>Hasil flyer muncul di sini</div></div></div>" + hisCard("flyer") + "</aside></div></div>";
+    '<div class="card" id="fl_res" style="margin-top:16px">' + kosongHasil("flyer") + '</div></div><aside class="aside">' + tutHtml("flyer") + hisCard("flyer") + "</aside></div></div>";
 }
 function flWire() {
   dropWire("fl_tpl", "", "Pilih atau tarik template PNG ke sini"); hisMuat("flyer");
@@ -1865,7 +1890,7 @@ function flWire() {
     if (f.type !== "image/png") return setStat(st, "Template harus berformat PNG.", "er");
     if (f.size > 8e6) return setStat(st, "Template terlalu besar (maksimal 8 MB).", "er");
     for (const [k, n] of FLY) { d[k] = $("#fl_" + k).value.trim(); if (!d[k]) return setStat(st, n + " wajib diisi.", "er"); }
-    btn.disabled = true; const t0 = Date.now();
+    btn.disabled = true; hasilMulai("flyer"); const t0 = Date.now();
     const tik = setInterval(() => setStat(st, "Membuat flyer… " + Math.round((Date.now() - t0) / 1000) + " detik (biasanya 30–80 detik)"), 1000); setStat(st, "Membuat flyer…");
     try {
       const tpl = await fileB64(f);
