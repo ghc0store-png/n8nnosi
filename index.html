@@ -649,7 +649,7 @@ function stPaint() {
   const el = $("#ulist"); if (!el) return;
   if (!USERS) { setHtml(el, '<div class="card"><div style="padding:12px">' + prgHtml(0, "muat", false) + '</div></div>'); return; }
   setHtml(el, USERS.length ? USERS.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(aksesTeks(u))}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
-    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
+    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stLihat(this.dataset.e)">Lihat password</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
 }
 const stAkun = (email) => (USERS || []).find((u) => u.email === email);
 async function stKirim(body, okMsg) {
@@ -684,6 +684,16 @@ window.stAkses = (email) => {
     if (p.role === "staf" && p.menus.includes("lh") && !p.lhPic) return toast("Pilih PIC untuk Laporan Harian Internal");
     if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic }, "Akses diperbarui")) tutup();
   };
+};
+window.stLihat = async (email) => {
+  try {
+    const r = await api("/api/users/sandi", { email });
+    if (r.error) return toast(r.error);
+    const ada = r.sandi != null;
+    const tutup = modalAkun(`<h4>Password akun</h4><p>${esc(email)}</p>${ada ? `<div style="font-size:22px;font-weight:700;letter-spacing:.5px;padding:14px;border-radius:12px;border:1px solid var(--line);margin:10px 0;word-break:break-all" id="pwv">${esc(r.sandi)}</div><div class="mut" style="font-size:12.5px">Jika pemilik akun mengganti passwordnya sendiri, yang tampil di sini ikut berubah.</div>` : '<div class="mut" style="margin:10px 0">Password akun ini belum tercatat (dibuat sebelum fitur ini ada). Tekan <b>Atur ulang password</b> untuk membuat yang baru; setelah itu bisa dilihat di sini.</div>'}
+      <div class="row" style="margin-top:14px"><button class="btn" id="mn">Tutup</button>${ada ? '<button class="btn pri" id="ps">Salin</button>' : ''}</div>`);
+    if (ada) $("#ps").onclick = () => { try { navigator.clipboard.writeText(r.sandi); toast("Password disalin"); } catch (e) { toast("Tidak bisa menyalin"); } };
+  } catch (e) { toast("Gagal mengambil password"); }
 };
 window.stReset = (email) => {
   const u = stAkun(email); if (!u) return;
