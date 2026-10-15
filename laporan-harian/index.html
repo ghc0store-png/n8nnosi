@@ -203,6 +203,7 @@ button.stat.on{border-color:var(--c,var(--a1));box-shadow:0 0 0 1px var(--c,var(
   .toast{bottom:24px}.top .hi{display:none}
   .stepper .stp{font-size:13px;padding:7px 12px 7px 8px}.cl2{padding:14px 14px 12px 18px}
 }
+@media(max-width:700px){.hm{display:none}}
 @media(max-width:560px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.stat small{font-size:11.5px}.tools input{min-width:0;flex:1 1 100%}.dock{flex-wrap:wrap}}
 /* form Karin */
 .kbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}.kbox .fld{margin:10px 0 0}
@@ -314,7 +315,7 @@ function donut(parts,size,sw,center){const tot=parts.reduce((a,b)=>a+b.v,0)||1,r
 const bar=(p,c)=>`<div class="prog"><i style="width:${p}%;${c?'background:'+c:''}"></i></div>`;
 
 /* ============ SHELL ============ */
-function navItems(){if(DIR())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian']];if(ADM())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian'],['tag','wallet','Tagihan per PIC'],['sync','bolt','Sinkron & akun']];
+function navItems(){if(DIR())return[['dash','home','Dashboard'],['pantau','wallet','Pantau pembayaran'],['lapa','doc','Laporan harian']];if(ADM())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian'],['tag','wallet','Tagihan per PIC'],['sync','bolt','Sinkron & akun']];
  const k=pic(S.user).k;return k==='area'?[['hari','home','Hari ini'],['inv','inv','Invoice'],['lap','doc','Laporan harian'],['bayar','wallet','Pembayaran']]:k==='riki'?[['riki','list','BPJS per lokasi'],['lap','doc','Laporan harian']]:k==='karin'?[['karin','check','Laporan bulanan & absensi'],['karinx','list','Pengecualian'],['lap','doc','Laporan harian']]:[['lap','doc','Rencana kerja harian']]}
 function badgeFor(k){if(ADM())return '';
  if(k==='hari'){const n=inM(S.user,CURM).filter(c=>!done(c,CURM)).length,r=getR(S.user,TODAY),t=(r&&r.status==='sent'?0:1)+(n?1:0);return t?`<em class="cnt">${t}</em>`:`<em class="cnt g">✓</em>`}
@@ -326,11 +327,11 @@ function shell(content){const page=S.page||navItems()[0][0],nm=DIR()?'Direktur':
  ${navItems().map(([k,i,l])=>`<button class="nv ${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${l}</span>${badgeFor(k)}</button>`).join('')}
  <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${DIR()?'D':ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${DIR()?'Direktur':ADM()?'Nosi':esc(S.user)}</b><small>${DIR()?'Hanya melihat':ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
  <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><button class="btn ghost sm" data-act="logout" title="Keluar dari akun" style="margin-right:8px">Keluar</button><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>
- <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}<button data-act="home" title="Kembali ke Pusat Kontrol (menu lain)">${ic('out')}<span>Menu lain</span></button></nav>`}
+ <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Pantau pembayaran','Bayar').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}<button data-act="home" title="Kembali ke Pusat Kontrol (menu lain)">${ic('out')}<span>Menu lain</span></button></nav>`}
 (function(){const ap=()=>document.body.classList.toggle('menuoff',localStorage.getItem('lhmenuoff')==='1');ap();const hp=()=>matchMedia('(max-width:900px)').matches;document.addEventListener('click',e=>{const c=e.target.closest;if(!c)return;if(hp()){if(e.target.closest('.mlg'))document.body.classList.toggle('menuopen');else if(e.target.closest('#menuback,.side .logo,.side .nv'))document.body.classList.remove('menuopen');return}const t=e.target.closest('.side .logo');if(!t)return;localStorage.setItem('lhmenuoff',localStorage.getItem('lhmenuoff')==='1'?'0':'1');ap()})})();
 function render(){const root=$('#root');if(!S.user){root.innerHTML=vLogin();return}
  if(!S.page||!navItems().some(n=>n[0]===S.page))S.page=navItems()[0][0];
- root.innerHTML=shell({hari:vHari,inv:vInv,lap:vLap,bayar:vBayar,dash:vDash,lapa:vLapAdm,tag:vTag,riki:vRiki,karin:vKarin,karinx:vKarinX,sync:vSync}[S.page]())}
+ root.innerHTML=shell({hari:vHari,inv:vInv,lap:vLap,bayar:vBayar,dash:vDash,lapa:vLapAdm,pantau:vPantau,tag:vTag,riki:vRiki,karin:vKarin,karinx:vKarinX,sync:vSync}[S.page]())}
 function head(t,sub,right=''){return `<div class="ph"><div><h1>${t}</h1><p class="sub">${sub}</p></div><div class="row">${right}</div></div>`}
 const monSel=(act='bulan',val=S.bulan,all=false)=>`<select data-act="${act}" style="width:auto">${all?`<option value="all" ${val==='all'?'selected':''}>Semua bulan</option>`:''}${MONTHS.map(m=>`<option value="${m}" ${val===m?'selected':''}>${mLab(m)}</option>`).join('')}</select>`;
 
@@ -497,6 +498,15 @@ function vLapAdm(){const f=S.rf,rows=entriesOf((p,d)=>(!f.pic||p===f.pic)&&d>=f.
  return head('Laporan harian',`${rows.length} kegiatan ditemukan (riwayat dari Google Sheets + website)`,`<button class="btn ghost" data-act="csv">${ic('dl')} Unduh CSV</button>`)+`<div class="tools"><select data-act="rfp"><option value="">Semua PIC</option>${PICS.map(p=>`<option ${f.pic===p.n?'selected':''}>${p.n}</option>`).join('')}</select><input type="date" data-act="rff" value="${f.from}"><input type="date" data-act="rft" value="${f.to}"></div>`+logTable(rows,true)}
 function csv(){const f=S.rf,rows=entriesOf((p,d)=>(!f.pic||p===f.pic)&&d>=f.from&&d<=f.to);const out=[['Tanggal','PIC','Kategori','Kegiatan','Keterangan'],...rows.map(x=>[x.d,x.p,x.e.cat||'',x.e.kegiatan,[...x.e.items,x.e.ket].filter(Boolean).join(' | ')])];
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+out.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\r\n')],{type:'text/csv'}));a.download='laporan-harian.csv';a.click()}
+function vPantau(){const m=S.bulan,P=S.dpic||'',dc=S.dc||'semua',q=S.q.toLowerCase().trim();
+ const L=AREA.filter(a=>!P||a===P).flatMap(a=>inM(a,m)),tg=c=>prevDebt(c,m)>0;
+ const cnt=k=>k==='semua'?L.length:L.filter(c=>k==='tung'?tg(c):catOf(c,m)===k).length;
+ const R=L.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(dc==='semua'||(dc==='tung'?tg(c):catOf(c,m)===dc))).sort((a,b)=>a.owner.localeCompare(b.owner)||a.name.localeCompare(b.name));
+ const CH=[['semua','Semua'],['belum','Belum ditagih'],['ditagih','Menunggu bayar (proses)'],['dibayar','Sudah lunas'],['tung','Ada tunggakan']];
+ return head('Pantau pembayaran',`${L.length} client · ${mLab(m)} · hanya melihat`,`<select data-act="dpic" style="width:auto"><option value="">Semua PIC</option>${AREA.map(a=>`<option ${a===P?'selected':''}>${a}</option>`).join('')}</select>${monSel()}`)+moneyTiles(L,m)+
+ `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">${CH.map(([k,l])=>`<button class="btn sm ${dc===k?'pri':''}" data-act="dc" data-v="${k}">${l} (${cnt(k)})</button>`).join('')}</div>
+ <div class="tools"><input data-act="q" placeholder="Cari client…" value="${esc(S.q)}"></div><div class="card scroll"><table class="tbl"><thead><tr><th>Client</th><th>PIC</th><th class="hm">Langkah</th><th style="text-align:right">Nominal</th><th>Status</th><th style="text-align:right">Tunggakan lalu</th></tr></thead><tbody>
+ ${R.map(c=>{const ss=stepsOf(c),n=ss.filter(x=>flag(c,x.k,m)).length,k=catOf(c,m),o=c.ms[m];return `<tr><td><b>${esc(nice(c.name))}</b></td><td>${esc(c.owner)}</td><td class="hm" style="min-width:110px"><small>${n}/${ss.length}</small>${bar(100*n/ss.length)}</td><td style="text-align:right;white-space:nowrap">${o.nom?rp(o.nom):'—'}</td><td><span class="pill ${CATL[k][1]}">${CATL[k][0]}</span></td><td style="text-align:right;white-space:nowrap">${prevDebt(c,m)?rp(prevDebt(c,m)):'—'}</td></tr>`}).join('')||'<tr><td colspan="6" class="sub" style="padding:18px">Tidak ada client yang cocok.</td></tr>'}</tbody></table></div>`}
 function vTag(){const p=S.fpic,m=S.bulan,L=inM(p,m),q=S.q.toLowerCase().trim(),R=L.filter(c=>!q||c.name.toLowerCase().includes(q));
  return head('Tagihan per PIC',`${pic(p).a} · ${R.length} client · ${mLab(m)}`,`<select data-act="fpic" style="width:auto">${AREA.map(a=>`<option ${a===p?'selected':''}>${a}</option>`).join('')}</select>${monSel()}<button class="btn" data-act="cnew">${ic('plus')} Client baru</button>`)+moneyTiles(L,m)+
  `<div class="tools"><input data-act="q" placeholder="Cari client…" value="${esc(S.q)}"></div><div class="card scroll"><table class="tbl"><thead><tr><th>Client</th><th>PIC admin</th><th>Langkah</th><th style="text-align:right">Nominal</th><th>Status</th><th style="text-align:right">Tunggakan lalu</th></tr></thead><tbody>
@@ -511,14 +521,14 @@ document.addEventListener('input',ev=>{const el=ev.target;
 document.addEventListener('change',async ev=>{const el=ev.target,a=el.dataset.act;
  if(el.dataset.ai!==undefined){const v=el.value.trim();if(!v)return;const e=myRep(false).entries[+el.dataset.ai];if(!e.items.includes(v))e.items.push(v);save();render();setTimeout(()=>document.querySelector(`[data-ai="${el.dataset.ai}"]`)?.focus(),0);return}
  if(el.dataset.bf!==undefined){await addBukti(+el.dataset.bf,el.files);return}
- if(a==='fpic'){S.fpic=el.value;S.q='';render()}else if(a==='bulan'){S.bulan=el.value;render()}else if(a==='lm'){S.lm=el.value;render()}
+ if(a==='fpic'){S.fpic=el.value;S.q='';render()}else if(a==='dpic'){S.dpic=el.value;render()}else if(a==='bulan'){S.bulan=el.value;render()}else if(a==='lm'){S.lm=el.value;render()}
  else if(a==='rfp'){S.rf.pic=el.value;render()}else if(a==='rff'){S.rf.from=el.value;render()}else if(a==='rft'){S.rf.to=el.value;render()}});
 const ACT={
  logout(){try{['tok','cacheS','pil'].forEach(k=>localStorage.removeItem(k))}catch(e){}location.href="../"},
  go(b){S.page=b.dataset.p;S.q='';render();scrollTo(0,0)},
  theme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);render()},
  close(){closeAll()},home(){location.href='../'},csv(){csv()},remind(){toast('Demo: pengingat WhatsApp akan dikirim lewat n8n')},revisi(){const r=myRep(false);if(!r)return;r.status='draft';save();render();toast('Laporan dibuka untuk revisi')},
- filt(b){S.filt=b.dataset.v;render()},only(){S.only=!S.only;render()},
+ filt(b){S.filt=b.dataset.v;render()},dc(b){S.dc=b.dataset.v;render()},only(){S.only=!S.only;render()},
  tg(b){tick(b.dataset.id,b.dataset.k)},cdet(b){cform(b.dataset.id)},cnew(){cform(null)},
  xedit(b){xform(b.dataset.id)},xdel(b){const c=cl(b.dataset.id);c.extra=(c.extra||[]).filter(x=>x.k!==b.dataset.k);Object.values(c.ms).forEach(o=>delete o.chk[b.dataset.k]);save();render();xform(b.dataset.id)},xpre(b){addExtra(b.dataset.id,b.dataset.l)},
  paytg(b){const c=cl(b.dataset.id),m=S.bulan;c.pay[m]=c.pay[m]==='LUNAS'?c.ms[m].nom:'LUNAS';save();render()},
