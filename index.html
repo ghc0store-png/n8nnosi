@@ -1168,13 +1168,14 @@ const TUT = {
   ], c: "Lokasi <b>ATR BPN WONOGIRI PENGEMUDI</b>, tanggal <b>15 Oktober 2026</b>, periode <b>Oktober 2026</b>, nominal <b>6700000</b> → bot menjawab terbilang \"Enam Juta Tujuh Ratus Ribu Rupiah\" → tekan SETUJU → muncul <b>INVOICE</b> dan <b>KWITANSI</b> dalam bentuk PDF.",
   t: "Periksa nominal, terbilang, dan tanggal sebelum menekan SETUJU. Setelah PDF jadi dan terlanjur dikirim ke client, perbaikannya lebih repot." },
   bpjs: { j: "Cara memakai Pusat BPJS", s: [
-    "Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas). Semua langkah di bawahnya mengikuti bulan yang dipilih.",
-    "Kerjakan <b>berurutan 1 sampai 4</b>: <b>1 Rekap Gaji</b>, <b>2 Rincian KES</b>, <b>3 Rincian TK</b>, <b>4 Rekap RAB</b>. Tekan <b>Mulai / lihat</b> pada tiap langkah, lalu tunggu sampai selesai sebelum lanjut.",
-    "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau). Bila ragu, buka langkahnya untuk melihat datanya.",
-    "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk menghitung untung atau rugi per lokasi.",
-    "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) dipakai untuk mengunggah PDF bulk dari BPJS, yang dipisah otomatis per lokasi dan disimpan ke Google Drive."
-  ], c: "Awal bulan: pilih <b>September 2026</b> → jalankan langkah 1 Rekap Gaji sampai 4 Rekap RAB satu per satu → buka <b>5. Hasil BPJS</b> → lihat lokasi mana yang rugi. Lalu unggah PDF bukti bayar TK dan KES lewat menu Bukti Bayar BPJS.",
-  t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Jangan menjalankan langkah yang sama dua kali bersamaan." },
+    "Di panel <b>Panduan bulanan</b> (kiri), pilih <b>bulan</b> dan <b>tahun</b>. Status kelima langkah di bawahnya mengikuti periode itu dan tertulis <b>Belum dijalankan</b> atau <b>Selesai</b>.",
+    "Kerjakan <b>berurutan 1 sampai 4</b>: <b>1 Rekap Gaji</b> (tarik rekap gaji tiap PIC), <b>2 Rincian BPJS KES</b> (tarik tagihan KES), <b>3 Rincian BPJS TK</b> (baca PDF F2 ke Google Sheets), <b>4 Rekap RAB</b> (tarik file RAB bulan ini). Tekan <b>Mulai / lihat</b> di tiap langkah; halaman berikutnya terbuka, lalu tekan <b>Jalankan</b> di sana.",
+    "Tunggu sampai langkah itu <b>Selesai</b>, baru lanjut ke langkah berikutnya. Kembali ke Pusat BPJS dengan tombol <b>Kembali</b>.",
+    "Langkah <b>5 Hasil BPJS</b> baru bisa dibuka setelah langkah 1 sampai 4 selesai (tertulis \"Menunggu langkah 1 samp…\" sebelum itu). Tekan <b>Buka</b> untuk melihat untung atau rugi.",
+    "Kolom tengah <b>Semua menu</b> berisi jalan pintas ke tiap halaman: <b>Bukti Bayar BPJS</b> (unggah PDF bulk), <b>Rincian Bukti Bayar BPJS</b> (KES dan TK), <b>Rekap RAB</b>, <b>Rekap Gaji</b>, dan <b>Hasil BPJS</b>. Tiap kartu menampilkan <b>Terakhir</b> kapan proses selesai.",
+    "<b>Riwayat hasil</b> (kanan bawah) mencatat proses yang pernah jalan. Tekan <b>Review</b> untuk membaca ringkasannya."
+  ], c: "Awal Oktober: pilih <b>September 2026</b> → langkah 1 Rekap Gaji → Mulai / lihat → Jalankan → tunggu Selesai → ulangi untuk langkah 2, 3, dan 4 → langkah 5 berubah jadi <b>Buka</b> → hasilnya mis. \"September 2026: UNTUNG Rp 2.844.937\". Terakhir, unggah PDF bukti bayar lewat menu <b>Bukti Bayar BPJS</b>.",
+  t: "Langkah 1 sampai 4 menyiapkan data di Google Sheets, dan Hasil BPJS menghitung dari data itu. Jadi bila ada file baru di Drive, jalankan ulang langkahnya dulu sebelum Hasil BPJS." },
   idcard: { j: "Cara membuat ID Card", s: [
     "Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru). Tekan kotak foto untuk memilih, atau tarik fotonya ke kotak itu.",
     "Isi <b>Nomor ID Card</b> (contoh 0007/RAYMP/PAM/IX/2026), <b>Nama</b>, dan <b>Posisi</b> (contoh Security).",
@@ -1185,47 +1186,68 @@ const TUT = {
   ], c: "Karyawan pertama: foto Budi, nomor <b>0007/RAYMP/PAM/IX/2026</b>, nama <b>Budi Santoso</b>, posisi <b>Security</b> → Buat ID Card +. Form kembali kosong dengan nomor <b>0008/RAYMP/PAM/IX/2026</b> dan posisi Security: tinggal unggah foto dan isi nama karyawan berikutnya.",
   t: "Foto yang gelap, buram, atau miring membuat kartu kurang rapi. Pastikan wajah jelas dan latar polos." },
   bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: [
-    "Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).",
-    "Di halaman berikutnya, unggah <b>PDF bulk</b> yang diunduh dari BPJS.",
-    "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.",
-    "Hasilnya muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi."
-  ], c: "Bulan ini bukti bayar TK sudah turun dari BPJS dalam satu PDF berisi banyak lokasi → pilih <b>TK</b> → unggah PDF itu → muncul daftar PDF terpisah per lokasi, siap dibuka satu per satu.",
-  t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya." },
+    "Pilih jenis BPJS: <b>Bukti Bayar BPJS TK</b> (Ketenagakerjaan) atau <b>Bukti Bayar BPJS KES</b> (Kesehatan).",
+    "Di halaman berikutnya, unggah satu <b>PDF bulk</b> (Bill Payment) yang diunduh dari BPJS.",
+    "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive, di folder bulan yang sesuai.",
+    "Daftar <b>Berkas per lokasi</b> muncul di halaman yang sama. Tiap lokasi bisa di-<b>Review</b> atau di-<b>Unduh</b>."
+  ], c: "Bukti bayar TK bulan September turun dari BPJS sebagai satu PDF → pilih <b>Bukti Bayar BPJS TK</b> → unggah → muncul 99 PDF terpisah per lokasi (BAPENDA KALTENG, BPS BLORA, dan seterusnya).",
+  t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya, lengkap dengan status Selesai atau Gagal." },
   bbup: { j: "Cara mengunggah PDF bulk", s: [
-    "Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah, atau ketuk kotaknya untuk memilih berkas. Ukuran maksimal sekitar 17 MB.",
-    "Tekan <b>Proses PDF</b>.",
-    "Tunggu. Bilah progres menunjukkan berapa berkas sudah masuk Google Drive. Jangan menutup halaman sebelum selesai.",
-    "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.",
+    "Di kotak <b>Unggah PDF bulk</b>, tarik PDF Bill Payment dari BPJS, atau ketuk kotaknya untuk memilih berkas. Ukuran maksimal sekitar 17 MB.",
+    "Tekan <b>Proses PDF</b> (tombol baru aktif setelah ada berkas). Tunggu sampai kartu unggahan berstatus <b>Selesai</b>.",
+    "Kartu unggahan menjelaskan hasilnya, contoh \"99 blok pembayaran dipisah menjadi 99 PDF; 99 terunggah ke Google Drive\". Bila statusnya <b>Gagal</b>, baca pesannya dan unggah ulang.",
+    "Di bagian <b>Berkas per lokasi</b>, pilih periode (contoh <b>September 2026 (99 lokasi)</b>). Ketik di kotak <b>Cari nama lokasi</b> untuk menyaring.",
+    "Tekan <b>Review</b> untuk melihat PDF satu lokasi, <b>Unduh</b> untuk menyimpannya, <b>Unduh semua (ZIP)</b> untuk semua lokasi sekaligus, atau <b>Buka folder di Drive</b>.",
     "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (kanan bawah)."
-  ], c: "File <b>Bill Payment TK September.pdf</b> (12 MB) → Proses PDF → progres \"23 dari 40 berkas\" → selesai → 40 PDF per lokasi tampil di daftar.",
+  ], c: "Unggah <b>BULK Bill Payment BPJS TK 30 SEPTEMBER.pdf</b> → Proses PDF → Selesai → pilih <b>September 2026</b> → ketik \"BLORA\" → tekan <b>Review</b> pada BPS BLORA → <b>Unduh semua (ZIP)</b> bila ingin semuanya.",
   t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
   rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: [
-    "Pilih jenis BPJS: <b>KES</b> (Kesehatan) atau <b>TK</b> (Ketenagakerjaan).",
-    "Di halaman berikutnya, pilih <b>bulan</b> dan <b>tahun</b>. Data hasil yang sudah rapi langsung tampil di bawah formulir.",
-    "Pakai kotak <b>cari</b> untuk mencari lokasi atau nama, lalu <b>Unduh</b> bila perlu.",
-    "Bila ada file baru di Google Drive, tekan <b>Jalankan</b> untuk menarik data terbaru, lalu tunggu sampai statusnya selesai."
-  ], c: "Pilih <b>KES</b> → bulan <b>September 2026</b> → tabel rincian per lokasi tampil → ketik \"SABO\" di kotak cari untuk menyaring satu lokasi → <b>Unduh</b>.",
-  t: "Data yang tampil adalah tabel rapi dari Google Sheets. Proses sebelumnya tercatat di Riwayat hasil (kanan bawah)." },
+    "Pilih jenis BPJS: <b>Rincian Bukti Bayar BPJS KES</b> (Kesehatan) atau <b>Rincian Bukti Bayar BPJS TK</b> (Ketenagakerjaan).",
+    "Halaman berikutnya adalah <b>Data Hasil</b>: pilih <b>bulan</b> dan <b>tahun</b>, lalu tekan <b>Jalankan</b> untuk menarik data periode itu ke Google Sheets.",
+    "Setelah selesai, rincian peserta per lokasi bisa dilihat, dicari, dan diunduh. Ada tautan <b>Buka Google Sheets</b> di ringkasan hasilnya."
+  ], c: "Pilih <b>Rincian Bukti Bayar BPJS KES</b> → <b>September 2026</b> → Jalankan → ringkasan \"255 lokasi, 3189 peserta, Rp 489.462.434\" → tekan <b>Buka Google Sheets</b> untuk melihat tabelnya.",
+  t: "Ini sama dengan langkah 2 (KES) dan langkah 3 (TK) di Panduan bulanan Pusat BPJS." },
   rdmenu: { j: "Cara memakai menu ini", s: [
-    "Pilih <b>bulan</b> dan <b>tahun</b>. Data hasil yang sudah rapi tampil di bawah formulir.",
-    "Pakai kotak <b>cari</b>, lalu <b>Unduh</b> bila perlu.",
-    "Tekan <b>Jalankan</b> untuk menarik data baru bila ada perubahan."
-  ], c: "Rekap RAB bulan Oktober terlihat kurang satu lokasi → pastikan file RAB-nya sudah ada di Drive → tekan <b>Jalankan</b> dan tunggu sampai Selesai.",
+    "Pilih <b>bulan</b> dan <b>tahun</b>.",
+    "Tekan <b>Jalankan</b> untuk menarik data periode itu ke Google Sheets.",
+    "Lihat ringkasan hasilnya, lalu tekan <b>Buka Google Sheets</b> bila ingin melihat tabelnya."
+  ], c: "Pilih <b>September 2026</b> → Jalankan → tunggu Selesai → Buka Google Sheets.",
   t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
-  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: [
-    "Pilih <b>bulan</b> dan <b>tahun</b>.",
-    "Data rapi muncul di bawah formulir. Pakai kotak <b>cari</b> untuk mencari lokasi atau nama, lalu <b>Unduh</b> bila perlu.",
-    "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai; jangan menekan dua kali.",
-    "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."
-  ], c: "Pilih <b>September 2026</b> → ketik \"SABO\" di kotak cari untuk menyaring satu lokasi → bila ada file baru di Drive, tekan <b>Jalankan</b> dan tunggu tulisan Selesai.",
-  t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
-  bphitung: { j: "Cara melihat Hasil BPJS", s: [
-    "Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.",
-    "Pilih <b>bulan</b> dan <b>tahun</b>.",
-    "Tekan <b>Jalankan</b> untuk menghitung selisih antara tagihan dan pembayaran.",
-    "Untung atau rugi per lokasi muncul di bawah formulir. Proses sebelumnya ada di <b>Riwayat hasil</b> (kanan bawah)."
-  ], c: "Semua langkah 1–4 September sudah hijau → pilih <b>September 2026</b> → Jalankan → lokasi dengan angka minus berarti rugi dan perlu dicek ulang.",
-  t: "Hitungan memakai data yang sudah ada di Sheets. Bila datanya belum terbaru, perbarui langkah 1 sampai 4 dulu." },
+  bp_kes: { j: "Cara memakai Rincian KES", s: [
+    "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
+    "Tekan <b>Jalankan</b>. Sistem menarik tagihan BPJS Kesehatan periode itu dari Google Drive ke Google Sheets. Bilah persen menunjukkan perkiraan prosesnya; jangan menekan Jalankan dua kali.",
+    "Setelah <b>Selesai</b>, ringkasannya tampil di <b>Data hasil</b>: jumlah lokasi, jumlah peserta, dan total tagihan. Tekan <b>Buka Google Sheets</b> untuk melihat tabelnya.",
+    "Baca <b>Catatan</b> di bawahnya bila ada (misalnya tab yang dilewati atau lokasi yang selisih)."
+  ], c: "Pilih <b>September</b>, tahun <b>2026</b> → Jalankan → hasil: \"255 lokasi, 3189 peserta, Rp 489.462.434\".",
+  t: "Hasil juga dikirim ke Telegram admin seperti biasa, dan proses sebelumnya tercatat di Riwayat hasil (kanan bawah)." },
+  bp_tk: { j: "Cara memakai Rincian TK", s: [
+    "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
+    "Tekan <b>Jalankan</b>. Sistem membaca PDF F2 BPJS Ketenagakerjaan dari Google Drive lalu menaruh isinya ke Google Sheets.",
+    "Tunggu sampai <b>Selesai</b>, lalu baca ringkasan di <b>Data hasil</b> dan tekan <b>Buka Google Sheets</b> untuk melihat tabelnya.",
+    "Baca <b>Catatan</b> bila ada, misalnya F2 yang belum terbaca."
+  ], c: "Pilih <b>September</b>, tahun <b>2026</b> → Jalankan → tunggu Selesai → Buka Google Sheets.",
+  t: "Pastikan file F2 periode itu sudah ada di Google Drive sebelum menekan Jalankan." },
+  bp_rab: { j: "Cara memakai Rekap RAB", s: [
+    "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
+    "Tekan <b>Jalankan</b>. Sistem menarik file RAB periode itu dari folder Google Drive RAB 2026 ke <b>REKAP RAB 2026</b> di Google Sheets.",
+    "Tunggu sampai <b>Selesai</b>, lalu baca ringkasan di <b>Data hasil</b>. Tekan <b>Buka Google Sheets</b> untuk melihat rekapnya.",
+    "Bila ada RAB yang belum masuk atau gagal dibaca, itu tertulis di <b>Catatan</b>."
+  ], c: "Pilih <b>September</b>, tahun <b>2026</b> → Jalankan → rekap RAB September terisi di REKAP RAB 2026.",
+  t: "Jalankan lagi bila ada file RAB baru atau perubahan, supaya rekapnya terbaru." },
+  bp_gaji: { j: "Cara memakai Rekap Gaji", s: [
+    "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
+    "Tekan <b>Jalankan</b>. Sistem menarik rekap gaji tiap PIC periode itu ke rekap gaji per bulan di Google Sheets.",
+    "Tunggu sampai <b>Selesai</b>, lalu baca ringkasan di <b>Data hasil</b> dan tekan <b>Buka Google Sheets</b>.",
+    "Bila ada PIC yang belum masuk, itu tertulis di <b>Catatan</b>."
+  ], c: "Pilih <b>September</b>, tahun <b>2026</b> → Jalankan → rekap gaji September terisi.",
+  t: "Ini langkah 1 di Panduan bulanan. Kerjakan lebih dulu sebelum Hasil BPJS." },
+  bp_hasil: { j: "Cara melihat Hasil BPJS", s: [
+    "Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS untuk bulan itu sudah <b>Selesai</b> (Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB). Halaman ini tidak menarik data ulang.",
+    "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>, lalu tekan <b>Jalankan</b>.",
+    "Tunggu sampai <b>Selesai</b>. Ringkasan di <b>Tinjau rekap</b> berisi untung atau rugi per bulan, totalnya, dan catatan.",
+    "Tekan <b>Buka Google Sheets</b> untuk detail per lokasi. Nama di bukti bayar yang tidak ditemukan di sheet gaji dicatat di tab <b>SELISIH KARYAWAN</b>."
+  ], c: "Langkah 1–4 September sudah hijau → pilih <b>September 2026</b> → Jalankan → \"September 2026: UNTUNG Rp 2.844.937\" dan catatan \"652 nama di bukti bayar tidak ditemukan di sheet gaji\".",
+  t: "Bila angkanya aneh, biasanya data langkah 1 sampai 4 belum terbaru. Jalankan ulang langkah yang terkait, baru hitung lagi." },
   flyer: { j: "Cara membuat Flyer Lowongan", s: [
     "Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan lowongan).",
     "Isi <b>8 kolom</b> lowongan: Posisi, Lokasi penempatan, Kualifikasi, Benefit, Syarat tambahan, Batas lamaran, Kontak, dan Nama PIC. Untuk banyak poin dalam satu kolom, pisahkan dengan tanda <b>|</b>.",
@@ -1530,8 +1552,8 @@ async function bbZip() {
 
 /* ---------- Permintaan > BPJS > Rincian KES/TK, Rekap RAB, Rekap Gaji, Hasil (menjalankan workflow n8n yang sama dengan perintah Telegram) ---------- */
 const BP = {
-  rkesM: { kind: "kes", mode: "mentah", ket: "File tagihan BPJS Kesehatan mentah di Google Drive, per lokasi. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
-  rkesH: { kind: "kes", mode: "hasil", ket: "Data rapi hasil tarikan di Google Sheets (rincian peserta per lokasi). Lihat, cari, dan unduh. Tombol Jalankan menarik data baru dari file mentah." },
+  rkesM: { kind: "kes", mode: "mentah", ket: "File tagihan BPJS Kesehatan di Google Drive, per lokasi." },
+  rkesH: { kind: "kes", mode: "hasil", ket: "Data rapi hasil tarikan di Google Sheets (rincian peserta per lokasi). Lihat, cari, dan unduh. Tombol Jalankan menarik data baru dari Google Drive." },
   rtkM: { kind: "tk", mode: "mentah", ket: "File F2 BPJS Ketenagakerjaan mentah (PDF) di Google Drive. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
   rtkH: { kind: "tk", mode: "hasil", ket: "Data rapi hasil bacaan F2 di Google Sheets. Lihat, cari, dan unduh. Tombol Jalankan membaca F2 baru dari Drive ke Sheets." },
   rabM: { kind: "rab", mode: "mentah", ket: "File RAB (spreadsheet) mentah di folder Google Drive RAB 2026. Lihat isinya, unduh, dan cek mana yang belum masuk rekap." },
@@ -1663,7 +1685,7 @@ function bpView() {
       ${mode === "mentah" ? "" : '<button class="btn pri" id="bpgo">Jalankan</button>'}</div>
     ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div>
   <div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
-  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div></div><aside class="aside">${tutHtml(rqSub === "hasil" ? "bphitung" : "bphasil")}${mode === "mentah" ? "" : '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div>'}</aside></div>`;
+  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div></div><aside class="aside">${tutHtml("bp_" + (BP[rqSub].kind || "hasil"))}${mode === "mentah" ? "" : '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div>'}</aside></div>`;
 }
 function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
