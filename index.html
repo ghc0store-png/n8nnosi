@@ -742,13 +742,17 @@ function stView() {
   <label style="margin-top:12px">Password awal (minimal 8 karakter)<input id="up" type="text" placeholder="Atau tekan Buat acak" autocomplete="off"></label>
   <div class="row" style="margin-top:10px"><button class="btn" onclick="$('#up').value=acakPw()">Buat acak</button><button class="btn pri" id="usv" onclick="stSimpan()">Simpan akun</button></div>
   <div class="mut" style="margin-top:8px;font-size:12.5px">Email yang sudah ada akan diperbarui (password dan akses diganti). Berikan email dan password awal ke pekerja, lalu sarankan mereka menggantinya.</div></div>
-  <div class="sec"><h3>Daftar akun</h3></div><div id="ulist" class="grid still"></div>`;
+  <div class="sec"><h3>Daftar akun <span class="mut" id="ucnt" style="font-weight:500;font-size:13px"></span></h3></div><input type="search" id="ucari" placeholder="Cari akun: email, menu, peran, atau nama PIC…" autocomplete="off" value="${esc(stCari)}" style="margin-bottom:10px"><div id="ulist" class="grid still"></div>`;
 }
+let stCari = "";
+document.addEventListener("input", (e) => { if (e.target && e.target.id === "ucari") { stCari = e.target.value; stPaint(); } });
 function stPaint() {
   const el = $("#ulist"); if (!el) return;
   if (!USERS) { setHtml(el, '<div class="card"><div style="padding:12px">' + prgHtml(0, "muat", false) + '</div></div>'); return; }
-  setHtml(el, USERS.length ? USERS.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(aksesTeks(u))}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
-    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stLihat(this.dataset.e)">Lihat password</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">Belum ada akun pekerja.</div></div>');
+  const q = stCari.trim().toLowerCase(), daftar = q ? USERS.filter((u) => (u.email + " " + aksesTeks(u) + " " + (u.active ? "aktif" : "nonaktif")).toLowerCase().includes(q)) : USERS;
+  const cn = $("#ucnt"); if (cn) cn.textContent = q ? "(" + daftar.length + " dari " + USERS.length + ")" : "(" + USERS.length + ")";
+  setHtml(el, daftar.length ? daftar.map((u) => `<div class="card item"><div class="h"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(u.email)}</div><div class="mut">${esc(aksesTeks(u))}</div></div><span class="pill ${u.active ? "ok" : "mut"}">${u.active ? "Aktif" : "Nonaktif"}</span></div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn" data-e="${esc(u.email)}" onclick="stAkses(this.dataset.e)">Ubah akses</button><button class="btn" data-e="${esc(u.email)}" onclick="stLihat(this.dataset.e)">Lihat password</button><button class="btn" data-e="${esc(u.email)}" onclick="stReset(this.dataset.e)">Atur ulang password</button><button class="btn" data-e="${esc(u.email)}" onclick="stAktif(this.dataset.e)">${u.active ? "Nonaktifkan" : "Aktifkan"}</button><button class="btn dg" data-e="${esc(u.email)}" onclick="stHapus(this.dataset.e)">Hapus</button></div></div>`).join("") : '<div class="card"><div class="mut" style="padding:12px">' + (USERS.length ? "Tidak ada akun yang cocok dengan pencarian." : "Belum ada akun pekerja.") + "</div></div>");
 }
 const stAkun = (email) => (USERS || []).find((u) => u.email === email);
 async function stKirim(body, okMsg) {
