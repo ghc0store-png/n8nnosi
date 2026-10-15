@@ -204,6 +204,22 @@ button.stat.on{border-color:var(--c,var(--a1));box-shadow:0 0 0 1px var(--c,var(
   .stepper .stp{font-size:13px;padding:7px 12px 7px 8px}.cl2{padding:14px 14px 12px 18px}
 }
 @media(max-width:560px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.stat small{font-size:11.5px}.tools input{min-width:0;flex:1 1 100%}.dock{flex-wrap:wrap}}
+/* beranda + menu bawah */
+.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:20px;margin-bottom:18px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(124,108,255,.22),rgba(34,211,238,.12));box-shadow:var(--shadow)}
+.hero.done{background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(34,211,238,.08))}
+.hero .hi-ic{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--a1);color:#fff;flex:none}.hero .hi-ic svg{width:24px;height:24px}
+.hero .hb{flex:1;min-width:210px;display:flex;flex-direction:column;gap:3px}.hero .hb small{color:var(--mut);font-weight:600}.hero .hb b{font-size:19px;line-height:1.3}
+.btn.lg{padding:14px 22px;font-size:16px;border-radius:14px}
+.trow{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line)}
+.trow .tn{flex:1;min-width:0}.trow .tn b{display:block;font-size:15.5px}.trow .tn small{color:var(--mut)}.trow .prog{margin-top:7px;height:6px}
+.ringw{position:relative;width:96px;height:96px;flex:none}.ringw b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px}
+.bnav{display:none}
+@media(max-width:900px){.bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--glass);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+ .bnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px;color:var(--mut);font-size:11.5px;font-weight:600;position:relative;background:none;border:0}
+ .bnav button svg{width:22px;height:22px}.bnav button.on{color:var(--ink);background:rgba(124,108,255,.18)}
+ .bnav .cnt{position:absolute;top:2px;right:calc(50% - 24px);font-size:10px;min-width:17px;padding:1px 5px}
+ .wrap main{padding-bottom:96px}.dock{bottom:76px}.toast{bottom:90px}.mlg{display:none}
+ .trow{flex-wrap:wrap}.trow .btn{width:100%}.hero .btn{width:100%}}
 @media print{.side,.top,.dock,.toast{display:none!important}.wrap{margin:0}}
 
 </style>
@@ -279,7 +295,7 @@ const CATL={belum:['Belum ditagih','belum'],ditagih:['Menunggu bayar','ditagih']
 let STATUS_TXT='Memuat…';
 let S={cat:'todo',lim:25,rm:'2026-09',km:'2026-10',rj:'semua',rs:'semua',kf:'semua',user:null,page:null,q:'',only:false,filt:'semua',bulan:CURM,lm:CURM,fpic:'OPAL',rf:{pic:'',from:'2026-01-01',to:TODAY}};
 const ADM=()=>S.user==='ADMIN';
-document.documentElement.dataset.theme=localStorage.getItem('theme')||'dark';
+document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 
 /* ============ CHART ============ */
 function donut(parts,size,sw,center){const tot=parts.reduce((a,b)=>a+b.v,0)||1,r=(size-sw)/2,c=2*Math.PI*r;let off=0;return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--panel2)" stroke-width="${sw}"/>${parts.filter(p=>p.v).map(p=>{const l=c*p.v/tot,o=`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${p.c}" stroke-width="${sw}" stroke-dasharray="${Math.max(l-2,1)} ${c-l+2}" stroke-dashoffset="${-off}" transform="rotate(-90 ${size/2} ${size/2})"/>`;off+=l;return o}).join('')}<text x="50%" y="52%" text-anchor="middle" fill="var(--ink)" font-size="30" font-weight="800">${center}</text><text x="50%" y="68%" text-anchor="middle" fill="var(--mut)" font-size="11">sudah kirim</text></svg>`}
@@ -287,8 +303,9 @@ const bar=(p,c)=>`<div class="prog"><i style="width:${p}%;${c?'background:'+c:''
 
 /* ============ SHELL ============ */
 function navItems(){if(ADM())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian'],['tag','wallet','Tagihan per PIC'],['sync','bolt','Sinkron & akun']];
- const k=pic(S.user).k;return k==='area'?[['inv','inv','Invoice'],['lap','doc','Laporan harian'],['bayar','wallet','Pembayaran']]:k==='riki'?[['riki','list','BPJS per lokasi'],['lap','doc','Laporan harian']]:k==='karin'?[['karin','check','Laporan bulanan & absensi'],['karinx','list','Pengecualian'],['lap','doc','Laporan harian']]:[['lap','doc','Rencana kerja harian']]}
+ const k=pic(S.user).k;return k==='area'?[['hari','home','Hari ini'],['inv','inv','Invoice'],['lap','doc','Laporan harian'],['bayar','wallet','Pembayaran']]:k==='riki'?[['riki','list','BPJS per lokasi'],['lap','doc','Laporan harian']]:k==='karin'?[['karin','check','Laporan bulanan & absensi'],['karinx','list','Pengecualian'],['lap','doc','Laporan harian']]:[['lap','doc','Rencana kerja harian']]}
 function badgeFor(k){if(ADM())return '';
+ if(k==='hari'){const n=inM(S.user,CURM).filter(c=>!done(c,CURM)).length,r=getR(S.user,TODAY),t=(r&&r.status==='sent'?0:1)+(n?1:0);return t?`<em class="cnt">${t}</em>`:`<em class="cnt g">✓</em>`}
  if(k==='inv'){const n=inM(S.user,CURM).filter(c=>!done(c,CURM)).length;return n?`<em class="cnt">${n>99?'99+':n}</em>`:`<em class="cnt g">✓</em>`}
  if(k==='lap'){const r=getR(S.user,TODAY);return r&&r.status==='sent'?`<em class="cnt g">✓</em>`:`<em class="cnt">!</em>`}
  return ''}
@@ -296,16 +313,34 @@ function shell(content){const page=S.page||navItems()[0][0],nm=ADM()?'Nosi':S.us
  return `<div id="menuback"></div><aside class="side"><div class="logo"><i>RM</i><div><b>RAY Workspace</b><small>PT Ray Mitra Perkasa</small></div></div>
  ${navItems().map(([k,i,l])=>`<button class="nv ${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${l}</span>${badgeFor(k)}</button>`).join('')}
  <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${ADM()?'Nosi':esc(S.user)}</b><small>${ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
- <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><button class="btn ghost sm" data-act="logout" title="Keluar dari akun" style="margin-right:8px">Keluar</button><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>`}
+ <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><button class="btn ghost sm" data-act="logout" title="Keluar dari akun" style="margin-right:8px">Keluar</button><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>
+ <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}</nav>`}
 (function(){const ap=()=>document.body.classList.toggle('menuoff',localStorage.getItem('lhmenuoff')==='1');ap();const hp=()=>matchMedia('(max-width:900px)').matches;document.addEventListener('click',e=>{const c=e.target.closest;if(!c)return;if(hp()){if(e.target.closest('.mlg'))document.body.classList.toggle('menuopen');else if(e.target.closest('#menuback,.side .logo,.side .nv'))document.body.classList.remove('menuopen');return}const t=e.target.closest('.side .logo');if(!t)return;localStorage.setItem('lhmenuoff',localStorage.getItem('lhmenuoff')==='1'?'0':'1');ap()})})();
 function render(){const root=$('#root');if(!S.user){root.innerHTML=vLogin();return}
  if(!S.page||!navItems().some(n=>n[0]===S.page))S.page=navItems()[0][0];
- root.innerHTML=shell({inv:vInv,lap:vLap,bayar:vBayar,dash:vDash,lapa:vLapAdm,tag:vTag,riki:vRiki,karin:vKarin,karinx:vKarinX,sync:vSync}[S.page]())}
+ root.innerHTML=shell({hari:vHari,inv:vInv,lap:vLap,bayar:vBayar,dash:vDash,lapa:vLapAdm,tag:vTag,riki:vRiki,karin:vKarin,karinx:vKarinX,sync:vSync}[S.page]())}
 function head(t,sub,right=''){return `<div class="ph"><div><h1>${t}</h1><p class="sub">${sub}</p></div><div class="row">${right}</div></div>`}
 const monSel=(act='bulan',val=S.bulan,all=false)=>`<select data-act="${act}" style="width:auto">${all?`<option value="all" ${val==='all'?'selected':''}>Semua bulan</option>`:''}${MONTHS.map(m=>`<option value="${m}" ${val===m?'selected':''}>${mLab(m)}</option>`).join('')}</select>`;
 
 /* ============ LOGIN ============ */
 function vLogin(){return `<div class="login"><div class="lbox"><div class="logo"><i style="width:54px;height:54px;font-size:20px;border-radius:16px">RM</i><div><b style="font-size:23px">Laporan Harian Internal</b><small style="font-size:13.5px">PT Ray Mitra Perkasa</small></div></div><div class="card" style="margin-top:24px"><b>${esc(LOGIN_MSG)}</b><p class="sub" style="margin:10px 0 16px">Halaman ini memakai akun yang sama dengan Pusat Kontrol.</p><a class="btn" href="../">Ke Pusat Kontrol</a> <button class="btn ghost" data-act="logout">Keluar dari akun</button></div></div></div>`}
+
+/* ============ BERANDA: HARI INI (PIC area) ============ */
+function vHari(){const p=S.user,m=CURM,all=inM(p,m),todo=all.filter(c=>!done(c,m)),rep=getR(p,TODAY),st=rep?.status||'none',n=(rep?.entries||[]).length;
+ const prog=c=>stepsOf(c).filter(s=>flag(c,s.k,m)).length/stepsOf(c).length;
+ const top=[...todo].sort((a,b)=>prog(b)-prog(a)||a.name.localeCompare(b.name)).slice(0,5),sm=sums(all,m),ok=all.length-todo.length,pc=all.length?Math.round(100*ok/all.length):0,R=36,C=2*Math.PI*R;
+ const lapTxt=st==='sent'?`Sudah dikirim pukul ${rep.sentAt.slice(11)} ✓`:n?`${n} kegiatan sudah tercatat, belum dikirim`:'Belum ada kegiatan hari ini';
+ const lapBtn=st==='sent'?'Lihat atau revisi laporan':n?'Lanjutkan dan kirim laporan':'Isi laporan hari ini';
+ return head(`${greet()}, ${esc(nice(p))}`,`${fmt(TODAY)} · inilah yang perlu Anda kerjakan hari ini`)+
+ `<div class="hero ${st==='sent'?'done':''}"><span class="hi-ic">${ic(st==='sent'?'check':'doc')}</span><div class="hb"><small>1 · Laporan hari ini</small><b>${lapTxt}</b><span class="hint">Pekerjaan yang Anda centang masuk otomatis ke laporan.</span></div><button class="btn lg" data-act="go" data-p="lap">${lapBtn}</button></div>
+ <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">2 · Invoice yang perlu dikerjakan <span class="pill ${todo.length?'warn':'ok'}">${todo.length?todo.length+' client':'semua selesai'}</span></h2>${all.length>5?'<button class="btn ghost sm" data-act="go" data-p="inv">Lihat semua →</button>':''}</div>
+  <p class="sub" style="margin:0 0 12px;font-size:13.5px">Tekan tombol ungu pada tiap client untuk menandai langkah berikutnya sudah selesai.</p>
+  ${top.map(c=>{const ss=stepsOf(c),nx=ss.find(x=>!flag(c,x.k,m)),d=ss.filter(x=>flag(c,x.k,m)).length;return `<div class="trow"><div class="tn"><b>${esc(nice(c.name))}</b><small>${d} dari ${ss.length} langkah selesai</small><div class="prog"><i style="width:${100*d/ss.length}%"></i></div></div><button class="btn sm" data-act="tg" data-id="${c.id}" data-k="${nx.k}">✓ ${esc(nx.l)}</button></div>`}).join('')||'<div class="empty"><b>Semua invoice bulan ini sudah lengkap 🎉</b>Tidak ada yang perlu dikerjakan.</div>'}
+ </div>
+ <div class="card"><h2 style="margin:0 0 12px">3 · Ringkasan ${mLab(m)}</h2><div class="row" style="gap:22px;align-items:center;flex-wrap:wrap">
+  <div class="ringw"><svg viewBox="0 0 90 90" width="96" height="96"><circle cx="45" cy="45" r="${R}" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="45" cy="45" r="${R}" fill="none" stroke="var(--ok)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C*pc/100} ${C}" transform="rotate(-90 45 45)"/></svg><b>${pc}%</b></div>
+  <div style="flex:1;min-width:200px"><b style="font-size:16px">${ok} dari ${all.length} client sudah lengkap</b><div class="row" style="gap:8px;margin-top:10px"><span class="pill belum">${sm.nb} belum ditagih</span><span class="pill ditagih">${sm.nt} menunggu bayar</span><span class="pill dibayar">${sm.nd} lunas</span></div></div>
+  <button class="btn ghost" data-act="go" data-p="inv">Buka semua invoice →</button></div></div>`}
 
 /* ============ HALAMAN 1: INVOICE ============ */
 function moneyTiles(L,m,opt){opt=typeof opt==='object'&&opt?opt:{extra:opt||''};const s=sums(L,m),on=opt.cat;
