@@ -10,8 +10,8 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Kontrol RAYMP">
-<title>Pusat Kontrol RAYMP</title>
+<meta name="apple-mobile-web-app-title" content="Kerja Ray">
+<title>Aplikasi Kerja Ray</title>
 <style>
 :root{
   --bg:#f3f4fb;--bg2:#e9ebf8;--surface:#ffffff;--surface2:#f7f8fd;--glass:rgba(255,255,255,.72);
@@ -576,7 +576,7 @@ label{font-size:12.5px}
 <div id="login" class="lg" hidden>
   <div class="lgc fade">
     <div class="logotile"><img src="logo.png" alt="RAY Mitra Perkasa" width="720" height="493"></div>
-    <h1>Pusat Kontrol RAYMP</h1>
+    <h1>Aplikasi Kerja Ray</h1>
     <p>Pantau dan kendalikan semua workflow dari satu tempat.</p>
     <div class="card">
       <label>Email<input id="em" type="email" placeholder="Kosongkan jika admin" autocomplete="username"></label>
@@ -591,7 +591,7 @@ label{font-size:12.5px}
 <div id="app" class="shell" hidden>
   <div id="menuback"></div>
   <aside class="side">
-    <div class="brand"><div class="logotile" title="Tampilkan / sembunyikan menu"><img src="logo.png" alt="RAY Mitra Perkasa" width="720" height="493"></div><div>Pusat Kontrol<small>PT Ray Mitra Perkasa</small></div></div>
+    <div class="brand"><div class="logotile" title="Tampilkan / sembunyikan menu"><img src="logo.png" alt="RAY Mitra Perkasa" width="720" height="493"></div><div>Aplikasi Kerja Ray<small>PT Ray Mitra Perkasa</small></div></div>
     <div id="sidenav"></div>
     <div class="sidefoot">
       <div id="akunSide" class="mut" style="font-size:12.5px;overflow-wrap:anywhere;padding:0 4px"></div>
@@ -601,13 +601,13 @@ label{font-size:12.5px}
     </div>
   </aside>
   <main>
-    <div class="printhead" aria-hidden="true"><img src="logo.png" alt="RAY"><div><div class="pn">PT Ray Mitra Perkasa</div><div class="ps" id="printAlamat">Pusat Kontrol RAYMP</div></div><div class="pd" id="printTgl"></div></div>
+    <div class="printhead" aria-hidden="true"><img src="logo.png" alt="RAY"><div><div class="pn">PT Ray Mitra Perkasa</div><div class="ps" id="printAlamat">Aplikasi Kerja Ray</div></div><div class="pd" id="printTgl"></div></div>
     <div class="akunbar"><div style="display:flex;align-items:center;min-width:0"><div class="logotile mlogo" title="Tampilkan / sembunyikan menu"><img src="logo.png" alt="RAY" width="720" height="493"></div><span id="akunTxt" class="mut"></span></div><button class="btn" onclick="akunMenu()">Akun</button></div>
     <div id="offnote" class="banner" hidden></div>
     <div id="view"><div class="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
   </main>
   <nav class="tabbar" id="tabbar"></nav>
-  <div class="printfoot">PT Ray Mitra Perkasa &bull; Dokumen dicetak dari Pusat Kontrol RAYMP</div>
+  <div class="printfoot">PT Ray Mitra Perkasa &bull; Dokumen dicetak dari Aplikasi Kerja Ray</div>
 </div>
 <div id="layer"></div>
 
@@ -680,7 +680,7 @@ window.pasangApp = async () => {
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), and = /Android/.test(ua);
   const cara = ios ? ["Buka halaman ini di <b>Safari</b>.", "Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).", "Pilih <b>Tambah ke Layar Utama</b>, lalu <b>Tambah</b>."]
     : and ? ["Buka menu Chrome (titik tiga di kanan atas).", "Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>."]
-    : ["Pakai <b>Chrome</b> atau <b>Edge</b>.", "Klik ikon <b>Pasang</b> di sebelah kanan kolom alamat, atau buka menu (titik tiga) lalu <b>Instal Pusat Kontrol RAYMP</b> / <b>Aplikasi &gt; Instal situs ini sebagai aplikasi</b>."];
+    : ["Pakai <b>Chrome</b> atau <b>Edge</b>.", "Klik ikon <b>Pasang</b> di sebelah kanan kolom alamat, atau buka menu (titik tiga) lalu <b>Instal Aplikasi Kerja Ray</b> / <b>Aplikasi &gt; Instal situs ini sebagai aplikasi</b>."];
   $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet"><h4>Pasang aplikasi</h4><p>Aplikasi akan muncul seperti aplikasi biasa dengan ikon sendiri, tanpa kolom alamat browser.</p><ol style="margin:0 0 16px;padding-left:20px;display:grid;gap:6px">${cara.map((c) => `<li>${c}</li>`).join("")}</ol><div class="row"><button class="btn pri" id="mn">Mengerti</button></div></div></div>`;
   const tutup = () => ($("#layer").innerHTML = "");
   $("#mn").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };

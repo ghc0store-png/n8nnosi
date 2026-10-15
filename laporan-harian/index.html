@@ -369,9 +369,9 @@ function badgeFor(k){if(ADM())return '';
 function shell(content){const page=S.page||navItems()[0][0],nm=DIR()?'Direktur':ADM()?'Nosi':S.user;
  return `<div id="menuback"></div><aside class="side"><div class="logo"><i>RM</i><div><b>RAY Workspace</b><small>PT Ray Mitra Perkasa</small></div></div>
  ${navItems().map(([k,i,l])=>`<button class="nv ${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${l}</span>${badgeFor(k)}</button>`).join('')}
- <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${DIR()?'D':ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${DIR()?'Direktur':ADM()?'Nosi':esc(S.user)}</b><small>${DIR()?'Hanya melihat':ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
+ <a class="nv" href="../" title="Kembali ke Aplikasi Kerja Ray" style="margin-top:6px">${ic('out')}<span>Aplikasi Kerja Ray</span></a><div class="sp"></div><div class="me"><div class="av">${DIR()?'D':ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${DIR()?'Direktur':ADM()?'Nosi':esc(S.user)}</b><small>${DIR()?'Hanya melihat':ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
  <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><button class="btn ghost sm" data-act="logout" title="Keluar dari akun" style="margin-right:8px">Keluar</button><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>
- <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Pantau pembayaran','Bayar').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}<button data-act="home" title="Kembali ke Pusat Kontrol (menu lain)">${ic('out')}<span>Menu lain</span></button></nav>`}
+ <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Pantau pembayaran','Bayar').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}<button data-act="home" title="Kembali ke Aplikasi Kerja Ray (menu lain)">${ic('out')}<span>Menu lain</span></button></nav>`}
 (function(){const ap=()=>document.body.classList.toggle('menuoff',localStorage.getItem('lhmenuoff')==='1');ap();const hp=()=>matchMedia('(max-width:900px)').matches;document.addEventListener('click',e=>{const c=e.target.closest;if(!c)return;if(hp()){if(e.target.closest('.mlg'))document.body.classList.toggle('menuopen');else if(e.target.closest('#menuback,.side .logo,.side .nv'))document.body.classList.remove('menuopen');return}const t=e.target.closest('.side .logo');if(!t)return;localStorage.setItem('lhmenuoff',localStorage.getItem('lhmenuoff')==='1'?'0':'1');ap()})})();
 function labelTables(){document.querySelectorAll('.tbl.rc').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(r=>[...r.children].forEach((td,i)=>{if(h[i]&&!td.dataset.l)td.dataset.l=h[i]}))})}
 function render(){const root=$('#root');if(!S.user){root.innerHTML=vLogin();return}
@@ -381,7 +381,7 @@ function head(t,sub,right=''){return `<div class="ph"><div><h1>${t}</h1><p class
 const monSel=(act='bulan',val=S.bulan,all=false)=>`<select data-act="${act}" style="width:auto">${all?`<option value="all" ${val==='all'?'selected':''}>Semua bulan</option>`:''}${MONTHS.map(m=>`<option value="${m}" ${val===m?'selected':''}>${mLab(m)}</option>`).join('')}</select>`;
 
 /* ============ LOGIN ============ */
-function vLogin(){return `<div class="login"><div class="lbox"><div class="logo"><i style="width:54px;height:54px;font-size:20px;border-radius:16px">RM</i><div><b style="font-size:23px">Laporan Harian Internal</b><small style="font-size:13.5px">PT Ray Mitra Perkasa</small></div></div><div class="card" style="margin-top:24px"><b>${esc(LOGIN_MSG)}</b><p class="sub" style="margin:10px 0 16px">Halaman ini memakai akun yang sama dengan Pusat Kontrol.</p><a class="btn" href="../">Ke Pusat Kontrol</a> <button class="btn ghost" data-act="logout">Keluar dari akun</button></div></div></div>`}
+function vLogin(){return `<div class="login"><div class="lbox"><div class="logo"><i style="width:54px;height:54px;font-size:20px;border-radius:16px">RM</i><div><b style="font-size:23px">Laporan Harian Internal</b><small style="font-size:13.5px">PT Ray Mitra Perkasa</small></div></div><div class="card" style="margin-top:24px"><b>${esc(LOGIN_MSG)}</b><p class="sub" style="margin:10px 0 16px">Halaman ini memakai akun yang sama dengan Aplikasi Kerja Ray.</p><a class="btn" href="../">Ke Aplikasi Kerja Ray</a> <button class="btn ghost" data-act="logout">Keluar dari akun</button></div></div></div>`}
 
 /* ============ BERANDA: HARI INI (PIC area) ============ */
 function vHari(){const p=S.user,m=CURM,all=inM(p,m),todo=all.filter(c=>!done(c,m)),rep=getR(p,TODAY),st=rep?.status||'none',n=(rep?.entries||[]).length;
@@ -714,7 +714,7 @@ async function flush(){
  const{ops,cur}=collectOps();if(!ops.length){setStatus('Tersimpan ✓');return}
  saving=true;
  try{for(let i=0;i<ops.length;i+=60){const r=await api('/api/lh/patch',{ops:ops.slice(i,i+60)});VER=r.v}SNAP=cur;setStatus('Tersimpan ✓')}
- catch(e){if(e.code===401){setStatus('Sesi habis — masuk ulang di Pusat Kontrol','warn');toast('Sesi habis. Masuk ulang di Pusat Kontrol.')}else{setStatus('Belum tersimpan — mencoba lagi…','warn');saveT=setTimeout(flush,5000)}}
+ catch(e){if(e.code===401){setStatus('Sesi habis — masuk ulang di Aplikasi Kerja Ray','warn');toast('Sesi habis. Masuk ulang di Aplikasi Kerja Ray.')}else{setStatus('Belum tersimpan — mencoba lagi…','warn');saveT=setTimeout(flush,5000)}}
  finally{saving=false}}
 addEventListener('beforeunload',ev=>{if(SNAP&&collectOps().ops.length){ev.preventDefault();ev.returnValue=''}});
 async function loadState(){
@@ -723,11 +723,11 @@ async function loadState(){
  if(RMONTHS.length&&!RMONTHS.includes(S.rm))S.rm=RMONTHS[RMONTHS.length-1];if(KMONTHS.length&&!KMONTHS.includes(S.km))S.km=KMONTHS[KMONTHS.length-1];
  if(S.user==='ADMIN'){try{PUSAT=await api('/api/lh/pusat')}catch(e){PUSAT=null}}}
 async function boot(){
- if(!TOKEN){LOGIN_MSG='Anda belum masuk. Masuk dulu di Pusat Kontrol, lalu buka menu Laporan Harian Internal.';render();return}
+ if(!TOKEN){LOGIN_MSG='Anda belum masuk. Masuk dulu di Aplikasi Kerja Ray, lalu buka menu Laporan Harian Internal.';render();return}
  try{const me=await api('/api/lh/me');
   if(!me.pic){LOGIN_MSG='Akun Anda belum dihubungkan ke seorang PIC. Minta Admin mengaturnya di menu “Sinkron & akun”.';render();return}
   S.user=me.pic;S.me=me;await loadState();setStatus('Tersimpan ✓');
- }catch(e){S.user=null;LOGIN_MSG=e.code===401?'Sesi habis. Masuk ulang di Pusat Kontrol.':e.code===403?e.message:'Tidak bisa tersambung ke server. Periksa koneksi internet lalu muat ulang halaman.'}
+ }catch(e){S.user=null;LOGIN_MSG=e.code===401?'Sesi habis. Masuk ulang di Aplikasi Kerja Ray.':e.code===403?e.message:'Tidak bisa tersambung ke server. Periksa koneksi internet lalu muat ulang halaman.'}
  render();
  setInterval(async()=>{if(!S.user||saving||document.hidden)return;const a=document.activeElement;if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))return;
   try{const{ops}=collectOps();if(ops.length)return;const v=await api('/api/lh/version');if(v.v!==VER){await loadState();render()}}catch(e){}},20000)}
