@@ -380,7 +380,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .drop img{max-height:150px;max-width:100%;border-radius:10px;display:block}
 .hasilimg{display:block;width:100%;height:auto;border-radius:16px;border:1px solid var(--line);box-shadow:var(--shadow)}
 .doc2{align-items:start}.doc2>.card{padding:18px}
-/* dua kolom: kerja di kiri, tutorial (kanan atas) + riwayat hasil (kanan bawah) */
+/* dua kolom: kerja di kiri, tutorial (kanan atas) + riwayat hasil */
 .duo{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(330px,.9fr);gap:18px;align-items:start}
 .duo>.main{min-width:0}.aside{display:flex;flex-direction:column;gap:16px;min-width:0}.aside>.card{margin:0}
 @media(max-width:1000px){.duo{grid-template-columns:minmax(0,1fr)}}
@@ -509,7 +509,9 @@ main:has(.duo3){max-width:1560px}
   body.menuoff .shell{grid-template-columns:72px 1fr}
 }
 /* ===== Tampilan HP: lebih ringkas ===== */
+.dk{display:inline}
 @media(max-width:620px){
+.dk{display:none}
 body{font-size:14px;line-height:1.45}
 main{padding-left:11px;padding-right:11px;padding-top:calc(10px + env(safe-area-inset-top))}
 .top{gap:8px;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
@@ -1210,7 +1212,7 @@ const TUT = {
     "Pilih <b>Bulan</b> sesuai Rekap Gaji.",
     "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar 30 detik.",
     "Hasil muncul di <b>Hasil terbaru</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>.",
-    "Setelah dipakai, tekan <b>Selesai</b>. Slip pindah ke <b>Riwayat hasil</b> (kanan bawah)."
+    "Setelah dipakai, tekan <b>Selesai</b>. Slip pindah ke <b>Riwayat hasil</b>."
   ], c: { isi: [["Lokasi", "BALAI TEKNIK SABO"], ["Nama", "M. AGUNG RISANTO"], ["Bulan", "JULI 2026"]], hasil: "Muncul berkas <b>Slip Gaji - M. AGUNG RISANTO - JULI 2026.pdf</b>." },
   t: "Pilihan nama atau bulan kosong = lokasi itu belum ada di Rekap Gaji bulan tersebut." },
   inv: { j: "Cara membuat Invoice", u: "Membuat invoice dan kwitansi PDF untuk satu lokasi.", s: [
@@ -1240,12 +1242,12 @@ const TUT = {
   ], c: { isi: [["Posisi", "Sales Motoris"], ["Lokasi penempatan", "Kabupaten Semarang"], ["Kualifikasi", "Wanita | Usia 18-40 tahun | Pendidikan minimal SMA"], ["Batas lamaran", "5 September 2026"]], hasil: "Tiap bagian yang dipisah <b>|</b> tampil sebagai butir terpisah di flyer." },
   t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
   bpjs: { j: "Cara memakai Pusat BPJS", u: "Mengerjakan BPJS tiap bulan secara berurutan, dari rekap sampai hitungan untung/rugi.", s: [
-    "Di <b>Panduan bulanan</b> (kiri), pilih <b>bulan</b> dan <b>tahun</b>.",
+    "Di <b>Panduan bulanan</b>, pilih <b>bulan</b> dan <b>tahun</b>.",
     "Kerjakan berurutan: <b>1 Rekap Gaji</b> → <b>2 Rincian KES</b> → <b>3 Rincian TK</b> → <b>4 Rekap RAB</b>.",
     "Tiap langkah: tekan <b>Mulai / lihat</b>, lalu <b>Jalankan</b> di halaman yang terbuka. Tunggu <b>Selesai</b> sebelum lanjut.",
     "Setelah 1 sampai 4 selesai, langkah <b>5 Hasil BPJS</b> bisa dibuka lewat tombol <b>Buka</b>.",
-    "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) untuk mengunggah PDF bulk dari BPJS.",
-    "Riwayat proses ada di <b>Riwayat hasil</b> (kanan bawah). Tekan <b>Review</b> untuk membaca ringkasannya."
+    "Menu <b>Bukti Bayar BPJS</b> untuk mengunggah PDF bulk dari BPJS.",
+    "Riwayat proses ada di <b>Riwayat hasil</b>. Tekan <b>Review</b> untuk membaca ringkasannya."
   ], c: { isi: [["Periode", "September 2026"], ["Urutan", "1 Rekap Gaji → 2 KES → 3 TK → 4 Rekap RAB → 5 Hasil BPJS"]], hasil: "Hasil BPJS menulis <b>September 2026: UNTUNG Rp 2.844.937</b>." },
   t: "Hasil BPJS menghitung dari data langkah 1 sampai 4. Bila ada file baru di Drive, jalankan ulang langkahnya dulu." },
   bbmenu: { j: "Cara memakai Bukti Bayar BPJS", u: "Memisahkan PDF bulk dari BPJS menjadi satu PDF per lokasi.", s: [
@@ -1254,7 +1256,7 @@ const TUT = {
     "Sistem memisahkannya per lokasi dan menyimpannya di Google Drive.",
     "Daftar <b>Berkas per lokasi</b> muncul. Tiap lokasi bisa di-<b>Review</b> atau di-<b>Unduh</b>."
   ], c: { isi: [["Jenis", "Bukti Bayar BPJS TK"], ["Berkas", "BULK Bill Payment BPJS TK 30 SEPTEMBER.pdf"]], hasil: "Muncul <b>99 PDF</b> terpisah per lokasi (BAPENDA KALTENG, BPS BLORA, dan seterusnya)." },
-  t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah), lengkap dengan status Selesai atau Gagal." },
+  t: "Unggahan sebelumnya tersimpan di Riwayat hasil, lengkap dengan status Selesai atau Gagal." },
   bbup: { j: "Cara mengunggah PDF bulk", u: "Mengunggah PDF bulk, lalu melihat dan mengunduh hasil per lokasi.", s: [
     "Tarik PDF ke kotak <b>Unggah PDF bulk</b>, atau ketuk untuk memilih berkas (maks. sekitar 17 MB).",
     "Tekan <b>Proses PDF</b>, lalu tunggu status <b>Selesai</b>.",
@@ -1283,7 +1285,7 @@ const TUT = {
     "Baca ringkasan di <b>Data hasil</b>: jumlah lokasi, peserta, dan total tagihan.",
     "Tekan <b>Buka Google Sheets</b> untuk melihat tabelnya. Baca <b>Catatan</b> bila ada."
   ], c: { isi: [["Bulan", "September"], ["Tahun", "2026"]], hasil: "<b>255 lokasi, 3189 peserta, Rp 489.462.434</b>." },
-  t: "Hasil juga dikirim ke Telegram admin. Proses sebelumnya ada di Riwayat hasil (kanan bawah)." },
+  t: "Hasil juga dikirim ke Telegram admin. Proses sebelumnya ada di Riwayat hasil." },
   bp_tk: { j: "Cara memakai Rincian TK", u: "Membaca PDF F2 BPJS Ketenagakerjaan dari Google Drive ke Google Sheets.", s: [
     "Pastikan file <b>F2</b> periode itu sudah ada di Google Drive.",
     "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
@@ -1291,7 +1293,7 @@ const TUT = {
     "Baca ringkasan di <b>Data hasil</b>, lalu tekan <b>Buka Google Sheets</b>.",
     "Baca <b>Catatan</b> bila ada."
   ], c: { isi: [["Bulan", "September"], ["Tahun", "2026"]], hasil: "Isi F2 September masuk ke Google Sheets, ringkasannya tampil di <b>Data hasil</b>." },
-  t: "Proses sebelumnya ada di Riwayat hasil (kanan bawah)." },
+  t: "Proses sebelumnya ada di Riwayat hasil." },
   bp_rab: { j: "Cara memakai Rekap RAB", u: "Menarik file RAB bulan itu ke REKAP RAB 2026.", s: [
     "Di <b>Pilih periode</b>, pilih <b>bulan</b> dan isi <b>tahun</b>.",
     "Tekan <b>Jalankan</b>, lalu tunggu <b>Selesai</b>.",
@@ -1383,7 +1385,7 @@ function rqView() {
       ${MENU_REQ.filter((m) => bolehMenu(m.k)).map((m) => `<div class="card item fade click" onclick="bukaSub('${m.k}')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic(m.ikon)}</div><div><div class="nm">${esc(m.nama)}</div><div class="mut">${m.ket(cnt)}</div></div></div></div></div>`).join("")}
     </div>`;
   }
-  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan di kiri. Hasilnya muncul di bawah formulir, lalu pindah ke Riwayat (kanan bawah) setelah selesai dipakai.</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan<span class="dk"> di kiri</span>. Hasilnya muncul di bawah formulir, lalu pindah ke Riwayat<span class="dk"></span> setelah selesai dipakai.</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
   <div class="duo"><div class="main"><div id="formbox"></div><div class="card" id="aktifwrap" style="margin-top:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Hasil terbaru</h3><span class="mut">sedang berjalan atau baru selesai</span></div><div id="aktif" class="grid still"></div></div></div>
   <aside class="aside">${tutHtml(rqSub)}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">yang sudah selesai dipakai</span></div><div id="hasil" class="grid still hisbody"></div></div></aside></div>`;
 }
