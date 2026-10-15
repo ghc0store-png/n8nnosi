@@ -1200,24 +1200,18 @@ const TUT = {
   ], c: "File <b>Bill Payment TK September.pdf</b> (12 MB) → Proses PDF → progres \"23 dari 40 berkas\" → selesai → 40 PDF per lokasi tampil di daftar.",
   t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
   rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: [
-    "Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.",
-    "Pilih <b>Data Mentah</b> untuk melihat file asli dari Google Drive, atau <b>Data Hasil</b> untuk data yang sudah dirapikan di Google Sheets.",
-    "Di halaman berikutnya, pilih <b>bulan</b> dan <b>tahun</b>."
-  ], c: "Ingin mengecek apakah ada file yang belum masuk rekap → pilih <b>KES</b> → <b>Data Mentah</b> → bulan September 2026. Ingin melihat tabel rapi per lokasi → pilih <b>Data Hasil</b>.",
-  t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
+    "Pilih jenis BPJS: <b>KES</b> (Kesehatan) atau <b>TK</b> (Ketenagakerjaan).",
+    "Di halaman berikutnya, pilih <b>bulan</b> dan <b>tahun</b>. Data hasil yang sudah rapi langsung tampil di bawah formulir.",
+    "Pakai kotak <b>cari</b> untuk mencari lokasi atau nama, lalu <b>Unduh</b> bila perlu.",
+    "Bila ada file baru di Google Drive, tekan <b>Jalankan</b> untuk menarik data terbaru, lalu tunggu sampai statusnya selesai."
+  ], c: "Pilih <b>KES</b> → bulan <b>September 2026</b> → tabel rincian per lokasi tampil → ketik \"SABO\" di kotak cari untuk menyaring satu lokasi → <b>Unduh</b>.",
+  t: "Data yang tampil adalah tabel rapi dari Google Sheets. Proses sebelumnya tercatat di Riwayat hasil (kanan bawah)." },
   rdmenu: { j: "Cara memakai menu ini", s: [
-    "Pilih <b>Data Mentah</b> untuk melihat dan mengunduh file asli di Google Drive.",
-    "Pilih <b>Data Hasil</b> untuk data rapi di Google Sheets: bisa dilihat, dicari, dan diunduh.",
-    "Di Data Hasil, tombol <b>Jalankan</b> menarik data baru bila ada perubahan."
-  ], c: "Rekap RAB bulan Oktober terlihat kurang satu lokasi → buka <b>Data Mentah</b> untuk memastikan filenya sudah ada di Drive → bila sudah ada, buka <b>Data Hasil</b> dan tekan <b>Jalankan</b>.",
+    "Pilih <b>bulan</b> dan <b>tahun</b>. Data hasil yang sudah rapi tampil di bawah formulir.",
+    "Pakai kotak <b>cari</b>, lalu <b>Unduh</b> bila perlu.",
+    "Tekan <b>Jalankan</b> untuk menarik data baru bila ada perubahan."
+  ], c: "Rekap RAB bulan Oktober terlihat kurang satu lokasi → pastikan file RAB-nya sudah ada di Drive → tekan <b>Jalankan</b> dan tunggu sampai Selesai.",
   t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
-  bpmentah: { j: "Cara melihat data mentah", s: [
-    "Pilih <b>bulan</b> dan <b>tahun</b>.",
-    "Daftar file asli di Google Drive muncul di bawah formulir.",
-    "Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> untuk menyimpan.",
-    "Periksa bagian <b>belum masuk rekap</b> bila ada: itu file yang sudah ada tetapi belum terhitung."
-  ], c: "Pilih <b>Oktober 2026</b> → muncul 38 file → 2 di antaranya bertanda belum masuk rekap → buka dan periksa, lalu jalankan ulang di Data Hasil.",
-  t: "Halaman ini hanya untuk melihat. Tidak ada tombol Jalankan di sini." },
   bphasil: { j: "Cara melihat dan menjalankan data hasil", s: [
     "Pilih <b>bulan</b> dan <b>tahun</b>.",
     "Data rapi muncul di bawah formulir. Pakai kotak <b>cari</b> untuk mencari lokasi atau nama, lalu <b>Unduh</b> bila perlu.",
@@ -1333,7 +1327,7 @@ let pjData = null, pjTok = 0;
 const pjLabel = () => BLN[bpPer.b] + " " + bpPer.t;
 function bpjsView() {
   const kartu = (id, ikon, judul, ket, rk) => `<div class="card item fade click" onclick="bukaSub('${id}')"><div class="h"><div style="display:flex;gap:12px;align-items:center;min-width:0"><div class="fic">${ic(ikon)}</div><div style="min-width:0"><div class="nm">${judul}</div><div class="mut">${ket}</div>${rk ? `<div class="rk mut" data-rk="${rk}"></div>` : ""}</div></div></div></div>`;
-  return `<div class="top"><div><h1>Pusat BPJS</h1><p>Ikuti langkah bulanan, pantau statusnya, lalu buka data mentah maupun hasilnya</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  return `<div class="top"><div><h1>Pusat BPJS</h1><p>Ikuti langkah bulanan, pantau statusnya, lalu buka datanya yang sudah rapi</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
   <div class="hub hub3"><div class="h-kiri"><div class="card fade pjhero"><div class="h"><div><div class="nm">Panduan bulanan</div><div class="mut">Status diambil otomatis dari proses yang sudah dijalankan untuk periode ini</div></div>
       <div class="bbtools"><select id="pjbln" aria-label="Bulan">${BLN.map((b, i) => `<option value="${i}"${i === bpPer.b ? " selected" : ""}>${b}</option>`).join("")}</select><input id="pjth" type="number" min="2024" max="2040" value="${bpPer.t}" aria-label="Tahun" style="flex:0 1 100px"></div></div>
     <div class="pjbar"><div id="pjfill"></div></div><div class="mut" id="pjtxt" style="margin-top:6px">Memuat status…</div>
@@ -1669,7 +1663,7 @@ function bpView() {
       ${mode === "mentah" ? "" : '<button class="btn pri" id="bpgo">Jalankan</button>'}</div>
     ${mode === "mentah" ? "" : '<div class="mut" style="margin-top:8px">Hasil juga dikirim ke Telegram admin seperti biasa.</div>'}</div>
   <div class="sec"><h3>${mode === "mentah" ? "Data mentah" : mode === "hasil" ? "Data hasil" : "Tinjau rekap"}</h3></div>
-  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div></div><aside class="aside">${tutHtml(rqSub === "hasil" ? "bphitung" : mode === "mentah" ? "bpmentah" : "bphasil")}${mode === "mentah" ? "" : '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div>'}</aside></div>`;
+  <div id="bptinjau" class="card fade"><div class="skel" style="height:22px;width:45%"></div><div class="skel" style="height:64px;margin-top:12px"></div><div class="skel" style="height:140px;margin-top:12px"></div></div></div><aside class="aside">${tutHtml(rqSub === "hasil" ? "bphitung" : "bphasil")}${mode === "mentah" ? "" : '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">proses sebelumnya</span></div><div id="bphasil" class="grid still hisbody"></div></div>'}</aside></div>`;
 }
 function bpInit() {
   bpKind = BP[rqSub].kind; bpData = null; bpBusy = false;
