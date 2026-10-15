@@ -471,7 +471,7 @@ function peranDariToken(t) { try { const p = t.split("."); if (p[0] === "v2" && 
 let PERAN = peranDariToken(token);
 let MENUS = PERAN === "slip" || PERAN === "bpjs" ? [PERAN] : []; // daftar resmi diambil dari server lewat /api/me
 let builtTab = null, pendingTop = "";
-if (PERAN !== "admin") { tab = "rq"; pendingTop = "__first"; }
+tab = "rq"; pendingTop = "__first";   // semua peran mendarat di menu pertamanya (admin: Slip Gaji)
 
 const I = {
   home: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
@@ -516,7 +516,7 @@ function showLogin() { try { localStorage.removeItem("tok"); localStorage.remove
 function enter() {
   $("#login").hidden = true; $("#app").hidden = false; load();
   // peran/email resmi dari server (admin bisa mengubah peran kapan saja)
-  api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; if (PERAN !== "admin") { tab = "rq"; rqSub = ""; pendingTop = "__first"; } chatBuilt = false; render(); } }).catch(() => {});
+  api("/api/me").then((r) => { if (r && r.role) { PERAN = r.role; MENUS = r.menus || []; EMAIL = r.email || ""; $("#pwS").hidden = !EMAIL; { tab = "rq"; rqSub = ""; pendingTop = "__first"; } chatBuilt = false; render(); } }).catch(() => {});
 }
 let EMAIL = "";
 /* ---------- pasang sebagai aplikasi (PWA) ---------- */
@@ -570,7 +570,7 @@ $("#go").onclick = async () => {
   try {
     const r = await fetch(API + "/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: $("#em").value.trim(), password: $("#pw").value }) });
     const d = await r.json();
-    if (d.ok) { token = d.token; PERAN = d.role || "admin"; tab = PERAN === "admin" ? "ov" : "rq"; rqSub = ""; pendingTop = PERAN === "admin" ? "" : "__first"; S = null; try { localStorage.setItem("tok", token); localStorage.removeItem("cacheS"); } catch (e) {} $("#pw").value = ""; enter(); }
+    if (d.ok) { token = d.token; PERAN = d.role || "admin"; tab = "rq"; rqSub = ""; pendingTop = "__first"; S = null; try { localStorage.setItem("tok", token); localStorage.removeItem("cacheS"); } catch (e) {} $("#pw").value = ""; enter(); }
     else { $("#lerr").hidden = false; $("#lerr").textContent = d.error || "Gagal masuk"; }
   } catch (e) { $("#lerr").hidden = false; $("#lerr").textContent = "Tidak bisa menghubungi server."; }
   $("#go").disabled = false;
