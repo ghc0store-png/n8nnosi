@@ -1131,7 +1131,7 @@ function paintChat() {
   for (let i = mine.length - 1; i >= 0; i--) if (mine[i].kind === "user") { ia = i; break; }
   let act = ia >= 0 ? mine.slice(ia) : [];
   if (act.length && (act[act.length - 1].created || 0) <= arsip && !needOk && !proses) act = [];          // sudah ditandai Selesai
-  const lama = mine.slice(0, act.length ? ia : mine.length).reverse().slice(0, 25);
+  const lama = mine.slice(0, act.length ? ia : mine.length).filter((o) => o.kind === "file").reverse().slice(0, 25);   // riwayat hanya berkas hasil, tanpa chat bot
   const aktifBox = $("#aktif");
   if (aktifBox) setHtml(aktifBox, (proses ? '<div class="card item">' + prgHtml(Date.now() - (last.created || Date.now()), "chat", false) + "</div>" : "") +
     (act.length ? act.slice().reverse().map((o) => hasilHtml(o, needOk && o === lastOb)).join("") + (!proses && !needOk ? '<div class="row"><button class="btn" onclick="arsipkan(\'' + rqSub + '\')">✓ Selesai — pindahkan ke riwayat</button></div>' : "") : (proses ? "" : '<div class="mut" style="padding:6px 2px">Belum ada permintaan. Isi formulir di atas, lalu hasilnya muncul di sini.</div>')));
