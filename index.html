@@ -1084,7 +1084,7 @@ const TUT = {
   slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
   inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>bawah formulir</b>.", "Tekan <b>Review</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>. Setelah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
   bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas).", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Tekan Review untuk melihat hasilnya." },
-  idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar.", "Hasil tampil di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa nama dan fotonya.", "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi kapan saja."], t: "Foto yang gelap atau buram membuat kartu kurang rapi. Pakai foto yang terang." },
+  idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar. Untuk banyak karyawan, tekan <b>Buat ID Card +</b>: kartu dibuat, lalu form siap untuk karyawan berikutnya.", "Hasil tampil di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa nama dan fotonya.", "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi kapan saja."], t: "Pada Buat ID Card +, nomor ID naik satu otomatis dan posisi tetap. Foto yang gelap atau buram membuat kartu kurang rapi." },
   bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: ["Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).", "Di halaman berikutnya, unggah <b>PDF bulk</b> dari BPJS.", "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.", "Hasilnya muncul <b>di bawah formulir</b>. Tekan <b>Review</b> untuk melihat atau <b>Unduh</b> per lokasi."], t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya." },
   bbup: { j: "Cara mengunggah PDF bulk", s: ["Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah (maksimal sekitar 17 MB), atau ketuk untuk memilih berkas.", "Tekan <b>Proses PDF</b>.", "Tunggu. Bilah progres menunjukkan berapa file sudah masuk Google Drive.", "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.", "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
   rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: ["Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.", "Pilih <b>Data Mentah</b> untuk melihat file aslinya, atau <b>Data Hasil</b> untuk data yang sudah rapi.", "Pilih <b>bulan</b> dan <b>tahun</b> di halaman berikutnya."], t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
@@ -1897,27 +1897,39 @@ function idView() {
     '<label>Nomor ID Card<input type="text" id="id_nomor" placeholder="Contoh: 0007/RAYMP/PAM/IX/2026" autocomplete="off"></label>' +
     '<label>Nama karyawan<input type="text" id="id_nama" placeholder="Contoh: Budi Santoso" autocomplete="off"></label>' +
     '<label>Posisi / bagian kerja<input type="text" id="id_posisi" placeholder="Contoh: Security" autocomplete="off"></label>' +
-    '<div class="fstat" id="id_st"></div><div class="row"><button class="btn pri" id="id_go">Buat ID Card</button></div></div>' +
+    '<div class="fstat" id="id_st"></div><div class="row"><button class="btn pri" id="id_go">Buat ID Card</button><button class="btn" id="id_go2" title="Buat kartu ini, lalu form disiapkan untuk karyawan berikutnya (nomor naik satu)">Buat ID Card +</button></div></div>' +
     '<div class="mut" style="font-size:12.5px;margin-top:12px">Gunakan foto wajah menghadap depan dengan latar polos (biru) agar hasil rapi.</div></div>' +
     '<div class="card" id="id_res" style="margin-top:16px">' + kosongHasil("idcard") + '</div></div><aside class="aside">' + tutHtml("idcard") + hisCard("idcard") + "</aside></div></div>";
 }
+// nomor ID berikutnya: angka di depan naik satu, panjangnya (nol di depan) dipertahankan
+function nomorBerikut(n) { const m = /^(\d+)(.*)$/s.exec(String(n || "").trim()); if (!m) return n; const d = String(Number(m[1]) + 1).padStart(m[1].length, "0"); return d + m[2]; }
+function idSiapLagi() {
+  const inp = $("#id_foto"); if (inp) { inp.value = ""; inp.dispatchEvent(new Event("change")); }       // kosongkan foto (label dan pratinjau ikut kembali)
+  const nm = $("#id_nama"); if (nm) nm.value = "";
+  const no = $("#id_nomor"); if (no) no.value = nomorBerikut(no.value);
+  if (nm) nm.focus();
+}
 function idWire() {
   dropWire("id_foto", "", "Pilih atau tarik foto ke sini"); hisMuat("idcard");
-  $("#id_go").onclick = async () => {
-    const f = $("#id_foto").files[0], nomor_id = $("#id_nomor").value.trim(), nama = $("#id_nama").value.trim(), posisi = $("#id_posisi").value.trim(), st = $("#id_st"), btn = $("#id_go");
+  const jalan = async (lagi) => {
+    const f = $("#id_foto").files[0], nomor_id = $("#id_nomor").value.trim(), nama = $("#id_nama").value.trim(), posisi = $("#id_posisi").value.trim(), st = $("#id_st"), btn = $("#id_go"), btn2 = $("#id_go2");
     if (!f) return setStat(st, "Pilih foto karyawan dulu.", "er");
     if (!nomor_id) return setStat(st, "Nomor ID Card wajib diisi.", "er");
     if (!nama) return setStat(st, "Nama karyawan wajib diisi.", "er");
     if (!posisi) return setStat(st, "Posisi / bagian kerja wajib diisi.", "er");
-    btn.disabled = true; hasilMulai("idcard"); setStat(st, "Menyusun ID Card…");
+    btn.disabled = btn2.disabled = true; hasilMulai("idcard"); setStat(st, "Menyusun ID Card…");
     try {
       const foto = await fileB64(f, 1600);
       const j = await api("/api/idcard/generate", { nomor_id, nama, posisi, foto_b64: foto.b64, foto_mime: foto.mime });
       if (j.error) throw new Error(j.error);
-      hasilGambar($("#id_res"), j, "idcard-" + slugNama(nama)); setStat(st, "ID Card berhasil dibuat.", "ok"); hisMuat("idcard");
+      hasilGambar($("#id_res"), j, "idcard-" + slugNama(nama)); hisMuat("idcard");
+      if (lagi) { idSiapLagi(); setStat(st, "ID Card " + nama + " berhasil dibuat. Form siap untuk karyawan berikutnya (nomor naik satu, posisi tetap).", "ok"); }
+      else setStat(st, "ID Card berhasil dibuat.", "ok");
     } catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal membuat ID Card", "er"); }
-    finally { btn.disabled = false; }
+    finally { btn.disabled = btn2.disabled = false; }
   };
+  $("#id_go").onclick = () => jalan(false);
+  $("#id_go2").onclick = () => jalan(true);
 }
 const FLY = [["posisi", "Posisi", "Contoh: Sales Motoris PT Ray Mitra Perkasa"], ["lokasi_penempatan", "Lokasi penempatan", "Contoh: Kabupaten Semarang"], ["kualifikasi", "Kualifikasi", "Wanita | Usia 18-40 tahun | Pendidikan minimal SMA"], ["benefit", "Benefit", "Gaji pokok | Tunjangan makan | BPJS"], ["syarat_tambahan", "Syarat tambahan", "Jujur dan bertanggung jawab | Berdomisili setempat"], ["batas_lamaran", "Batas lamaran", "Contoh: 5 September 2026"], ["kontak", "Kontak", "081234567890"], ["nama_pic", "Nama PIC", "Nama penanggung jawab lowongan"]];
 function flView() {
