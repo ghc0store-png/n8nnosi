@@ -568,10 +568,10 @@ I.kas = '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 // Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
-const TABS_ALL = [["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Pengajuan 86", "kas", "Dokumen"],
-  ["lh", "Laporan Harian Internal", "doc", "Dokumen"], ["peng", "Pengeluaran Operasional", "money", "Keuangan"],
+const TABS_ALL = [["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Arsip 86 (Telegram)", "kas", "Dokumen"],
+  ["lh", "Laporan Harian Internal", "doc", "Dokumen"], ["peng", "Pengeluaran Operasional", "money", "Keuangan"], ["a86", "Pengajuan 86", "kas", "Keuangan"],
   ["ov", "Ringkasan", "home", "Sistem"], ["wf", "Workflow", "flow", "Sistem"], ["er", "Eror", "alert", "Sistem"], ["hi", "Riwayat", "clock", "Sistem"], ["st", "Pengaturan", "cog", "Sistem"]];
-const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer", "lh", "peng"];
+const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer", "lh", "peng", "a86"];
 const topOf = () => (tab === "rq" ? (rqSub === "slip" || rqSub === "inv" ? rqSub : rqSub ? "bpjs" : "") : tab);
 const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => MENU_KEYS.includes(t[0]) && MENUS.includes(t[0])));
 
@@ -705,13 +705,14 @@ const MENU_REQ = [
   { k: "idcard", nama: "ID Card", ikon: "idc", ket: () => "Buat ID Card karyawan" },
   { k: "flyer", nama: "Flyer Lowongan", ikon: "img", ket: () => "Buat flyer lowongan kerja" },
   { k: "peng", nama: "Laporan Pengeluaran Operasional", ikon: "money", ket: () => "Ajukan dan setujui pengeluaran" },
+  { k: "a86", nama: "Pengajuan 86", ikon: "kas", ket: () => "Ajukan anggaran dan setujui bertahap" },
   { k: "lh", nama: "Laporan Harian Internal", ikon: "doc", ket: () => "Laporan harian, invoice, dan pembayaran PIC" },
 ];
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
 let USERS = null, stBuilt = false, LHPICS = ["OPAL", "HITA", "ADI", "PAK TOHAR", "ZAHRA", "MIDAN", "DINI", "IFA", "RIKI", "KARIN"];
 const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
-const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? " (PIC: " + u.lhPic + ")" : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "")).join(", ") : "Belum ada menu");
-function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic) {
+const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? " (PIC: " + u.lhPic + ")" : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "") + (k === "a86" && u.a86Peran ? " (" + (A86N[u.a86Peran] || u.a86Peran) + (u.a86Nama ? ": " + u.a86Nama : "") + ")" : "")).join(", ") : "Belum ada menu");
+function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic, a86Peran, a86Nama) {
   const cb = "display:flex;align-items:center;gap:7px;font-weight:500;color:var(--tx);font-size:14px";
   const ip = "width:auto;padding:0;margin:0";
   return `<div id="${pre}box"><div class="mut" style="font-size:12.5px;font-weight:600;margin-bottom:6px">Boleh membuka (menu Permintaan)</div>
@@ -721,11 +722,14 @@ function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic) {
   <select id="${pre}lhp"><option value="">Pilih PIC</option>${(LHPICS || []).map((n) => `<option value="${n}" ${lhPic === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>
   <div id="${pre}pjbox" style="margin-top:12px;display:${menus.includes("peng") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Pengeluaran Operasional: peran dalam alur persetujuan</div>
   <select id="${pre}pjp"><option value="">Pilih peran</option>${Object.entries(PGN).map(([k, n]) => `<option value="${k}" ${pjPeran === k ? "selected" : ""}>${n}</option>`).join("")}</select>
-  <input id="${pre}pjn" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(pjNama || "")}" autocomplete="off"></div></div>`;
+  <input id="${pre}pjn" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(pjNama || "")}" autocomplete="off"></div>
+  <div id="${pre}a86box" style="margin-top:12px;display:${menus.includes("a86") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Pengajuan 86: peran dalam alur persetujuan</div>
+  <select id="${pre}a86p"><option value="">Pilih peran</option>${Object.entries(A86N).map(([k, n]) => `<option value="${k}" ${a86Peran === k ? "selected" : ""}>${n}</option>`).join("")}</select>
+  <input id="${pre}a86n" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(a86Nama || "")}" autocomplete="off"></div></div>`;
 }
 function bacaPilihan(pre) {
   const adm = $("#" + pre + "adm").checked;
-  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim(), lhPic: ($("#" + pre + "lhp") || {}).value || "" };
+  return { role: adm ? "admin" : "staf", menus: [...document.querySelectorAll("." + pre + "m:checked")].map((x) => x.value), pjPeran: ($("#" + pre + "pjp") || {}).value || "", pjNama: (($("#" + pre + "pjn") || {}).value || "").trim(), lhPic: ($("#" + pre + "lhp") || {}).value || "", a86Peran: ($("#" + pre + "a86p") || {}).value || "", a86Nama: (($("#" + pre + "a86n") || {}).value || "").trim() };
 }
 const acakPw = () => { const a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(10)); return [...b].map((x) => a[x % a.length]).join(""); };
 async function stMuat() { try { const r = await api("/api/users"); if (r.users) { USERS = r.users; if (r.lhPics && r.lhPics.length) LHPICS = r.lhPics; stPaint(); } } catch (e) {} }
@@ -756,10 +760,11 @@ window.stSimpan = async () => {
   if (!email) return toast("Isi email dulu");
   if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
   if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
+  if (p.role === "staf" && p.menus.includes("a86") && (!p.a86Peran || !p.a86Nama)) return toast("Pilih peran dan isi nama lengkap untuk Pengajuan 86");
   if (p.role === "staf" && p.menus.includes("lh") && !p.lhPic) return toast("Pilih PIC untuk Laporan Harian Internal");
   if (password.length < 8) return toast("Password awal minimal 8 karakter");
   $("#usv").disabled = true;
-  if (await stKirim({ email, role: p.role, menus: p.menus, password, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; $("#npjp").value = ""; $("#npjn").value = ""; $("#npjbox").style.display = "none"; $("#nlhp").value = ""; $("#nlhbox").style.display = "none"; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
+  if (await stKirim({ email, role: p.role, menus: p.menus, password, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic, a86Peran: p.a86Peran, a86Nama: p.a86Nama }, "Akun disimpan. Berikan email dan password ke pekerja.")) { $("#ue").value = ""; $("#up").value = ""; $("#npjp").value = ""; $("#npjn").value = ""; $("#npjbox").style.display = "none"; $("#nlhp").value = ""; $("#nlhbox").style.display = "none"; document.querySelectorAll(".nm:checked,#nadm").forEach((x) => (x.checked = false)); }
   $("#usv").disabled = false;
 };
 window.stAktif = (email) => { const u = stAkun(email); if (u) stKirim({ email, role: u.role, menus: u.menus, active: !u.active }, u.active ? "Akun dinonaktifkan" : "Akun diaktifkan"); };
@@ -772,12 +777,13 @@ function modalAkun(isi) {
 }
 window.stAkses = (email) => {
   const u = stAkun(email); if (!u) return;
-  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin", u.pjPeran, u.pjNama, u.lhPic)}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
+  const tutup = modalAkun(`<h4>Ubah akses</h4><p>${esc(email)}</p>${pilihMenuHtml("e", u.menus, u.role === "admin", u.pjPeran, u.pjNama, u.lhPic, u.a86Peran, u.a86Nama)}<div class="row" style="margin-top:14px"><button class="btn" id="mn">Batal</button><button class="btn pri" id="ry">Simpan</button></div>`);
   $("#ry").onclick = async () => {
     const p = bacaPilihan("e"); if (p.role === "staf" && !p.menus.length) return toast("Pilih minimal satu menu");
     if (p.role === "staf" && p.menus.includes("peng") && (!p.pjPeran || !p.pjNama)) return toast("Pilih peran dan isi nama lengkap untuk Laporan Pengeluaran Operasional");
+  if (p.role === "staf" && p.menus.includes("a86") && (!p.a86Peran || !p.a86Nama)) return toast("Pilih peran dan isi nama lengkap untuk Pengajuan 86");
     if (p.role === "staf" && p.menus.includes("lh") && !p.lhPic) return toast("Pilih PIC untuk Laporan Harian Internal");
-    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic }, "Akses diperbarui")) tutup();
+    if (await stKirim({ email, role: p.role, menus: p.menus, active: !!u.active, pjPeran: p.pjPeran, pjNama: p.pjNama, lhPic: p.lhPic, a86Peran: p.a86Peran, a86Nama: p.a86Nama }, "Akses diperbarui")) tutup();
   };
 };
 window.stLihat = async (email) => {
@@ -998,8 +1004,8 @@ function chrome() {
   $("#akunTxt").textContent = $("#akunSide").textContent = akunNama(); tombolPasang();
   const er = S ? openErrs().filter((e) => S.now - new Date(e.started) < 864e5).length : 0;
   const aktif = topOf();
-  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i, g], x, arr) => (g && (x === 0 || arr[x - 1][3] !== g) ? `<div class="navgrp">${g}</div>` : "") + `<button class="nav ${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : k === "peng" && pgBadge ? `<span class="cnt">${pgBadge}</span>` : ""}</button>`).join(""));
-  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : k === "peng" && pgBadge ? `<b class="dotc">${pgBadge}</b>` : ""}</button>`).join(""));
+  setHtml($("#sidenav"), tabsBoleh().map(([k, n, i, g], x, arr) => (g && (x === 0 || arr[x - 1][3] !== g) ? `<div class="navgrp">${g}</div>` : "") + `<button class="nav ${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}${n}${k === "er" && er ? `<span class="cnt">${er}</span>` : k === "peng" && pgBadge ? `<span class="cnt">${pgBadge}</span>` : k === "a86" && a86Badge ? `<span class="cnt">${a86Badge}</span>` : ""}</button>`).join(""));
+  setHtml($("#tabbar"), tabsBoleh().map(([k, n, i]) => `<button class="${aktif === k ? "on" : ""}" onclick="go('${k}')">${ic(i)}<span>${n}</span>${k === "er" && er ? `<b class="dotc">${er}</b>` : k === "peng" && pgBadge ? `<b class="dotc">${pgBadge}</b>` : k === "a86" && a86Badge ? `<b class="dotc">${a86Badge}</b>` : ""}</button>`).join(""));
   if (window._navTab !== aktif) { window._navTab = aktif; try { const b = $("#tabbar button.on"); if (b && b.scrollIntoView) b.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} }
   const online = S && !netOff && S.now - S.agentSeen < 45000;
   const a = $("#agentS"); a.className = "pill " + (S ? (online ? "ok" : "er") : "mut"); a.lastChild.textContent = netOff ? "Tidak ada koneksi" : S ? (online ? "Server online" : "Server offline") : "memuat";
@@ -1121,6 +1127,7 @@ function paintChat() {
 }
 /* ---------- Tutorial singkat tiap bagian (kanan atas) ---------- */
 const TUT = {
+  a86: { j: "Cara memakai Pengajuan 86", s: ["<b>Pengaju</b>: tekan <b>Buat pengajuan</b>, isi data, lalu unggah <b>Foto 1 (RAB)</b> dan <b>Foto 2 (Rincian biaya)</b>. Keduanya wajib.", "Pengajuan berjalan: <b>Maker 1</b> → <b>Direktur Operasional</b> → <b>Direktur Utama</b> → <b>Maker (final)</b>.", "Tiap tahap menekan <b>Review</b> untuk memeriksa foto, lalu <b>Setujui</b>, <b>Minta revisi</b>, atau <b>Tolak</b> (catatan wajib).", "Bila diminta revisi, Pengaju menekan <b>Ubah & ajukan ulang</b>. Kodenya tetap sama dan kembali ke tahap yang meminta revisi.", "Setelah Maker (final) menyetujui, status menjadi <b>Menunggu rilis</b>."], t: "Angka merah di menu menunjukkan jumlah pengajuan yang menunggu tindakan Anda." },
   slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
   inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>bawah formulir</b>.", "Tekan <b>Review</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>. Setelah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
   bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas).", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Tekan Review untuk melihat hasilnya." },
@@ -1837,6 +1844,10 @@ function render() {
     if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = tab === "idcard" ? idView() : flView(); builtTab = tab; (tab === "idcard" ? idWire : flWire)(); }
     return;
   }
+  if (tab === "a86") {
+    if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = a86View(); builtTab = tab; a86Wire(); a86Muat(); }
+    return;
+  }
   if (tab === "peng") {
     if (builtTab !== tab || !$("#view [data-doc]")) { $("#view").innerHTML = pgView(); builtTab = tab; pgWire(); pgMuat(); }
     return;
@@ -2075,6 +2086,143 @@ window.agDetail = (id) => {
 };
 
 /* ---------- Pengajuan Pengeluaran: Korlap -> HRD -> Direktur Operasional -> Direktur Utama -> Bendahara ---------- */
+/* ---------- Pengajuan 86 (versi website): Pengaju → Maker 1 → Dir. Operasional → Dir. Utama → Maker (final) → Menunggu rilis ---------- */
+let A86 = null, A86ME = null, a86Filter = "giliran", a86Cari = "", a86Timer = null, a86Badge = 0, a86Salah = "";
+const A86N = { pengaju: "Pengaju", maker: "Maker", dirops: "Direktur Operasional", dirut: "Direktur Utama" };
+const A86_ST = { maker1: ["Menunggu Maker 1", "wa"], dirops: ["Menunggu Dir. Operasional", "wa"], dirut: ["Menunggu Dir. Utama", "wa"], maker2: ["Menunggu Maker (final)", "wa"], rilis: ["Menunggu rilis", "ok"], revisi: ["Perlu revisi", "wa"], ditolak: ["Ditolak", "er"], batal: ["Dibatalkan", "mut"] };
+const A86_ALUR = [["maker1", "Maker 1"], ["dirops", "Dir. Operasional"], ["dirut", "Dir. Utama"], ["maker2", "Maker (final)"], ["rilis", "Menunggu rilis"]];
+const A86_PROSES = ["maker1", "dirops", "dirut", "maker2", "revisi"];
+const A86_AKSI = { ajukan: ["Diajukan", "ok"], ajukan_ulang: ["Diajukan ulang", "ok"], setuju: ["Disetujui", "ok"], siap_rilis: ["Disetujui, menunggu rilis", "ok"], tolak: ["Ditolak", "er"], revisi: ["Diminta revisi", "wa"], batal: ["Dibatalkan", "mut"] };
+const A86_LANJUT = { maker1: "Direktur Operasional", dirops: "Direktur Utama", dirut: "Maker (final)", maker2: "status Menunggu rilis" };
+const a86Pill = (s) => { const [t, k] = A86_ST[s] || [s, "mut"]; return '<span class="pill ' + k + '">' + esc(t) + "</span>"; };
+
+function a86View() {
+  return '<div data-doc="a86"><div class="top"><div><h1>Pengajuan 86</h1><p id="a86_sub">Memuat…</p></div><div class="row"><button class="btn" id="a86_seg">' + ic("retry") + 'Muat ulang</button><button class="btn pri" id="a86_baru" hidden>Buat pengajuan</button></div></div>' +
+    '<div class="duo"><div class="main"><div id="a86_alur"></div><div class="agbar" id="a86_bar"></div><div class="grid" id="a86_list"><div class="sk"></div><div class="sk"></div></div></div><aside class="aside">' + tutHtml("a86") + "</aside></div></div>";
+}
+function a86Wire() {
+  $("#a86_seg").onclick = () => a86Muat(true); $("#a86_baru").onclick = () => a86Form(null);
+  clearInterval(a86Timer); a86Timer = setInterval(() => { if (tab !== "a86") return clearInterval(a86Timer); if (!document.hidden) a86Muat(); }, 30000);
+}
+async function a86Muat(paksa) {
+  try {
+    const me = await api("/api/a86/me"); if (me.error) throw new Error(me.error);
+    const dl = await api("/api/a86/daftar"); if (dl.error) throw new Error(dl.error);
+    A86ME = me; A86 = dl.items; a86Salah = ""; a86Badge = me.perluTindakan || 0; if (paksa) toast("Diperbarui");
+  } catch (e) { if (e.message === "login") return; a86Salah = e.message || "Gagal memuat"; }
+  a86Gambar(); try { chrome(); } catch (e) {}
+}
+async function a86CekBadge() {
+  if (document.hidden || !token || !(PERAN === "admin" || MENUS.includes("a86"))) return;
+  try { const me = await api("/api/a86/me"); if (!me.error && (me.perluTindakan || 0) !== a86Badge) { a86Badge = me.perluTindakan || 0; chrome(); } } catch (e) {}
+}
+setInterval(a86CekBadge, 60000);
+function a86Gambar() {
+  if (!$("#a86_list")) return;
+  if (a86Salah) { $("#a86_sub").textContent = ""; $("#a86_alur").innerHTML = ""; $("#a86_bar").innerHTML = ""; $("#a86_list").innerHTML = '<div class="card"><div class="kosong">' + ic("alert") + "<div>" + esc(a86Salah) + "</div></div></div>"; return; }
+  if (!A86 || !A86ME) return;
+  const peran = A86ME.peran, pj = peran === "pengaju";
+  $("#a86_sub").textContent = "Peran Anda: " + A86ME.label + (A86ME.nama ? " • " + A86ME.nama : "") + (pj ? ". Ajukan anggaran dan pantau persetujuannya. Wajib melampirkan 2 foto: RAB dan rincian biaya." : peran === "admin" ? ". Admin hanya melihat; keputusan diberikan oleh peran masing-masing." : ". Anda memberi keputusan pada pengajuan yang menunggu tahap Anda.");
+  $("#a86_baru").hidden = !pj;
+  const hit = (s) => A86.filter((x) => x.status === s).length;
+  $("#a86_alur").innerHTML = '<div class="agkpi">' + A86_ALUR.map(([k, n]) => '<div class="card k"><b>' + hit(k) + "</b><span>" + (k === "rilis" ? "Menunggu rilis" : "Menunggu " + n) + "</span></div>").join("") + (hit("revisi") ? '<div class="card k"><b>' + hit("revisi") + "</b><span>Perlu revisi</span></div>" : "") + "</div>";
+  const F = [["giliran", pj ? "Perlu revisi saya" : "Perlu tindakan saya", A86.filter((x) => x.giliran).length], ["proses", "Dalam proses", A86.filter((x) => A86_PROSES.includes(x.status)).length], ["rilis", "Menunggu rilis", hit("rilis")], ["tutup", "Ditolak / batal", hit("ditolak") + hit("batal")]];
+  if (peran === "admin") F.shift();
+  if (!F.some((f) => f[0] === a86Filter)) a86Filter = F[0][0];
+  if (!$("#a86_cari")) $("#a86_bar").innerHTML = '<input type="search" id="a86_cari" placeholder="Cari kode, nama, lokasi, atau kategori…" autocomplete="off"><span id="a86_chips" class="row" style="gap:6px;flex-wrap:wrap"></span>';
+  $("#a86_chips").innerHTML = F.map(([k, n, c]) => '<button class="btn' + (a86Filter === k ? " pri" : "") + '" onclick="a86Pilih(\'' + k + '\')">' + n + " (" + c + ")</button>").join("");
+  const cari = a86Cari.toLowerCase();
+  const ok = (x) => (a86Filter === "giliran" && x.giliran) || (a86Filter === "proses" && A86_PROSES.includes(x.status)) || (a86Filter === "rilis" && x.status === "rilis") || (a86Filter === "tutup" && ["ditolak", "batal"].includes(x.status));
+  const daftar = A86.filter((x) => ok(x) && (!cari || [x.kode, x.nama_pemohon, x.lokasi, x.kategori, x.bagian].join(" ").toLowerCase().includes(cari)));
+  $("#a86_list").innerHTML = daftar.map((x) => '<div class="card agrow fade" onclick="a86Detail(' + x.id + ')"' + (x.giliran ? ' style="border-color:var(--acc)"' : "") + '><div class="h"><div><div class="nm">' + esc(x.kategori) + " · " + esc(x.lokasi) + '</div><div class="mut" style="font-size:12.5px">' + esc(x.kode) + " · " + esc(x.nama_pemohon || "") + (x.bagian ? " (" + esc(x.bagian) + ")" : "") + "</div></div>" + a86Pill(x.status) + "</div>" +
+    '<div class="u"><b>' + rp(x.nominal) + "</b> · dibutuhkan " + pgTgl(x.tgl_butuh) + (x.putaran > 1 ? " · revisi ke-" + (x.putaran - 1) : "") + "</div>" + (x.giliran ? '<div class="u" style="color:var(--acc);font-weight:600">' + (pj ? "Perlu Anda revisi" : "Menunggu keputusan Anda") + "</div>" : "") + "</div>").join("") ||
+    '<div class="card"><div class="kosong">' + ic("kas") + "<div>" + (A86.length ? "Tidak ada pengajuan yang cocok" : pj ? "Belum ada pengajuan. Tekan Buat pengajuan." : "Belum ada pengajuan.") + "</div></div></div>";
+}
+window.a86Pilih = (k) => { a86Filter = k; a86Gambar(); };
+document.addEventListener("input", (e) => { if (e.target && e.target.id === "a86_cari") { a86Cari = e.target.value; a86Gambar(); } });
+
+function a86Form(x) {
+  const ubah = !!x, kat = (A86ME && A86ME.kategori) || [], wajib = '<b style="color:var(--er);font-weight:600">wajib</b>';
+  const tutup = pgModal("<h4>" + (ubah ? "Ubah & ajukan ulang" : "Buat Pengajuan 86") + "</h4><p>" + (ubah ? "Perbaiki sesuai catatan. Pengajuan kembali ke tahap yang meminta revisi." : "Wajib melampirkan 2 foto: Foto 1 RAB dan Foto 2 rincian biaya. Setelah dikirim: Maker 1 → Direktur Operasional → Direktur Utama → Maker (final).") + "</p>" +
+    '<div class="form"><div class="two-in"><label>Nama karyawan<input id="af_nama" maxlength="80" value="' + esc(x ? x.nama_pemohon : (A86ME && A86ME.nama) || "") + '"></label><label>Bagian / divisi<input id="af_bag" maxlength="80" placeholder="Contoh: Marketing" value="' + esc(x ? x.bagian : "") + '"></label></div>' +
+    '<div class="two-in"><label>Kategori biaya<input id="af_kat" list="af_katl" maxlength="60" placeholder="Pilih atau ketik" value="' + esc(x ? x.kategori : "") + '"><datalist id="af_katl">' + kat.map((k) => '<option value="' + esc(k) + '">').join("") + '</datalist></label><label>Client / lokasi<input id="af_lok" maxlength="120" placeholder="Contoh: DPU Kota Semarang" value="' + esc(x ? x.lokasi : "") + '"></label></div>' +
+    '<label>Uraian kebutuhan<textarea id="af_ura" rows="3" maxlength="1000" placeholder="Jelaskan untuk apa dana ini">' + esc(x ? x.uraian : "") + "</textarea></label>" +
+    '<div class="two-in"><label>Nominal (Rp)<input id="af_nom" inputmode="numeric" placeholder="350000" value="' + (x ? x.nominal : "") + '"></label><label>Tanggal kebutuhan<input id="af_tgl" type="date" value="' + esc(x ? x.tgl_butuh : "") + '"></label></div>' +
+    '<div class="mut" style="font-size:12.5px;font-weight:600;margin-top:4px">Rekening realisasi</div>' +
+    '<div class="two-in"><label>Nama bank<input id="af_bank" maxlength="40" placeholder="BCA / BRI / Mandiri…" value="' + esc(x ? x.bank : "") + '"></label><label>Nomor rekening<input id="af_rek" inputmode="numeric" maxlength="40" value="' + esc(x ? x.norek : "") + '"></label></div>' +
+    '<label>Atas nama<input id="af_an" maxlength="80" value="' + esc(x ? x.atas_nama : "") + '"></label>' +
+    '<div class="mut" style="font-size:12.5px;font-weight:600;margin-top:4px">Lampiran foto ' + (ubah ? "(kosongkan bila tidak diganti)" : wajib) + "</div>" +
+    '<div class="two-in"><label>Foto 1 — RAB ' + (ubah ? "" : wajib) + '<input id="af_rab" type="file" accept="image/*,application/pdf"></label><label>Foto 2 — Rincian biaya ' + (ubah ? "" : wajib) + '<input id="af_rin" type="file" accept="image/*,application/pdf"></label></div>' +
+    '<div id="af_prev" class="row" style="gap:8px;flex-wrap:wrap"></div>' +
+    '<label>Lampiran tambahan (opsional, maksimal 3 berkas)<input id="af_tam" type="file" accept="image/*,application/pdf" multiple></label></div>' +
+    '<div class="row" style="margin-top:14px"><button class="btn" id="af_batal">Batal</button><button class="btn pri" id="af_kirim">' + (ubah ? "Ajukan ulang" : "Kirim pengajuan") + "</button></div>");
+  $("#af_batal").onclick = tutup;
+  const pratinjau = () => { const box = $("#af_prev"); box.innerHTML = ""; [["af_rab", "RAB"], ["af_rin", "Rincian"]].forEach(([id, lb]) => { const f = $("#" + id).files[0]; if (!f) return; const d = document.createElement("div"); d.style.cssText = "display:flex;gap:8px;align-items:center;font-size:12.5px"; d.innerHTML = (/^image\//.test(f.type) ? '<img style="height:46px;border-radius:8px" src="' + URL.createObjectURL(f) + '">' : ic("doc")) + "<span><b>" + lb + "</b> · " + esc(f.name) + "</span>"; box.appendChild(d); }); };
+  $("#af_rab").onchange = pratinjau; $("#af_rin").onchange = pratinjau;
+  $("#af_kirim").onclick = async () => {
+    const b = $("#af_kirim"), kembali = () => { b.disabled = false; b.textContent = ubah ? "Ajukan ulang" : "Kirim pengajuan"; };
+    b.disabled = true; b.textContent = "Mengirim…";
+    try {
+      const fr = $("#af_rab").files[0], fi = $("#af_rin").files[0];
+      if (!ubah && !fr) { toast("Foto 1 (RAB) wajib diunggah"); return kembali(); }
+      if (!ubah && !fi) { toast("Foto 2 (Rincian biaya) wajib diunggah"); return kembali(); }
+      const body = { nama_karyawan: $("#af_nama").value, bagian: $("#af_bag").value, kategori: $("#af_kat").value, lokasi: $("#af_lok").value, uraian: $("#af_ura").value, nominal: String($("#af_nom").value).replace(/[^0-9]/g, ""), tgl_butuh: $("#af_tgl").value, bank: $("#af_bank").value, norek: $("#af_rek").value, atas_nama: $("#af_an").value, tambahan: [] };
+      if (fr) body.rab = await pgBacaBerkas(fr);
+      if (fi) body.rincian = await pgBacaBerkas(fi);
+      for (const f of [...$("#af_tam").files].slice(0, 3)) body.tambahan.push(await pgBacaBerkas(f));
+      if (ubah) body.id = x.id;
+      const r = await api(ubah ? "/api/a86/ubah" : "/api/a86/ajukan", body);
+      if (r.error) { toast(r.error); return kembali(); }
+      tutup(); toast(ubah ? "Diajukan ulang" : "Pengajuan terkirim ke Maker 1"); a86Muat();
+    } catch (e) { if (e.message !== "login") toast(e.message || "Gagal mengirim"); kembali(); }
+  };
+}
+window.a86BukaFile = async (id, nama) => {
+  try {
+    const f = await api("/api/a86/file?id=" + id); if (f.error) return toast(f.error);
+    if (/^image\//.test(f.mime)) return window.pratinjau("img", "data:" + f.mime + ";base64," + f.data, nama, f.nama || nama);
+    const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    window.pratinjau("pdf", URL.createObjectURL(new Blob([u8], { type: f.mime })), nama, f.nama || nama);
+  } catch (e) { if (e.message !== "login") toast("Gagal membuka berkas"); }
+};
+window.a86Detail = async (id) => {
+  let x; try { x = await api("/api/a86/detail?id=" + id); } catch (e) { return; }
+  if (x.error) return toast(x.error);
+  const peran = A86ME && A86ME.peran;
+  const tl = x.log.map((l) => { const [t, k] = A86_AKSI[l.aksi] || [l.aksi, "mut"]; return '<div class="t"><i class="' + k + '"></i><div><b>' + esc(t) + "</b> · " + esc(l.nama || l.email) + ' <span class="mut">(' + esc(A86N[l.peran] || l.peran) + ')</span><div class="mut" style="font-size:12.5px">' + pgWaktu(l.ts) + "</div>" + (l.memo ? '<div style="font-size:13.5px;margin-top:2px">' + esc(l.memo) + "</div>" : "") + "</div></div>"; }).join("");
+  const terbaru = (jenis) => (x.files || []).filter((f) => f.jenis === jenis).sort((a, b) => b.id - a.id)[0];
+  const berkas = (judul, f) => f ? '<div class="row" style="gap:8px;align-items:center;margin:4px 0"><b style="min-width:150px">' + judul + '</b><span class="mut" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(f.nama) + '</span><button class="btn" onclick="a86BukaFile(' + f.id + ",'" + esc(f.nama).replace(/'/g, "") + "')\">Review</button></div>" : '<div class="mut" style="margin:4px 0">' + judul + ": belum ada</div>";
+  const tam = (x.files || []).filter((f) => f.jenis === "tambahan").map((f) => berkas("Tambahan", f)).join("");
+  const lama = (x.files || []).filter((f) => (f.jenis === "rab" || f.jenis === "rincian") && f.id !== (terbaru(f.jenis) || {}).id).length;
+  let aksi = "";
+  if (x.giliran && peran !== "pengaju" && peran !== "admin") {
+    aksi = '<div class="form" style="margin-top:12px"><label>Catatan (wajib bila menolak atau meminta revisi)<textarea id="aa_memo" rows="2" maxlength="600"></textarea></label></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn pri" onclick="a86Aksi(' + x.id + ",'setuju','" + x.status + '\')">' + (x.status === "maker2" ? "Setujui — Menunggu rilis" : "Setujui & teruskan ke " + A86_LANJUT[x.status]) + '</button><button class="btn" onclick="a86Aksi(' + x.id + ",'revisi','" + x.status + '\')">Minta revisi</button><button class="btn dg" onclick="a86Aksi(' + x.id + ",'tolak','" + x.status + "')\">Tolak</button></div>";
+  } else if (peran === "pengaju") {
+    if (x.status === "revisi") aksi = '<div class="row" style="margin-top:12px"><button class="btn pri" onclick="a86Ubah(' + x.id + ')">Ubah & ajukan ulang</button><button class="btn dg" onclick="a86Batal(' + x.id + ')">Batalkan pengajuan</button></div>';
+    else if (A86_PROSES.includes(x.status)) aksi = '<div class="row" style="margin-top:12px"><button class="btn dg" onclick="a86Batal(' + x.id + ')">Batalkan pengajuan</button></div>';
+  }
+  window._a86X = x;
+  const tutup = pgModal("<h4>" + esc(x.kategori) + " · " + esc(x.lokasi) + "</h4><p>" + esc(x.kode) + " · " + a86Pill(x.status) + " · <b>" + rp(x.nominal) + "</b></p>" +
+    '<div class="form" style="gap:6px;margin:6px 0 10px"><div><b>' + esc(x.nama_pemohon) + "</b> (" + esc(x.bagian) + ')</div><div class="mut">Dibutuhkan ' + pgTgl(x.tgl_butuh) + (x.putaran > 1 ? " · diajukan ulang " + (x.putaran - 1) + "×" : "") + "</div><div>" + esc(x.uraian) + "</div>" +
+    '<div class="mut">Rekening realisasi: ' + esc(x.bank) + " · " + esc(x.norek) + " a.n. " + esc(x.atas_nama) + "</div></div>" +
+    '<div class="mut" style="font-size:12.5px;font-weight:600">Lampiran</div>' + berkas("Foto 1 — RAB", terbaru("rab")) + berkas("Foto 2 — Rincian biaya", terbaru("rincian")) + tam + (lama ? '<div class="mut" style="font-size:12px">' + lama + " berkas versi sebelumnya tersimpan.</div>" : "") +
+    '<div class="agtl" style="margin-top:10px">' + tl + "</div>" + aksi + '<div class="row" style="margin-top:12px"><button class="btn" id="mn">Tutup</button></div>');
+  $("#mn").onclick = tutup;
+};
+window.a86Aksi = async (id, aksi, status) => {
+  const memo = ($("#aa_memo") || {}).value || "";
+  if ((aksi === "tolak" || aksi === "revisi") && !memo.trim()) return toast(aksi === "tolak" ? "Tulis alasan penolakan" : "Tulis bagian yang harus direvisi");
+  const kata = { setuju: status === "maker2" ? "Setujui pengajuan ini? Statusnya menjadi Menunggu rilis." : "Setujui dan teruskan ke " + A86_LANJUT[status] + "?", tolak: "Tolak pengajuan ini? Pengaju harus membuat pengajuan baru.", revisi: "Kembalikan ke Pengaju untuk direvisi? Setelah diperbaiki, pengajuan kembali ke tahap Anda." }[aksi];
+  ask(aksi === "setuju" ? "Setujui pengajuan?" : aksi === "tolak" ? "Tolak pengajuan?" : "Minta revisi?", kata, aksi === "setuju" ? "Setujui" : aksi === "tolak" ? "Tolak" : "Minta revisi", aksi === "tolak", async () => {
+    try { const r = await api("/api/a86/aksi", { id, aksi, memo }); if (r.error) { toast(r.error); a86Muat(); return; } $("#layer").innerHTML = ""; toast(aksi === "setuju" ? (r.status === "rilis" ? "Disetujui: Menunggu rilis" : "Disetujui, diteruskan") : aksi === "tolak" ? "Pengajuan ditolak" : "Dikembalikan ke Pengaju untuk revisi"); a86Muat(); }
+    catch (e) { if (e.message !== "login") toast("Gagal menyimpan keputusan"); }
+  });
+};
+window.a86Ubah = (id) => { const x = window._a86X; if (x && x.id === id) a86Form(x); };
+window.a86Batal = (id) => ask("Batalkan pengajuan?", "Pengajuan dibatalkan dan tidak diproses lagi.", "Batalkan", true, async () => {
+  try { const r = await api("/api/a86/batal", { id }); if (r.error) { toast(r.error); a86Muat(); return; } $("#layer").innerHTML = ""; toast("Pengajuan dibatalkan"); a86Muat(); } catch (e) { if (e.message !== "login") toast("Gagal membatalkan"); }
+});
+
 let PG = null, PGME = null, pgFilter = "giliran", pgCari = "", pgTimer = null, pgBadge = 0, pgSalah = "";
 const PGN = { korlap: "Korlap", hrd: "HRD", dirops: "Direktur Operasional", dirut: "Direktur Utama", bendahara: "Bendahara" };
 const PG_ST = { hrd: ["Menunggu HRD", "wa"], dirops: ["Menunggu Dir. Operasional", "wa"], dirut: ["Menunggu Dir. Utama", "wa"], bendahara: ["Menunggu pembayaran", "wa"], revisi: ["Perlu revisi", "wa"], dibayar: ["Dibayar", "ok"], ditolak: ["Ditolak", "er"], batal: ["Dibatalkan", "mut"] };
@@ -2242,6 +2390,7 @@ window.pgBatal = (id) => ask("Batalkan pengajuan?", "Pengajuan dibatalkan dan ti
   document.addEventListener("click", (e) => { if (!e.target.closest) return; if (hp()) { if (e.target.closest(".mlogo")) document.body.classList.toggle("menuopen"); else if (e.target.closest("#menuback,.side .brand .logotile,.side .nav")) document.body.classList.remove("menuopen"); return; } const t = e.target.closest(".brand .logotile"); if (!t) return; localStorage.setItem("menuoff", localStorage.getItem("menuoff") === "1" ? "0" : "1"); ap(); });
 })();
 document.addEventListener("change", (e) => { const t0 = e.target; if (t0 && t0.matches && t0.matches('input[type=checkbox][value="lh"]')) { const bx0 = t0.closest("[id$=box]"), lb = bx0 && bx0.querySelector("[id$=lhbox]"); if (lb) lb.style.display = t0.checked ? "grid" : "none"; }
+  const ta = e.target; if (ta && ta.matches && ta.matches('input[type=checkbox][value="a86"]')) { const bxa = ta.closest("[id$=box]"), ab = bxa && bxa.querySelector("[id$=a86box]"); if (ab) ab.style.display = ta.checked ? "grid" : "none"; }
   const t = e.target; if (t && t.matches && t.matches('input[type=checkbox][value="peng"]')) { const bx = t.closest("[id$=box]"), pj = bx && bx.querySelector("[id$=pjbox]"); if (pj) pj.style.display = t.checked ? "grid" : "none"; } });
 </script>
 <script>
