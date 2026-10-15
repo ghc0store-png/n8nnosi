@@ -305,7 +305,8 @@ const CATL={belum:['Belum ditagih','belum'],ditagih:['Menunggu bayar','ditagih']
 /* ============ STATE ============ */
 let STATUS_TXT='Memuat…';
 let S={cat:'todo',lim:25,rm:'2026-09',km:'2026-10',rj:'semua',rs:'semua',kf:'semua',user:null,page:null,q:'',only:false,filt:'semua',bulan:CURM,lm:CURM,fpic:'OPAL',rf:{pic:'',from:'2026-01-01',to:TODAY}};
-const ADM=()=>S.user==='ADMIN';
+const DIR=()=>S.user==='DIREKTUR';
+const ADM=()=>S.user==='ADMIN'||DIR();
 document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 
 /* ============ CHART ============ */
@@ -313,17 +314,17 @@ function donut(parts,size,sw,center){const tot=parts.reduce((a,b)=>a+b.v,0)||1,r
 const bar=(p,c)=>`<div class="prog"><i style="width:${p}%;${c?'background:'+c:''}"></i></div>`;
 
 /* ============ SHELL ============ */
-function navItems(){if(ADM())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian'],['tag','wallet','Tagihan per PIC'],['sync','bolt','Sinkron & akun']];
+function navItems(){if(DIR())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian']];if(ADM())return[['dash','home','Dashboard'],['lapa','doc','Laporan harian'],['tag','wallet','Tagihan per PIC'],['sync','bolt','Sinkron & akun']];
  const k=pic(S.user).k;return k==='area'?[['hari','home','Hari ini'],['inv','inv','Invoice'],['lap','doc','Laporan harian'],['bayar','wallet','Pembayaran']]:k==='riki'?[['riki','list','BPJS per lokasi'],['lap','doc','Laporan harian']]:k==='karin'?[['karin','check','Laporan bulanan & absensi'],['karinx','list','Pengecualian'],['lap','doc','Laporan harian']]:[['lap','doc','Rencana kerja harian']]}
 function badgeFor(k){if(ADM())return '';
  if(k==='hari'){const n=inM(S.user,CURM).filter(c=>!done(c,CURM)).length,r=getR(S.user,TODAY),t=(r&&r.status==='sent'?0:1)+(n?1:0);return t?`<em class="cnt">${t}</em>`:`<em class="cnt g">✓</em>`}
  if(k==='inv'){const n=inM(S.user,CURM).filter(c=>!done(c,CURM)).length;return n?`<em class="cnt">${n>99?'99+':n}</em>`:`<em class="cnt g">✓</em>`}
  if(k==='lap'){const r=getR(S.user,TODAY);return r&&r.status==='sent'?`<em class="cnt g">✓</em>`:`<em class="cnt">!</em>`}
  return ''}
-function shell(content){const page=S.page||navItems()[0][0],nm=ADM()?'Nosi':S.user;
+function shell(content){const page=S.page||navItems()[0][0],nm=DIR()?'Direktur':ADM()?'Nosi':S.user;
  return `<div id="menuback"></div><aside class="side"><div class="logo"><i>RM</i><div><b>RAY Workspace</b><small>PT Ray Mitra Perkasa</small></div></div>
  ${navItems().map(([k,i,l])=>`<button class="nv ${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${l}</span>${badgeFor(k)}</button>`).join('')}
- <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${ADM()?'Nosi':esc(S.user)}</b><small>${ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
+ <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${DIR()?'D':ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${DIR()?'Direktur':ADM()?'Nosi':esc(S.user)}</b><small>${DIR()?'Hanya melihat':ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
  <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><button class="btn ghost sm" data-act="logout" title="Keluar dari akun" style="margin-right:8px">Keluar</button><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>
  <nav class="bnav">${navItems().map(([k,i,l])=>`<button class="${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${esc(l.replace('Laporan bulanan & absensi','Bulanan').replace('Rencana kerja harian','Rencana').replace('Tagihan per PIC','Tagihan').replace('Sinkron & akun','Akun').replace('BPJS per lokasi','BPJS'))}</span>${badgeFor(k)}</button>`).join('')}</nav>`}
 (function(){const ap=()=>document.body.classList.toggle('menuoff',localStorage.getItem('lhmenuoff')==='1');ap();const hp=()=>matchMedia('(max-width:900px)').matches;document.addEventListener('click',e=>{const c=e.target.closest;if(!c)return;if(hp()){if(e.target.closest('.mlg'))document.body.classList.toggle('menuopen');else if(e.target.closest('#menuback,.side .logo,.side .nv'))document.body.classList.remove('menuopen');return}const t=e.target.closest('.side .logo');if(!t)return;localStorage.setItem('lhmenuoff',localStorage.getItem('lhmenuoff')==='1'?'0':'1');ap()})})();
@@ -480,7 +481,7 @@ function vDash(){const m=S.bulan;
  const feed=entriesOf((p,d)=>d>=TODAY).slice(0,7),al=dashAlerts(m);
  const mx=Math.max(1,...AREA.map(p=>{const s=sums(inM(p,m),m);return s.belum+s.ditagih+s.dibayar}));
  return head('Dashboard',`${AREA.length} PIC invoice · ${A.length} client · ${mLab(m)}`,monSel())+
- `<div class="g g3"><div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Perlu perhatian</h2><button class="btn sm" data-act="remind">${ic('bell')} Ingatkan lewat WhatsApp</button></div><div style="margin-top:12px">${al.map(([c,t,d])=>`<div class="al ${c}">${ic(c==='info'?'info':'alert')}<div><b>${esc(t)}</b><small>${esc(d)}</small></div></div>`).join('')||`<div class="al ok">${ic('check')}<div><b>Semua aman</b><small>Tidak ada yang perlu ditindaklanjuti saat ini.</small></div></div>`}</div></div>
+ `<div class="g g3"><div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Perlu perhatian</h2>${DIR()?'':`<button class="btn sm" data-act="remind">${ic('bell')} Ingatkan lewat WhatsApp</button>`}</div><div style="margin-top:12px">${al.map(([c,t,d])=>`<div class="al ${c}">${ic(c==='info'?'info':'alert')}<div><b>${esc(t)}</b><small>${esc(d)}</small></div></div>`).join('')||`<div class="al ok">${ic('check')}<div><b>Semua aman</b><small>Tidak ada yang perlu ditindaklanjuti saat ini.</small></div></div>`}</div></div>
   <div class="card"><h2>Laporan hari ini</h2><div class="row" style="gap:20px;flex-wrap:nowrap">${donut([{v:c('sent'),c:'#34d399'},{v:c('draft'),c:'#fbbf24'},{v:c('none'),c:'#fb7185'}],130,16,`${c('sent')}/${PICS.length}`)}<div class="legend" style="flex-direction:column;margin:0;gap:7px"><span style="--c:#34d399">Sudah kirim · ${c('sent')}</span><span style="--c:#fbbf24">Draft · ${c('draft')}</span><span style="--c:#fb7185">Belum isi · ${c('none')}</span></div></div></div></div>`+
  moneyTiles(A,m)+
  `<div class="card"><h2>Posisi tagihan per PIC</h2><p class="sub" style="margin:-6px 0 14px;font-size:13px">Panjang batang = total tagihan ${mLab(m)}. <span style="color:var(--bad)">Merah</span> belum ditagih · <span style="color:var(--info)">biru</span> menunggu bayar · <span style="color:var(--ok)">hijau</span> lunas.</p>
@@ -488,7 +489,7 @@ function vDash(){const m=S.bulan;
   <div style="width:${Math.max(w,2)}%"><div class="sbar"><i style="width:${tot?100*s.belum/tot:0}%;background:var(--bad)"></i><i style="width:${tot?100*s.ditagih/tot:0}%;background:var(--info)"></i><i style="width:${tot?100*s.dibayar/tot:0}%;background:var(--ok)"></i></div></div>
   <div class="hint" style="margin-top:5px">Belum ditagih <b>${rpS(s.belum)||'—'}</b> · Menunggu bayar <b>${s.ditagih?rpS(s.ditagih):'—'}</b> · Lunas <b>${s.dibayar?rpS(s.dibayar):'—'}</b></div></div>`}).join('')}</div>
  ${teamCard(m)}
- ${pusatCard()}
+ ${DIR()?'':pusatCard()}
  <div class="g g2"><div class="card"><h2>Status per orang hari ini</h2><div class="g" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px">${st.map(({p,s,r})=>`<div class="who" style="padding:10px 12px"><div class="av" style="width:32px;height:32px;font-size:13px">${p.n[0]}</div><div style="flex:1;min-width:0"><b style="font-size:13.5px">${p.n}</b><small>${r?`${r.entries.length} kegiatan`:'belum ada isian'}</small></div><span class="pill ${s}">${s==='sent'?'✓':s==='draft'?'…':'!'}</span></div>`).join('')}</div></div>
   <div class="card"><h2>Hari terisi — ${mLab(m)}</h2><p class="sub" style="margin-bottom:10px;font-size:13px">dari ${days.length} hari kerja berjalan · ${PICS.length-kep.length} akun belum punya riwayat</p>${kep.map(x=>`<div style="margin-bottom:10px"><div class="row" style="justify-content:space-between"><b style="font-size:13px">${x.p.n}</b><small class="sub">${x.n}/${days.length}</small></div>${bar(days.length?100*x.n/days.length:0,x.n/days.length<.5?'var(--bad)':'')}</div>`).join('')}</div></div>
  <div class="card"><h2>Kegiatan terbaru</h2>${feed.map(x=>`<div class="feed" style="--c:#7c6cff"><span class="dot"></span><div><b>${x.p}</b> — ${x.e.cat?`[${esc(x.e.cat)}] `:''}${esc(nice(x.e.kegiatan))}<br><small class="sub">${x.e.items.slice(0,3).map(i=>esc(nice(i))).join(' · ')}${x.e.items.length>3?` · +${x.e.items.length-3} lainnya`:''}</small></div></div>`).join('')||'<div class="empty">Belum ada.</div>'}</div>`}

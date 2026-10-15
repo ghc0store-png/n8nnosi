@@ -766,7 +766,7 @@ const MENU_REQ = [
 const bolehMenu = (k) => PERAN === "admin" || MENUS.includes(k);
 let USERS = null, stBuilt = false, LHPICS = ["OPAL", "HITA", "ADI", "PAK TOHAR", "ZAHRA", "MIDAN", "DINI", "IFA", "RIKI", "KARIN"];
 const namaMenu = (k) => (MENU_REQ.find((m) => m.k === k) || { nama: k }).nama;
-const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? " (PIC: " + u.lhPic + ")" : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "") + (k === "a86" && u.a86Peran ? " (" + (A86N[u.a86Peran] || u.a86Peran) + (u.a86Nama ? ": " + u.a86Nama : "") + ")" : "")).join(", ") : "Belum ada menu");
+const aksesTeks = (u) => (u.role === "admin" ? "Admin (semua menu)" : u.menus.length ? u.menus.map((k) => namaMenu(k) + (k === "lh" && u.lhPic ? (u.lhPic === "DIREKTUR" ? " (Dasbor Direktur)" : " (PIC: " + u.lhPic + ")") : "") + (k === "peng" && u.pjPeran ? " (" + (PGN[u.pjPeran] || u.pjPeran) + (u.pjNama ? ": " + u.pjNama : "") + ")" : "") + (k === "a86" && u.a86Peran ? " (" + (A86N[u.a86Peran] || u.a86Peran) + (u.a86Nama ? ": " + u.a86Nama : "") + ")" : "")).join(", ") : "Belum ada menu");
 function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic, a86Peran, a86Nama) {
   const cb = "display:flex;align-items:center;gap:7px;font-weight:500;color:var(--tx);font-size:14px";
   const ip = "width:auto;padding:0;margin:0";
@@ -774,7 +774,7 @@ function pilihMenuHtml(pre, menus, adm, pjPeran, pjNama, lhPic, a86Peran, a86Nam
   <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${MENU_REQ.map((m) => `<label style="${cb}"><input type="checkbox" class="${pre}m" value="${m.k}" style="${ip}" ${menus.includes(m.k) ? "checked" : ""}>${esc(m.nama)}</label>`).join("")}
   <label style="${cb}"><input type="checkbox" id="${pre}adm" style="${ip}" ${adm ? "checked" : ""}>Admin (semua menu, termasuk Pengaturan)</label></div>
   <div id="${pre}lhbox" style="margin-top:12px;display:${menus.includes("lh") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Harian Internal: akun ini adalah PIC siapa?</div>
-  <select id="${pre}lhp"><option value="">Pilih PIC</option>${(LHPICS || []).map((n) => `<option value="${n}" ${lhPic === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+  <select id="${pre}lhp"><option value="">Pilih PIC</option>${(LHPICS || []).map((n) => `<option value="${n}" ${lhPic === n ? "selected" : ""}>${n === "DIREKTUR" ? "DIREKTUR — dasbor pantau semua PIC (hanya lihat)" : n}</option>`).join("")}</select></div>
   <div id="${pre}pjbox" style="margin-top:12px;display:${menus.includes("peng") ? "grid" : "none"};gap:8px"><div class="mut" style="font-size:12.5px;font-weight:600">Laporan Pengeluaran Operasional: peran dalam alur persetujuan</div>
   <select id="${pre}pjp"><option value="">Pilih peran</option>${Object.entries(PGN).map(([k, n]) => `<option value="${k}" ${pjPeran === k ? "selected" : ""}>${n}</option>`).join("")}</select>
   <input id="${pre}pjn" placeholder="Nama lengkap (tampil di riwayat persetujuan)" maxlength="60" value="${esc(pjNama || "")}" autocomplete="off"></div>
