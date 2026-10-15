@@ -390,6 +390,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .tsteps{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:11px}
 .tsteps li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.45}
 .tsteps li i{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-size:12.5px;font-weight:700;display:grid;place-items:center;flex:none;margin-top:1px}
+.tcon{margin-top:14px;padding:11px 13px;border-radius:12px;background:var(--accsoft);font-size:13.5px;line-height:1.5}.tcon b:first-child{display:block;color:var(--acc);font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
 .ttip{margin-top:14px;padding:11px 13px;border-radius:12px;background:var(--wasoft);color:var(--tx);font-size:13.5px;line-height:1.45}
 .his .hh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}.his h3{margin:0;font-size:16px}
 .hisbody{max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:9px}
@@ -1139,21 +1140,108 @@ function paintChat() {
 }
 /* ---------- Tutorial singkat tiap bagian (kanan atas) ---------- */
 const TUT = {
-  a86: { j: "Cara memakai Pengajuan 86", s: ["<b>Pengaju</b>: tekan <b>Buat pengajuan</b>, isi data, lalu unggah <b>Foto 1 (RAB)</b> dan <b>Foto 2 (Rincian biaya)</b>. Keduanya wajib.", "Pengajuan berjalan: <b>Maker 1</b> → <b>Direktur Operasional</b> → <b>Direktur Utama</b> → <b>Maker (final)</b>.", "Tiap tahap menekan <b>Review</b> untuk memeriksa foto, lalu <b>Setujui</b>, <b>Minta revisi</b>, atau <b>Tolak</b> (catatan wajib).", "Bila diminta revisi, Pengaju menekan <b>Ubah & ajukan ulang</b>. Kodenya tetap sama dan kembali ke tahap yang meminta revisi.", "Setelah Maker (final) menyetujui, status menjadi <b>Menunggu rilis</b>."], t: "Angka merah di menu menunjukkan jumlah pengajuan yang menunggu tindakan Anda." },
-  slip: { j: "Cara membuat Slip Gaji", s: ["Pilih <b>Lokasi / client</b> lebih dulu.", "Pilih <b>Nama karyawan</b> (atau <b>SEMUA</b> untuk satu lokasi sekaligus).", "Pilih <b>Bulan</b> sesuai Rekap Gaji.", "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit.", "Hasilnya muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh PDF</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Kalau pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut." },
-  inv: { j: "Cara membuat Invoice", s: ["Pilih <b>Lokasi</b> dan isi <b>tanggal pengiriman</b> serta <b>periode</b> (bulan dan tahun).", "Tekan <b>Kirim ke bot</b>.", "Bila bot menampilkan hasil pengecekan, baca dulu. Tekan <b>SETUJU</b> bila benar atau <b>BATAL</b> bila ada yang salah.", "File PDF muncul di <b>bawah formulir</b>.", "Tekan <b>Review</b> untuk memeriksa isinya, lalu <b>Unduh PDF</b>. Setelah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah)."], t: "Periksa nominal dan tanggal di PDF sebelum dikirim ke client." },
-  bpjs: { j: "Cara memakai Pusat BPJS", s: ["Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas).", "Kerjakan <b>berurutan 1 sampai 4</b>: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB. Tekan <b>Mulai / lihat</b> pada tiap langkah.", "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau).", "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk melihat untung atau rugi.", "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) dipakai untuk mengunggah PDF bulk yang dipisah per lokasi."], t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Tekan Review untuk melihat hasilnya." },
-  idcard: { j: "Cara membuat ID Card", s: ["Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru).", "Isi <b>Nomor ID Card</b>, <b>Nama</b>, dan <b>Posisi</b>.", "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar. Untuk banyak karyawan, tekan <b>Buat ID Card +</b>: kartu dibuat, lalu form siap untuk karyawan berikutnya.", "Hasil tampil di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa nama dan fotonya.", "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi kapan saja."], t: "Pada Buat ID Card +, nomor ID naik satu otomatis dan posisi tetap. Foto yang gelap atau buram membuat kartu kurang rapi." },
-  bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: ["Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).", "Di halaman berikutnya, unggah <b>PDF bulk</b> dari BPJS.", "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.", "Hasilnya muncul <b>di bawah formulir</b>. Tekan <b>Review</b> untuk melihat atau <b>Unduh</b> per lokasi."], t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya." },
-  bbup: { j: "Cara mengunggah PDF bulk", s: ["Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah (maksimal sekitar 17 MB), atau ketuk untuk memilih berkas.", "Tekan <b>Proses PDF</b>.", "Tunggu. Bilah progres menunjukkan berapa file sudah masuk Google Drive.", "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.", "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
-  rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: ["Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.", "Pilih <b>Data Mentah</b> untuk melihat file aslinya, atau <b>Data Hasil</b> untuk data yang sudah rapi.", "Pilih <b>bulan</b> dan <b>tahun</b> di halaman berikutnya."], t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
-  rdmenu: { j: "Cara memakai menu ini", s: ["Pilih <b>Data Mentah</b> untuk melihat dan mengunduh file asli di Google Drive.", "Pilih <b>Data Hasil</b> untuk data rapi di Google Sheets: bisa dilihat, dicari, dan diunduh.", "Di Data Hasil, tombol <b>Jalankan</b> menarik data baru bila ada perubahan."], t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
-  bpmentah: { j: "Cara melihat data mentah", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Daftar file asli di Google Drive muncul <b>di bawah formulir</b>.", "Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b>.", "Periksa mana yang <b>belum masuk rekap</b> bila ada."], t: "Halaman ini hanya untuk melihat. Tidak ada tombol Jalankan di sini." },
-  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: ["Pilih <b>bulan</b> dan <b>tahun</b>.", "Data rapi muncul <b>di bawah formulir</b>. Gunakan kotak cari bila perlu, lalu <b>Unduh</b>.", "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai.", "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
-  bphitung: { j: "Cara melihat Hasil BPJS", s: ["Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.", "Pilih <b>bulan</b> dan <b>tahun</b>.", "Tekan <b>Jalankan</b> untuk menghitung selisih.", "Untung atau rugi per lokasi muncul <b>di bawah formulir</b>. Proses sebelumnya ada di <b>Riwayat hasil</b> (kanan bawah)."], t: "Hitungan memakai data yang sudah ada di Sheets. Perbarui langkah 1 sampai 4 dulu bila datanya belum terbaru." },
-  flyer: { j: "Cara membuat Flyer Lowongan", s: ["Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan).", "Isi <b>8 kolom</b> lowongan. Untuk banyak poin, pisahkan dengan tanda <b>|</b>.", "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.", "Hasil muncul di <b>bawah formulir</b>. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh</b>.", "Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa di-review lagi."], t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
+  a86: { j: "Cara memakai Pengajuan 86", s: [
+    "<b>Pengaju</b>: tekan <b>Buat pengajuan</b>. Isi nama karyawan, bagian/divisi, kategori biaya, client/lokasi, uraian kebutuhan, nominal (hanya angka), tanggal kebutuhan, dan rekening tujuan (bank, nomor rekening, atas nama).",
+    "Unggah <b>2 foto wajib</b>: <b>Foto 1 = RAB</b> dan <b>Foto 2 = rincian biaya</b>. Bisa ditambah maksimal 3 lampiran lain (opsional). Tanpa kedua foto wajib, pengajuan tidak bisa dikirim.",
+    "Tekan <b>Kirim pengajuan</b>. Pengajuan berjalan berurutan: <b>Maker 1</b> → <b>Direktur Operasional</b> → <b>Direktur Utama</b> → <b>Maker (final)</b>. Pengajuan masuk ke tahap berikutnya hanya setelah tahap sebelumnya menyetujui.",
+    "<b>Penyetuju</b> (Maker / Direktur): buka kartu yang bertanda <b>Perlu tindakan saya</b>, tekan <b>Review</b> pada tiap foto, lalu pilih <b>Setujui</b>, <b>Minta revisi</b>, atau <b>Tolak</b>. Untuk Minta revisi dan Tolak, catatan wajib ditulis.",
+    "Bila diminta revisi, <b>Pengaju</b> membuka pengajuannya (status <b>Perlu revisi</b>), tekan <b>Ubah & ajukan ulang</b>, perbaiki data atau ganti foto, lalu kirim lagi. Kode pengajuan <b>tetap sama</b> dan langsung kembali ke tahap yang meminta revisi.",
+    "Setelah <b>Maker (final)</b> menyetujui, status menjadi <b>Menunggu rilis</b>. Pengajuan yang <b>Ditolak</b> tidak bisa diubah; buat pengajuan baru. Pengaju masih bisa <b>Batalkan</b> selama belum Menunggu rilis."
+  ], c: "Pengaju Kokoh mengajukan <b>Transportasi, DPU Kota Semarang, Rp 350.000</b> dengan foto RAB dan foto rincian. Ela (Maker 1) menyetujui → Pak Yasir meminta revisi dengan catatan \"rincian BBM kurang jelas\" → Kokoh menekan <b>Ubah & ajukan ulang</b> dan mengganti Foto 2 → pengajuan kembali ke Pak Yasir → disetujui → Pak Ferry setuju → Ela (final) setuju → status <b>Menunggu rilis</b>.",
+  t: "Angka merah di menu menunjukkan jumlah pengajuan yang menunggu tindakan Anda. Admin hanya melihat dan tidak ikut memberi keputusan. Nominal tulis angka saja, contoh 350000." },
+  slip: { j: "Cara membuat Slip Gaji", s: [
+    "Pilih <b>Lokasi / client</b> lebih dulu. Pilihan Nama dan Bulan di bawahnya baru terisi setelah lokasi dipilih.",
+    "Pilih <b>Bulan</b> sesuai yang ada di Rekap Gaji (contoh: JULI 2026). Bulan yang tampil hanya bulan yang sudah ada datanya.",
+    "Pilih <b>Nama karyawan</b>. Pilih <b>SEMUA</b> bila ingin slip seluruh karyawan di lokasi itu sekaligus.",
+    "Tekan <b>Kirim ke bot</b>, lalu tunggu sekitar setengah menit (untuk SEMUA bisa lebih lama).",
+    "Hasil muncul di kotak <b>Hasil terbaru</b> di bawah formulir. Tekan <b>Review</b> untuk memeriksa isi slip, lalu <b>Unduh PDF</b>.",
+    "Bila sudah selesai dipakai, tekan <b>Selesai — pindahkan ke riwayat</b>. Slip pindah ke <b>Riwayat hasil</b> (kanan bawah) dan bisa dibuka lagi kapan saja."
+  ], c: "Lokasi <b>BALAI TEKNIK SABO</b> → Bulan <b>JULI 2026</b> → Nama <b>M. AGUNG RISANTO</b> → Kirim ke bot. Sekitar 30 detik kemudian muncul berkas <b>Slip Gaji - M. AGUNG RISANTO - JULI 2026.pdf</b>.",
+  t: "Bila pilihan nama atau bulan kosong, berarti lokasi itu belum ada di Rekap Gaji bulan tersebut. Periksa gaji bulan itu sudah direkap atau belum." },
+  inv: { j: "Cara membuat Invoice", s: [
+    "Pilih <b>Lokasi / client</b> dari daftar.",
+    "Isi <b>Tanggal pengiriman</b> (tanggal yang akan tercetak di invoice, contoh 15 Oktober 2026) dan pilih <b>Periode</b> tagihan (bulan dan tahun).",
+    "Isi <b>Nominal</b> dengan angka, contoh <b>6700000</b>. Bila nominalnya sama dengan invoice terakhir lokasi itu, cukup tulis <b>FLAT</b>.",
+    "Tekan <b>Kirim ke bot</b>. Bot menampilkan hasil pengecekan di kotak <b>Hasil terbaru</b>: lokasi, tanggal, periode, nominal, terbilang, serta nomor invoice dan kwitansi.",
+    "Baca pengecekan itu. Tekan <b>SETUJU</b> bila benar, atau <b>BATAL</b> bila ada yang salah, lalu ulangi dari awal.",
+    "Setelah SETUJU, PDF invoice dan kwitansi muncul. Tekan <b>Review</b> untuk memeriksa, <b>Unduh PDF</b> untuk menyimpan, lalu <b>Selesai</b> agar pindah ke <b>Riwayat hasil</b>."
+  ], c: "Lokasi <b>ATR BPN WONOGIRI PENGEMUDI</b>, tanggal <b>15 Oktober 2026</b>, periode <b>Oktober 2026</b>, nominal <b>6700000</b> → bot menjawab terbilang \"Enam Juta Tujuh Ratus Ribu Rupiah\" → tekan SETUJU → muncul <b>INVOICE</b> dan <b>KWITANSI</b> dalam bentuk PDF.",
+  t: "Periksa nominal, terbilang, dan tanggal sebelum menekan SETUJU. Setelah PDF jadi dan terlanjur dikirim ke client, perbaikannya lebih repot." },
+  bpjs: { j: "Cara memakai Pusat BPJS", s: [
+    "Pilih <b>bulan</b> dan <b>tahun</b> di panel <b>Panduan bulanan</b> (kiri atas). Semua langkah di bawahnya mengikuti bulan yang dipilih.",
+    "Kerjakan <b>berurutan 1 sampai 4</b>: <b>1 Rekap Gaji</b>, <b>2 Rincian KES</b>, <b>3 Rincian TK</b>, <b>4 Rekap RAB</b>. Tekan <b>Mulai / lihat</b> pada tiap langkah, lalu tunggu sampai selesai sebelum lanjut.",
+    "Langkah yang sudah jalan berubah menjadi <b>Selesai</b> (hijau). Bila ragu, buka langkahnya untuk melihat datanya.",
+    "Setelah 1 sampai 4 selesai, buka <b>5. Hasil BPJS</b> untuk menghitung untung atau rugi per lokasi.",
+    "Menu <b>Bukti Bayar BPJS</b> (kolom tengah) dipakai untuk mengunggah PDF bulk dari BPJS, yang dipisah otomatis per lokasi dan disimpan ke Google Drive."
+  ], c: "Awal bulan: pilih <b>September 2026</b> → jalankan langkah 1 Rekap Gaji sampai 4 Rekap RAB satu per satu → buka <b>5. Hasil BPJS</b> → lihat lokasi mana yang rugi. Lalu unggah PDF bukti bayar TK dan KES lewat menu Bukti Bayar BPJS.",
+  t: "Proses yang sedang jalan atau baru selesai tampil di kiri bawah. Tekan Selesai bila sudah tidak dipakai: prosesnya pindah ke Riwayat hasil (kanan bawah). Jangan menjalankan langkah yang sama dua kali bersamaan." },
+  idcard: { j: "Cara membuat ID Card", s: [
+    "Unggah <b>foto wajah menghadap depan</b> dengan latar polos (biru). Tekan kotak foto untuk memilih, atau tarik fotonya ke kotak itu.",
+    "Isi <b>Nomor ID Card</b> (contoh 0007/RAYMP/PAM/IX/2026), <b>Nama</b>, dan <b>Posisi</b> (contoh Security).",
+    "Tekan <b>Buat ID Card</b>, lalu tunggu sebentar. Hasilnya muncul di bawah formulir.",
+    "Tekan <b>Review</b> untuk memeriksa nama, posisi, dan fotonya. Bila kurang pas, ubah isiannya lalu buat ulang.",
+    "Untuk banyak karyawan, pakai <b>Buat ID Card +</b>: kartu dibuat, nomor ID naik satu otomatis, nama dan foto dikosongkan, posisi tetap. Tinggal isi karyawan berikutnya.",
+    "Tekan <b>Unduh</b>. Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa dibuka lagi."
+  ], c: "Karyawan pertama: foto Budi, nomor <b>0007/RAYMP/PAM/IX/2026</b>, nama <b>Budi Santoso</b>, posisi <b>Security</b> → Buat ID Card +. Form kembali kosong dengan nomor <b>0008/RAYMP/PAM/IX/2026</b> dan posisi Security: tinggal unggah foto dan isi nama karyawan berikutnya.",
+  t: "Foto yang gelap, buram, atau miring membuat kartu kurang rapi. Pastikan wajah jelas dan latar polos." },
+  bbmenu: { j: "Cara memakai Bukti Bayar BPJS", s: [
+    "Pilih jenis BPJS: <b>TK</b> (Ketenagakerjaan) atau <b>KES</b> (Kesehatan).",
+    "Di halaman berikutnya, unggah <b>PDF bulk</b> yang diunduh dari BPJS.",
+    "Sistem memisahkannya menjadi <b>satu PDF per lokasi</b> dan menyimpannya di Google Drive.",
+    "Hasilnya muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi."
+  ], c: "Bulan ini bukti bayar TK sudah turun dari BPJS dalam satu PDF berisi banyak lokasi → pilih <b>TK</b> → unggah PDF itu → muncul daftar PDF terpisah per lokasi, siap dibuka satu per satu.",
+  t: "Unggahan sebelumnya tersimpan di Riwayat hasil (kanan bawah) pada halaman berikutnya." },
+  bbup: { j: "Cara mengunggah PDF bulk", s: [
+    "Tarik <b>PDF Bill Payment</b> dari BPJS ke kotak unggah, atau ketuk kotaknya untuk memilih berkas. Ukuran maksimal sekitar 17 MB.",
+    "Tekan <b>Proses PDF</b>.",
+    "Tunggu. Bilah progres menunjukkan berapa berkas sudah masuk Google Drive. Jangan menutup halaman sebelum selesai.",
+    "<b>Berkas per lokasi</b> muncul di bawah formulir. Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> per lokasi.",
+    "Unggahan yang lebih lama ada di <b>Riwayat hasil</b> (kanan bawah)."
+  ], c: "File <b>Bill Payment TK September.pdf</b> (12 MB) → Proses PDF → progres \"23 dari 40 berkas\" → selesai → 40 PDF per lokasi tampil di daftar.",
+  t: "Satu PDF diproses satu kali. Tunggu sampai selesai sebelum mengunggah PDF lain." },
+  rbmenu: { j: "Cara memakai Rincian Bukti Bayar", s: [
+    "Pilih jenis BPJS: <b>KES</b> atau <b>TK</b>.",
+    "Pilih <b>Data Mentah</b> untuk melihat file asli dari Google Drive, atau <b>Data Hasil</b> untuk data yang sudah dirapikan di Google Sheets.",
+    "Di halaman berikutnya, pilih <b>bulan</b> dan <b>tahun</b>."
+  ], c: "Ingin mengecek apakah ada file yang belum masuk rekap → pilih <b>KES</b> → <b>Data Mentah</b> → bulan September 2026. Ingin melihat tabel rapi per lokasi → pilih <b>Data Hasil</b>.",
+  t: "Data Mentah = file asli di Google Drive. Data Hasil = tabel rapi di Google Sheets." },
+  rdmenu: { j: "Cara memakai menu ini", s: [
+    "Pilih <b>Data Mentah</b> untuk melihat dan mengunduh file asli di Google Drive.",
+    "Pilih <b>Data Hasil</b> untuk data rapi di Google Sheets: bisa dilihat, dicari, dan diunduh.",
+    "Di Data Hasil, tombol <b>Jalankan</b> menarik data baru bila ada perubahan."
+  ], c: "Rekap RAB bulan Oktober terlihat kurang satu lokasi → buka <b>Data Mentah</b> untuk memastikan filenya sudah ada di Drive → bila sudah ada, buka <b>Data Hasil</b> dan tekan <b>Jalankan</b>.",
+  t: "Jalankan hanya bila perlu, misalnya setelah ada file baru di Drive." },
+  bpmentah: { j: "Cara melihat data mentah", s: [
+    "Pilih <b>bulan</b> dan <b>tahun</b>.",
+    "Daftar file asli di Google Drive muncul di bawah formulir.",
+    "Tekan <b>Review</b> untuk melihat isinya atau <b>Unduh</b> untuk menyimpan.",
+    "Periksa bagian <b>belum masuk rekap</b> bila ada: itu file yang sudah ada tetapi belum terhitung."
+  ], c: "Pilih <b>Oktober 2026</b> → muncul 38 file → 2 di antaranya bertanda belum masuk rekap → buka dan periksa, lalu jalankan ulang di Data Hasil.",
+  t: "Halaman ini hanya untuk melihat. Tidak ada tombol Jalankan di sini." },
+  bphasil: { j: "Cara melihat dan menjalankan data hasil", s: [
+    "Pilih <b>bulan</b> dan <b>tahun</b>.",
+    "Data rapi muncul di bawah formulir. Pakai kotak <b>cari</b> untuk mencari lokasi atau nama, lalu <b>Unduh</b> bila perlu.",
+    "Tekan <b>Jalankan</b> bila ingin menarik data baru. Tunggu sampai statusnya selesai; jangan menekan dua kali.",
+    "Proses sebelumnya tercatat di <b>Riwayat hasil</b> (kanan bawah)."
+  ], c: "Pilih <b>September 2026</b> → ketik \"SABO\" di kotak cari untuk menyaring satu lokasi → bila ada file baru di Drive, tekan <b>Jalankan</b> dan tunggu tulisan Selesai.",
+  t: "Hasil proses juga dikirim ke Telegram admin seperti biasa." },
+  bphitung: { j: "Cara melihat Hasil BPJS", s: [
+    "Pastikan langkah <b>1 sampai 4</b> di Pusat BPJS sudah selesai: Rekap Gaji, Rincian KES, Rincian TK, Rekap RAB.",
+    "Pilih <b>bulan</b> dan <b>tahun</b>.",
+    "Tekan <b>Jalankan</b> untuk menghitung selisih antara tagihan dan pembayaran.",
+    "Untung atau rugi per lokasi muncul di bawah formulir. Proses sebelumnya ada di <b>Riwayat hasil</b> (kanan bawah)."
+  ], c: "Semua langkah 1–4 September sudah hijau → pilih <b>September 2026</b> → Jalankan → lokasi dengan angka minus berarti rugi dan perlu dicek ulang.",
+  t: "Hitungan memakai data yang sudah ada di Sheets. Bila datanya belum terbaru, perbarui langkah 1 sampai 4 dulu." },
+  flyer: { j: "Cara membuat Flyer Lowongan", s: [
+    "Unggah <b>template PNG kosong</b> (gambar flyer tanpa tulisan lowongan).",
+    "Isi <b>8 kolom</b> lowongan: Posisi, Lokasi penempatan, Kualifikasi, Benefit, Syarat tambahan, Batas lamaran, Kontak, dan Nama PIC. Untuk banyak poin dalam satu kolom, pisahkan dengan tanda <b>|</b>.",
+    "Tekan <b>Buat flyer</b>. Tunggu 30 sampai 80 detik.",
+    "Hasil muncul di bawah formulir. Tekan <b>Review</b> untuk memeriksa, lalu <b>Unduh</b>.",
+    "Bila sudah selesai dipakai, tekan <b>Selesai</b>: hasil pindah ke <b>Riwayat</b> (kanan bawah) dan bisa dibuka lagi."
+  ], c: "Posisi <b>Sales Motoris</b>, lokasi penempatan <b>Kabupaten Semarang</b>, kualifikasi <b>Wanita | Usia 18-40 tahun | Pendidikan minimal SMA</b>, benefit <b>Gaji pokok | Tunjangan makan | BPJS</b>, batas lamaran <b>5 September 2026</b> → tiap bagian yang dipisah | tampil sebagai butir terpisah di flyer.",
+  t: "Semua kolom wajib diisi. Hasil yang belum pas bisa diulang dengan mengubah isiannya." },
 };
-const tutHtml = (k) => { const t = TUT[k], buka = typeof matchMedia === "function" && matchMedia("(max-width:1000px)").matches ? "" : " open"; return '<div class="card tut"><details' + buka + '><summary><span class="ti">?</span>' + t.j + '</summary><ol class="tsteps">' + t.s.map((x, i) => "<li><i>" + (i + 1) + "</i><span>" + x + "</span></li>").join("") + '</ol><div class="ttip">💡 ' + t.t + "</div></details></div>"; };
+const tutHtml = (k) => { const t = TUT[k], buka = typeof matchMedia === "function" && matchMedia("(max-width:1000px)").matches ? "" : " open"; return '<div class="card tut"><details' + buka + '><summary><span class="ti">?</span>' + t.j + '</summary><ol class="tsteps">' + t.s.map((x, i) => "<li><i>" + (i + 1) + "</i><span>" + x + "</span></li>").join("") + '</ol>' + (t.c ? '<div class="tcon"><b>Contoh</b>' + t.c + '</div>' : '') + '<div class="ttip">💡 ' + t.t + "</div></details></div>"; };
 const hisCard = (jenis) => '<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">terbaru di atas</span></div><div class="hisbody" id="his_' + jenis + '"><div class="skel" style="height:46px"></div></div></div>';
 window.pratinjau = (jenis, src, judul, nama) => {
   const lama = document.getElementById("pv"); if (lama) lama.remove();
