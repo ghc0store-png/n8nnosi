@@ -295,7 +295,7 @@ function badgeFor(k){if(ADM())return '';
 function shell(content){const page=S.page||navItems()[0][0],nm=ADM()?'Nosi':S.user;
  return `<div id="menuback"></div><aside class="side"><div class="logo"><i>RM</i><div><b>RAY Workspace</b><small>PT Ray Mitra Perkasa</small></div></div>
  ${navItems().map(([k,i,l])=>`<button class="nv ${page===k?'on':''}" data-act="go" data-p="${k}">${ic(i)}<span>${l}</span>${badgeFor(k)}</button>`).join('')}
- <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${ADM()?'Nosi':esc(S.user)}</b><small>${ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Kembali ke Pusat Kontrol" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
+ <a class="nv" href="../" title="Kembali ke Pusat Kontrol" style="margin-top:6px">${ic('out')}<span>Pusat Kontrol</span></a><div class="sp"></div><div class="me"><div class="av">${ADM()?'N':S.user[0]}</div><div style="flex:1;min-width:0"><b>${ADM()?'Nosi':esc(S.user)}</b><small>${ADM()?'Admin':pic(S.user).a}</small></div><button data-act="logout" title="Keluar dari akun" class="ib" style="width:34px;height:34px">${ic('out')}</button></div></aside>
  <div class="wrap"><div class="top"><button class="mlg" data-act="menu" title="Tampilkan / sembunyikan menu">RM</button><div class="hi">${greet()}, <b>${esc(nm)}</b> · ${fmt(TODAY)}</div><div class="sp"></div><span class="statpill demo"><i></i>${STATUS_TXT}</span><button class="ib" data-act="theme" title="Ganti tema terang/gelap">${ic(document.documentElement.dataset.theme==='dark'?'sun':'moon')}</button>${ADM()?'':`<button class="ib" data-act="logout" title="Keluar" style="display:none">${ic('out')}</button>`}</div><main>${content}</main></div>`}
 (function(){const ap=()=>document.body.classList.toggle('menuoff',localStorage.getItem('lhmenuoff')==='1');ap();const hp=()=>matchMedia('(max-width:900px)').matches;document.addEventListener('click',e=>{const c=e.target.closest;if(!c)return;if(hp()){if(e.target.closest('.mlg'))document.body.classList.toggle('menuopen');else if(e.target.closest('#menuback,.side .logo,.side .nv'))document.body.classList.remove('menuopen');return}const t=e.target.closest('.side .logo');if(!t)return;localStorage.setItem('lhmenuoff',localStorage.getItem('lhmenuoff')==='1'?'0':'1');ap()})})();
 function render(){const root=$('#root');if(!S.user){root.innerHTML=vLogin();return}
@@ -466,7 +466,7 @@ document.addEventListener('change',async ev=>{const el=ev.target,a=el.dataset.ac
  if(a==='fpic'){S.fpic=el.value;S.q='';render()}else if(a==='bulan'){S.bulan=el.value;render()}else if(a==='lm'){S.lm=el.value;render()}
  else if(a==='rfp'){S.rf.pic=el.value;render()}else if(a==='rff'){S.rf.from=el.value;render()}else if(a==='rft'){S.rf.to=el.value;render()}});
 const ACT={
- logout(){location.href="../"},
+ logout(){try{['tok','cacheS','pil'].forEach(k=>localStorage.removeItem(k))}catch(e){}location.href="../"},
  go(b){S.page=b.dataset.p;S.q='';render();scrollTo(0,0)},
  theme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);render()},
  close(){closeAll()},csv(){csv()},remind(){toast('Demo: pengingat WhatsApp akan dikirim lewat n8n')},unlock(){toast('Demo: permintaan buka kunci dikirim ke Admin')},
