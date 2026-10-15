@@ -1256,15 +1256,6 @@ const TUT = {
     "Tekan <b>Buka Google Sheets</b> untuk detail. Nama yang tidak ditemukan di sheet gaji ada di tab <b>SELISIH KARYAWAN</b>."
   ], c: { isi: [["Bulan", "September"], ["Tahun", "2026"]], hasil: "<b>September 2026: UNTUNG Rp 2.844.937</b>, dengan catatan 652 nama di bukti bayar tidak ditemukan di sheet gaji." },
   t: "Halaman ini tidak menarik data ulang. Bila angkanya aneh, jalankan ulang langkah 1 sampai 4 dulu." },
-  a86: { j: "Cara memakai Pengajuan 86", u: "Mengajukan anggaran. Disetujui bertahap: Maker 1 → Dir. Operasional → Dir. Utama → Maker final.", s: [
-    "<b>Pengaju</b>: tekan <b>Buat pengajuan</b>, isi data dan rekening tujuan.",
-    "Unggah <b>2 foto wajib</b>: <b>Foto 1 = RAB</b>, <b>Foto 2 = rincian biaya</b>. Lampiran lain boleh, maks. 3.",
-    "Tekan <b>Kirim pengajuan</b>. Pengajuan berjalan satu tahap demi satu tahap.",
-    "<b>Penyetuju</b>: buka kartu <b>Perlu tindakan saya</b>, tekan <b>Review</b> pada foto, lalu <b>Setujui</b>, <b>Minta revisi</b>, atau <b>Tolak</b> (catatan wajib untuk dua yang terakhir).",
-    "Bila diminta revisi, Pengaju menekan <b>Ubah & ajukan ulang</b>. Kode tetap sama dan kembali ke tahap yang meminta.",
-    "Setelah Maker final setuju, status menjadi <b>Menunggu rilis</b>."
-  ], c: { isi: [["Pengaju", "Kokoh"], ["Kategori / lokasi", "Transportasi, DPU Kota Semarang"], ["Nominal", "350000"], ["Foto", "RAB dan rincian biaya"]], hasil: "Ela setuju → Pak Yasir minta revisi (\"rincian BBM kurang jelas\") → Kokoh ganti Foto 2 dan ajukan ulang → Pak Yasir, Pak Ferry, lalu Ela (final) setuju → <b>Menunggu rilis</b>." },
-  t: "Angka merah di menu = jumlah pengajuan yang menunggu tindakan Anda. Nominal tulis angka saja. Admin hanya melihat." },
 };
 const tutHtml = (k) => {
   const t = TUT[k], buka = typeof matchMedia === "function" && matchMedia("(max-width:1000px)").matches ? "" : " open";
@@ -2227,7 +2218,7 @@ const a86Pill = (s) => { const [t, k] = A86_ST[s] || [s, "mut"]; return '<span c
 
 function a86View() {
   return '<div data-doc="a86"><div class="top"><div><h1>Pengajuan 86</h1><p id="a86_sub">Memuat…</p></div><div class="row"><button class="btn" id="a86_seg">' + ic("retry") + 'Muat ulang</button><button class="btn pri" id="a86_baru" hidden>Buat pengajuan</button></div></div>' +
-    '<div class="duo"><div class="main"><div id="a86_alur"></div><div class="agbar" id="a86_bar"></div><div class="grid" id="a86_list"><div class="sk"></div><div class="sk"></div></div></div><aside class="aside">' + tutHtml("a86") + "</aside></div></div>";
+    '<div id="a86_alur"></div><div class="agbar" id="a86_bar"></div><div class="grid" id="a86_list"><div class="sk"></div><div class="sk"></div></div></div>';
 }
 function a86Wire() {
   $("#a86_seg").onclick = () => a86Muat(true); $("#a86_baru").onclick = () => a86Form(null);
