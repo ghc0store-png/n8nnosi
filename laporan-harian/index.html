@@ -344,7 +344,8 @@ function repPanel(p){
  const kind=pic(p).k,rep=getR(p,TODAY),locked=rep?.status==='sent',en=rep?.entries||[],area=kind==='area'||kind==='riki'||kind==='karin',L=namesFor(p);
  return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Kegiatan hari ini</h2><span class="pill ${rep?rep.status:'none'}">${SL[rep?rep.status:'none']}</span></div>
  <p class="sub" style="margin:4px 0 14px;font-size:13.5px">${fmt(TODAY)}. ${area?'Kegiatan bertanda <b style="color:var(--a2)">⚡</b> masuk otomatis dari centang. Tambahkan kegiatan lain bila ada.':'Isi jam, rencana kerja, status, jumlah lokasi, dan bukti.'}</p>
- ${locked?`<div class="lock">${ic('check')}<div style="flex:1">Laporan sudah dikirim pukul ${rep.sentAt.slice(11)}. Isinya terkunci agar tidak berubah.</div><button class="btn ghost sm" data-act="unlock">Minta buka kunci</button></div>`:''}
+ ${!locked&&rep?.sentAt?`<div class="lock" style="border-color:var(--warn)">${ic('alert')}<div style="flex:1">Anda sedang <b>merevisi</b> laporan yang sudah dikirim pukul ${rep.sentAt.slice(11)}. Ubah seperlunya, lalu tekan <b>Kirim revisi</b>.</div></div>`:''}
+ ${locked?`<div class="lock">${ic('check')}<div style="flex:1">Laporan sudah dikirim pukul ${rep.sentAt.slice(11)}. Ada yang perlu diubah? Tekan <b>Revisi laporan</b>; hasil revisi menggantikan laporan tadi di sheet Anda.</div><button class="btn sm" data-act="revisi">Revisi laporan</button></div>`:''}
  ${kind==='ifa'&&!locked?`<div style="margin-bottom:6px" class="hint">Pilih cepat:</div><div class="chips" style="margin-bottom:14px">${IFA_PLANS.map((t,i)=>`<button class="chip" data-act="iplan" data-i="${i}">+ ${esc(nice(t))}</button>`).join('')}</div>`:''}
  ${area?`<datalist id="cl-${esc(p)}">${L.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`:''}<datalist id="kegl">${KEG.map(k=>`<option value="${k}">`).join('')}</datalist>
  ${en.map((e,i)=>`<div class="kr"><div class="kt">${e.auto?'<span class="auto" title="Otomatis dari centang">⚡</span>':''}${kind==='ifa'?`<input type="time" data-ef="jam" data-e="${i}" value="${esc(e.jam||'08:00')}" style="width:108px;flex:none" ${locked?'disabled':''}>`:''}${KAT[p]?`<select data-ef="cat" data-e="${i}" style="width:auto;flex:none" ${locked?'disabled':''}><option value="">Kategori…</option>${KAT[p].map(k=>`<option ${e.cat===k?'selected':''}>${k}</option>`).join('')}</select>`:''}<input data-ef="kegiatan" data-e="${i}" list="kegl" value="${esc(e.kegiatan)}" placeholder="${area?'Nama kegiatan, mis. PENGIRIMAN INVOICE OKTOBER':'Rencana kerja'}" ${locked?'disabled':''}>${locked?'':`<button class="ib" style="width:38px;height:38px;flex:none" data-act="edel" data-e="${i}" title="Hapus kegiatan ini">${ic('x')}</button>`}</div>
@@ -353,7 +354,7 @@ function repPanel(p){
   ${area?'':`<div class="row" style="margin-top:10px;flex-wrap:nowrap"><div class="seg">${['belum','proses','selesai'].map(s=>`<button class="${e.st===s?'on s-'+s:''}" data-act="est" data-e="${i}" data-s="${s}" ${locked?'disabled':''}>${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><input data-ef="ket" data-e="${i}" value="${esc(e.ket)}" placeholder="Jumlah lokasi, mis. 18 LOKASI" ${locked?'disabled':''}></div>
    <div class="row" style="margin-top:10px">${e.bukti.map((b,j)=>`<div class="th" style="width:46px;height:46px">${b.thumb?`<img src="${b.thumb}">`:'📎'}${locked?'':`<button data-act="rmb" data-e="${i}" data-j="${j}">×</button>`}</div>`).join('')}${!locked&&e.bukti.length<2?`<label class="btn ghost sm" style="cursor:pointer">${ic('up')} Foto bukti<input type="file" accept="image/*,.pdf" data-bf="${i}" hidden multiple></label>`:''}</div>`}</div>`).join('')||`<div class="empty"><b>Belum ada kegiatan hari ini</b>${area?'Centang pekerjaan di halaman kerja, atau tekan “Tambah kegiatan”.':'Tekan “Tambah kegiatan” untuk mulai.'}</div>`}
  ${locked?'':`<button class="btn ghost" data-act="eadd" style="width:100%;border-style:dashed;margin:4px 0 14px">${ic('plus')} Tambah kegiatan</button>
- <div class="dock"><span class="hint"><b>${en.length}</b> kegiatan · tersimpan otomatis</span><button class="btn ok lg" data-act="send">${ic('send')} Kirim laporan hari ini</button></div>`}</div>`}
+ <div class="dock"><span class="hint"><b>${en.length}</b> kegiatan · tersimpan otomatis</span><button class="btn ok lg" data-act="send">${ic('send')} ${rep?.sentAt?'Kirim revisi':'Kirim laporan hari ini'}</button></div>`}</div>`}
 function vLap(){const p=S.user,rows=entriesOf((pp,d)=>pp===p&&(S.lm==='all'||d.startsWith(S.lm))&&d<TODAY),has=hasLog(p);
  const ifa=pic(p).k==='ifa',area=pic(p).k!=='ifa';
  return head(ifa?'Rencana kerja harian':'Laporan harian',`${esc(p)} · ${pic(p).a}`)+
@@ -469,7 +470,7 @@ const ACT={
  logout(){try{['tok','cacheS','pil'].forEach(k=>localStorage.removeItem(k))}catch(e){}location.href="../"},
  go(b){S.page=b.dataset.p;S.q='';render();scrollTo(0,0)},
  theme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);render()},
- close(){closeAll()},csv(){csv()},remind(){toast('Demo: pengingat WhatsApp akan dikirim lewat n8n')},unlock(){toast('Demo: permintaan buka kunci dikirim ke Admin')},
+ close(){closeAll()},csv(){csv()},remind(){toast('Demo: pengingat WhatsApp akan dikirim lewat n8n')},revisi(){const r=myRep(false);if(!r)return;r.status='draft';save();render();toast('Laporan dibuka untuk revisi')},
  filt(b){S.filt=b.dataset.v;render()},only(){S.only=!S.only;render()},
  tg(b){tick(b.dataset.id,b.dataset.k)},cdet(b){cform(b.dataset.id)},cnew(){cform(null)},
  xedit(b){xform(b.dataset.id)},xdel(b){const c=cl(b.dataset.id);c.extra=(c.extra||[]).filter(x=>x.k!==b.dataset.k);Object.values(c.ms).forEach(o=>delete o.chk[b.dataset.k]);save();render();xform(b.dataset.id)},xpre(b){addExtra(b.dataset.id,b.dataset.l)},
@@ -482,7 +483,7 @@ const ACT={
  rmb(b){myRep(false).entries[+b.dataset.e].bukti.splice(+b.dataset.j,1);save();render()},
  send(){const r=myRep(false);if(!r||!r.entries.some(e=>e.kegiatan.trim()))return toast('Isi minimal satu kegiatan dulu');r.entries=r.entries.filter(e=>e.kegiatan.trim()); if(KAT[S.user]&&r.entries.some(e=>!e.cat))return toast('Pilih kategori ('+KAT[S.user].join(' / ')+') untuk setiap kegiatan');
   if(pic(S.user).k==='ifa'){const nb=r.entries.filter(e=>e.st==='selesai'&&!e.bukti.length).length;if(nb&&!confirm(`${nb} kegiatan berstatus Selesai belum ada bukti. Tetap kirim?`))return}
-  r.status='sent';r.sentAt=new Date().toISOString().slice(0,16);save();render();confetti();toast('Laporan terkirim')}};
+  const re=!!r.sentAt;if(re)r.rev=(r.rev||0)+1;r.status='sent';r.sentAt=new Date().toISOString().slice(0,16);save();render();confetti();toast(re?'Revisi terkirim':'Laporan terkirim')}};
 document.addEventListener('click',ev=>{if(ev.target.id==='ov'){closeAll();return}
  const b=ev.target.closest('[data-act]');if(!b||['INPUT','SELECT','TEXTAREA'].includes(b.tagName))return;ACT[b.dataset.act]?.(b)});
 document.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target;
