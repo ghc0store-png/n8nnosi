@@ -478,7 +478,7 @@ main:has(.duo3){max-width:1560px}
 /* Slip Gaji & Invoice: form ringkas satu baris seperti ID Card/Flyer */
 #formbox>.card{padding:12px 14px}
 #formbox>.card>h4{margin:0 0 8px!important;font-size:15px}
-#formbox .form{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 12px;align-items:start}
+#formbox .form{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px 12px;align-items:start}
 #formbox .form>label{font-size:12.5px}
 #formbox .form input,#formbox .form select{padding:7px 10px;font-size:13.5px;border-radius:9px}
 #formbox>.card>.row{margin-top:10px!important;justify-content:flex-start}
@@ -576,7 +576,7 @@ I.kas = '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 // Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
-const TABS_ALL = [["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Arsip 86 (Telegram)", "kas", "Dokumen"],
+const TABS_ALL = [["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"],
   ["lh", "Laporan Harian Internal", "doc", "Dokumen"], ["peng", "Pengeluaran Operasional", "money", "Keuangan"], ["a86", "Pengajuan 86", "kas", "Keuangan"],
   ["ov", "Ringkasan", "home", "Sistem"], ["wf", "Workflow", "flow", "Sistem"], ["er", "Eror", "alert", "Sistem"], ["hi", "Riwayat", "clock", "Sistem"], ["st", "Pengaturan", "cog", "Sistem"]];
 const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer", "lh", "peng", "a86"];
