@@ -493,10 +493,9 @@ I.kas = '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="
 I.shield ='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>';
 const ic = (n) => `<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 // Menu utama (datar). Kolom ke-4 = judul kelompok di bar samping. Kunci slip/inv/bpjs/idcard/flyer = menu dokumen (hak akses per akun).
-const TABS_ALL = [["ov", "Ringkasan", "home", "Pantau"], ["wf", "Workflow", "flow", "Pantau"], ["er", "Eror", "alert", "Pantau"], ["hi", "Riwayat", "clock", "Pantau"],
-  ["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Pengajuan 86", "kas", "Dokumen"],
+const TABS_ALL = [["slip", "Slip Gaji", "money", "Dokumen"], ["inv", "Invoice", "doc", "Dokumen"], ["bpjs", "BPJS", "shield", "Dokumen"], ["idcard", "ID Card", "idc", "Dokumen"], ["flyer", "Flyer Lowongan", "img", "Dokumen"], ["anggaran", "Pengajuan 86", "kas", "Dokumen"],
   ["lh", "Laporan Harian Internal", "doc", "Dokumen"], ["peng", "Pengeluaran Operasional", "money", "Keuangan"],
-  ["st", "Pengaturan", "cog", "Sistem"]];
+  ["ov", "Ringkasan", "home", "Sistem"], ["wf", "Workflow", "flow", "Sistem"], ["er", "Eror", "alert", "Sistem"], ["hi", "Riwayat", "clock", "Sistem"], ["st", "Pengaturan", "cog", "Sistem"]];
 const REQ_TOP = ["slip", "inv", "bpjs"], MENU_KEYS = ["slip", "inv", "bpjs", "idcard", "flyer", "lh", "peng"];
 const topOf = () => (tab === "rq" ? (rqSub === "slip" || rqSub === "inv" ? rqSub : rqSub ? "bpjs" : "") : tab);
 const tabsBoleh = () => (PERAN === "admin" ? TABS_ALL : TABS_ALL.filter((t) => MENU_KEYS.includes(t[0]) && MENUS.includes(t[0])));
