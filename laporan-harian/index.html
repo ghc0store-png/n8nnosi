@@ -406,7 +406,7 @@ function cform(id){const m=S.bulan,c=id?cl(id):{name:'',sistem:'MANUAL',pejabat:
  <button class="btn" type="submit" style="width:100%">Simpan</button></form>`;$('#dr').classList.add('on');$('#ov').classList.add('on')}
 
 /* ============ HALAMAN 3: PEMBAYARAN ============ */
-function vBayar(){const p=S.user,m=S.bulan,all=DB.clients.filter(c=>c.owner===p),inMonth=inM(p,m),q=S.q.toLowerCase(),L=all.filter(c=>!q||c.name.toLowerCase().includes(q));
+function vBayar(){const p=S.user,m=S.bulan,all=DB.clients.filter(c=>c.owner===p),inMonth=inM(p,m),q=S.q.toLowerCase(),L=all.filter(c=>(c.ms[m]||Object.values(c.pay).some(v=>typeof v==='number'&&v>0))&&(!q||c.name.toLowerCase().includes(q)));
  const tot=mm=>all.reduce((a,c)=>{const v=c.pay[mm];return a+(typeof v==='number'?v:0)},0);
  return head('Pembayaran',`${pic(p).a} · catatan sudah dibayar / belum`,monSel())+
  guide('bayar',['Setiap baris adalah satu client, setiap kolom satu bulan.','<b style="color:var(--ok)">LUNAS</b> = sudah dibayar. <b style="color:var(--bad)">Angka merah</b> = nominal yang belum dibayar.','Tekan kotak bulan untuk <b>menandai lunas</b> atau membatalkannya.'])+
