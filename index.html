@@ -2391,12 +2391,12 @@ async function idOlahFoto(f) {
   idFoto.proses = (async () => {
     try {
       const im = await idMuatGambar(f); idFoto.asli = idPotong(im); idTampilPratinjau();
-      if (!idFoto.pakaiBiru) { set("Foto asli akan dipakai."); return; }
-      set("Menghapus latar… (pertama kali agak lama karena memuat model)");
+      if (!idFoto.pakaiBiru) { set("Foto asli dipakai."); return; }
+      set("Menghapus latar…");
       const biru = await idGantiLatar(idFoto.asli);
       if (idFoto.file !== mulai) return;
-      idFoto.biru = biru; idTampilPratinjau(); set("Latar diganti biru. Hasil kurang pas? Hilangkan centang di bawah untuk memakai foto asli.");
-    } catch (e) { set("Latar tidak bisa dihapus otomatis (" + (e.message || "galat") + "). Foto asli akan dipakai."); }
+      idFoto.biru = biru; idTampilPratinjau(); set("Latar sudah biru. Kurang pas? Hilangkan centang.");
+    } catch (e) { set("Latar gagal dihapus, foto asli dipakai."); }
   })();
   return idFoto.proses;
 }
@@ -2411,13 +2411,13 @@ function idPasangLatar() {
   const label = document.querySelector("#id_foto").closest("label");
   if (!label || document.getElementById("id_bg")) return;
   const bar = document.createElement("div"); bar.id = "id_bg"; bar.className = "mut"; bar.style.cssText = "font-size:12px;margin-top:6px;line-height:1.4";
-  bar.innerHTML = '<div class="bgtog" style="display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="id_bgcek" checked style="width:auto"> <span>Ganti latar jadi biru otomatis</span></div><div class="bgst"></div>';
+  bar.innerHTML = '<div class="bgtog" style="display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="id_bgcek" checked style="width:auto"> <span>Latar jadi biru</span></div><div class="bgst"></div>';
   label.appendChild(bar);
   bar.addEventListener("click", (e) => { if (e.target.id === "id_bgcek") return; e.preventDefault(); if (e.target.closest(".bgtog")) { const c = bar.querySelector("#id_bgcek"); c.checked = !c.checked; c.dispatchEvent(new Event("change")); } });
   bar.querySelector("#id_bgcek").onchange = async (e) => {
     idFoto.pakaiBiru = e.target.checked;
     const f = idFoto.file; if (!f) return;
-    if (idFoto.pakaiBiru && !idFoto.biru) { idFoto.file = null; await idOlahFoto(f); } else { idTampilPratinjau(); bar.querySelector(".bgst").textContent = idFoto.pakaiBiru ? "Latar diganti biru." : "Foto asli akan dipakai."; }
+    if (idFoto.pakaiBiru && !idFoto.biru) { idFoto.file = null; await idOlahFoto(f); } else { idTampilPratinjau(); bar.querySelector(".bgst").textContent = idFoto.pakaiBiru ? "Latar sudah biru." : "Foto asli dipakai."; }
   };
   document.querySelector("#id_foto").addEventListener("change", () => { const f = document.querySelector("#id_foto").files[0]; idFoto.file = null; if (f) idOlahFoto(f); else { idFoto.asli = idFoto.biru = null; bar.querySelector(".bgst").textContent = ""; } });
 }
