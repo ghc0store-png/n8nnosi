@@ -307,6 +307,7 @@ main>*{animation:in .4s var(--ease) both}
 .prg-track{height:12px;border-radius:99px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
 .prg-bar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2),#e879f9);position:relative;transition:width .35s linear;box-shadow:0 0 18px -2px var(--acc)}
 .prg-bar:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:200% 100%;animation:prgshine 1.4s linear infinite}
+.prg-bar[data-diam]:after{animation:none;display:none}
 @keyframes prgshine{from{background-position:200% 0}to{background-position:-200% 0}}
 /* ---------- logo perusahaan ---------- */
 .logotile{display:inline-grid;place-items:center;background:#fff;border-radius:14px;padding:5px 8px;box-shadow:0 8px 22px -10px rgba(3,64,127,.45),inset 0 0 0 1px rgba(3,64,127,.10)}
@@ -1389,7 +1390,7 @@ const arsipTs = (k) => Number(arsipBaca()[k] || 0);
 window.arsipkan = (k) => { const o = arsipBaca(); o[k] = Date.now(); try { localStorage.setItem("arsipHasil", JSON.stringify(o)); } catch (e) {} paintChat(); toast("Dipindahkan ke riwayat"); };
 const HASIL_AKTIF = { idcard: null, flyer: null }, HASIL_MEM = {};
 const kosongHasil = (jenis, teks) => '<div class="kosong">' + ic(jenis === "idcard" ? "idc" : "img") + "<div>" + (teks || (jenis === "idcard" ? "Hasil ID Card muncul di sini" : "Hasil flyer muncul di sini")) + "</div></div>";
-window.hasilMulai = (jenis) => { HASIL_AKTIF[jenis] = null; const el = $(jenis === "idcard" ? "#id_res" : "#fl_res"); if (el) el.innerHTML = kosongHasil(jenis, "Sedang disusun…"); hisMuat(jenis); };
+window.hasilMulai = (jenis) => { HASIL_AKTIF[jenis] = null; const el = $(jenis === "idcard" ? "#id_res" : "#fl_res"); if (el) el.innerHTML = '<div style="padding:14px 6px">' + prgHtml(0, jenis) + '<div class="mut" style="margin-top:8px;font-size:12.5px">Sedang disusun. Mohon tunggu, jangan tutup halaman ini.</div></div>'; hisMuat(jenis); };
 window.hasilReview = (jenis) => { const m = HASIL_MEM[jenis]; if (m) window.pratinjau("img", m.src, m.judul, m.nama); };
 window.hasilSelesai = (jenis) => { HASIL_AKTIF[jenis] = null; delete HASIL_MEM[jenis]; const el = $(jenis === "idcard" ? "#id_res" : "#fl_res"); if (el) el.innerHTML = kosongHasil(jenis); hisMuat(jenis); toast("Dipindahkan ke riwayat"); };
 const arsipBpjs = () => { try { return JSON.parse(localStorage.getItem("arsipBpjs") || "[]"); } catch (e) { return []; } };
@@ -1722,7 +1723,7 @@ window.tiketKirim = (sumber) => ask("Teruskan ke Claude Code?", "Laporan (percak
 /* ---------- palet warna & tanggal cetak ---------- */
 try { const p = localStorage.getItem("palet"); if (p) document.documentElement.dataset.palet = p; } catch (e) {}
 window.addEventListener("beforeprint", () => { const e = document.getElementById("printTgl"); if (e) e.innerHTML = "Dicetak<br>" + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long", timeStyle: "short" }) + " WIB"; });
-const PRG_DUR = { tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
+const PRG_DUR = { idcard: 30e3, flyer: 60e3, vrbaca: 8e3, tinjau: 25e3, buka: 14e3, muat: 5e3, rab: 45e3, kes: 45e3, tk: 30e3, gaji: 25e3, hasil: 20e3, bb: 120e3, chat: 45e3 };
 function prgHitung(el, dur) { const p = 1 - Math.exp(-2.1 * el / dur); return Math.max(1, Math.min(97, Math.round(p * 97))); }
 function prgCap(p, el, dur) { return el > dur * 3 ? "Masih berjalan, mohon tunggu…" : p < 15 ? "Menyiapkan…" : p < 60 ? "Membaca dan mengolah data…" : p < 90 ? "Menulis hasil…" : "Hampir selesai…"; }
 function prgHtml(el, kind, menunggu) {
@@ -2151,7 +2152,7 @@ const vrPill = (r) => { if (!r.siap) { const x = VR_NAMA[r.status] || ["mut", r.
 let vrTunda = null;
 function vrGambarCepat() { if (vrTunda) return; vrTunda = setTimeout(() => { vrTunda = null; vrSegarkan(); }, 400); }
 const vrLolos = (r) => VR.f === "semua" || (VR.f === "LAIN" ? !r.siap : r.siap && r.selesai && (VR.f === "ERROR" ? !["COCOK", "TIDAK COCOK"].includes(r.status) : r.status === VR.f));
-const vrBaris = (r) => '<tr><td>' + esc(r.baris) + '</td><td>' + esc(r.bank) + '</td><td>' + esc(r.no_rek) + '</td><td>' + esc(r.nama) + '</td><td>' + vrPill(r) + '</td><td>' + (r.skor == null ? '' : esc(String(r.skor))) + '</td><td>' + esc(r.nama_terdaftar || '') + '</td><td style="white-space:normal;min-width:220px">' + esc(r.pesan || '') + '</td></tr>';
+const vrBaris = (r) => '<tr><td>' + esc(r.baris) + '</td><td>' + esc(r.bank) + '</td><td>' + esc(r.no_rek) + '</td><td>' + esc(r.nama) + '</td><td>' + vrPill(r) + '</td><td>' + (r.skor == null ? '' : esc(String(r.skor))) + '</td><td>' + (r.nama_terdaftar ? '<b>' + esc(r.nama_terdaftar) + '</b>' : (r.selesai && r.siap && r.status === 'TIDAK COCOK' ? '<span class="mut" title="api.co.id tidak menampilkan nama pemilik bila nama tidak cocok">disembunyikan bank</span>' : '')) + '</td><td style="white-space:normal;min-width:220px">' + esc(r.pesan || '') + '</td></tr>';
 function vrAngka() {
   const c = vrHitung(), total = VR.baris.length, siap = VR.baris.filter((r) => r.siap).length, sel = VR.baris.filter((r) => r.siap && r.selesai).length, pc = siap ? Math.round(sel / siap * 100) : 100;
   return { c, total, siap, sel, pc };
@@ -2161,7 +2162,7 @@ function vrSegarkan() {
   if (!$("#vr_isi")) return;
   const { c, total, siap, sel, pc } = vrAngka();
   $("#vr_sum").innerHTML = '<span class="pill ok">Cocok ' + c.cocok + '</span><span class="pill er">Tidak cocok ' + c.tidak + '</span><span class="pill wa">Error ' + c.error + '</span><span class="pill mut">Tidak diproses ' + c.lain + '</span>' + (c.tunggu ? '<span class="pill">Menunggu ' + c.tunggu + '</span>' : '');
-  $("#vr_prog").innerHTML = '<div class="vrbar"><i style="width:' + pc + '%"></i></div><div class="mut" style="font-size:12.5px">' + sel + ' dari ' + siap + ' rekening sudah dicek (' + pc + '%)' + (VR.jalan ? ' — sedang berjalan, jangan tutup halaman ini' : '') + '</div>';
+  $("#vr_prog").innerHTML = '<div class="prg"><div class="prg-top"><span class="prg-n">' + pc + '%</span><span class="prg-cap">' + sel + ' dari ' + siap + ' rekening sudah dicek' + (VR.jalan ? ' — sedang berjalan, jangan tutup halaman ini' : '') + '</span></div><div class="prg-track"><div class="prg-bar" style="width:' + pc + '%"' + (VR.jalan ? '' : ' data-diam="1"') + '></div></div></div>';
   const tampil = VR.baris.filter(vrLolos);
   $("#vr_isi").innerHTML = tampil.length ? tampil.map(vrBaris).join("") : '<tr><td colspan="8" class="mut">Tidak ada baris di kategori ini.</td></tr>';
   const F = { semua: total, COCOK: c.cocok, "TIDAK COCOK": c.tidak, ERROR: c.error, LAIN: c.lain }, N = { semua: "Semua", COCOK: "Cocok", "TIDAK COCOK": "Tidak cocok", ERROR: "Error", LAIN: "Tidak diproses" };
@@ -2247,7 +2248,7 @@ async function vrMulai() {
   if (!f) return setStat(st, "Pilih file dulu.", "er");
   if (!/\.(csv|txt|xlsx|xls)$/i.test(f.name)) return setStat(st, "Format file harus CSV atau Excel (.xlsx).", "er");
   if (f.size > 3.5e6) return setStat(st, "File terlalu besar (maksimal 3,5 MB).", "er");
-  btn.disabled = true; setStat(st, "Membaca file…");
+  btn.disabled = true; setStat(st, "Membaca file…"); { const hh = $("#vr_hasil"); if (hh) { hh.hidden = false; hh.innerHTML = '<div style="padding:6px">' + prgHtml(0, "vrbaca") + '<div class="mut" style="margin-top:8px;font-size:12.5px">Membaca file dan mencocokkan nama bank…</div></div>'; } }
   try {
     const b = await fileB64(f);
     const j = await api("/api/vr/baca", { file: { nama: f.name, b64: b.b64, mime: f.type } });
@@ -2258,7 +2259,7 @@ async function vrMulai() {
     if (!siap) return setStat(st, "Tidak ada baris yang siap dicek. Lihat alasannya di tabel hasil.", "er");
     setStat(st, VR.baris.length + " baris dibaca: " + siap + " siap dicek" + (kurang ? ", " + kurang + " tidak bisa dicek." : "."));
     ask("Mulai pengecekan?", siap + " rekening akan dicek ke api.co.id dan memakai " + siap + " kuota pengecekan." + (kurang ? " " + kurang + " baris tidak dikirim (data kurang atau bank tidak dikenali)." : ""), "Mulai cek", false, () => vrCek(false));
-  } catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal membaca file", "er"); }
+  } catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal membaca file", "er"); if (!VR.baris.length) vrGambarHasil(); else vrGambarHasil(); }
   finally { btn.disabled = false; }
 }
 function vrWire() {
