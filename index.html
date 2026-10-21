@@ -2118,7 +2118,6 @@ setInterval(() => { if (token && !document.hidden) load(); }, 10000);
 /* ---------- Verifikasi No Rekening (file -> Worker -> n8n yasir -> api.co.id) ---------- */
 const VR_NAMA = { "COCOK": ["ok", "Cocok"], "TIDAK COCOK": ["er", "Tidak cocok"], "ERROR": ["wa", "Error"], "BANK TIDAK DIKENALI": ["wa", "Bank tak dikenal"], "DATA TIDAK LENGKAP": ["mut", "Data kurang"] };
 let VR = { st: null, baris: [], jalan: false, henti: false, nama: "", f: "semua" };
-const vrAdmin = () => PERAN === "admin";
 function vrView() {
   return '<div data-doc="vr"><div class="top"><div><h1>Verifikasi No Rekening</h1><p>Unggah daftar rekening (CSV atau Excel). Sistem mengecek kecocokan nama pemilik rekening lewat api.co.id.</p></div></div>' +
     '<div class="duo doc2"><div class="main">' +
@@ -2129,62 +2128,61 @@ function vrView() {
     '<div class="fstat" id="vr_st"></div><div class="row"><button class="btn pri" id="vr_go">Baca file &amp; cek rekening</button></div></div></div>' +
     '<div class="card" id="vr_hasil" style="margin-top:16px" hidden></div>' +
     '</div><aside class="aside"><div class="card"><h3 style="margin:0 0 8px;font-size:15px">Cara kerja</h3>' +
-    '<ol style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;color:var(--mut)"><li>Unggah file berisi bank, nomor rekening, dan nama pemilik.</li><li>Sistem membaca file, lalu mengecek tiap rekening ke api.co.id (satu per satu).</li><li>Hasil tiap baris: <b>Cocok</b>, <b>Tidak cocok</b>, atau <b>Error</b>, lengkap dengan skor kemiripan nama.</li><li>Unduh hasilnya ke Excel.</li></ol>' +
+    '<ol style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;color:var(--mut)"><li>Unggah file berisi bank, nomor rekening, dan nama pemilik.</li><li>Sistem membaca file, lalu mengecek tiap rekening ke api.co.id (beberapa sekaligus).</li><li>Hasil tiap baris: <b>Cocok</b>, <b>Tidak cocok</b>, atau <b>Error</b>, lengkap dengan skor kemiripan nama.</li><li>Unduh hasilnya ke Excel.</li></ol>' +
     '<h3 style="margin:14px 0 6px;font-size:15px">Perlu diketahui</h3><ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;color:var(--mut)"><li>Skor 7 atau lebih dianggap cocok. Nama pemilik yang ditampilkan disamarkan oleh api.co.id.</li><li>"Tidak cocok" berarti nama tidak sesuai <i>atau</i> rekening tidak ditemukan.</li><li>Baris yang datanya kurang atau banknya tidak dikenali tidak dikirim, jadi tidak memakai kuota.</li><li>Nomor rekening yang di Excel berubah menjadi angka ilmiah (1,23E+11) perlu diubah ke format Teks.</li></ul></div></aside></div></div>';
 }
 function vrKunciHtml() {
   const s = VR.st;
   if (!s) return '<div class="mut">Memuat pengaturan…</div>';
-  const ada = !!(s.kunci && s.kunci.ada);
-  let h = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">API key api.co.id</h3>' +
-    (ada ? '<span class="pill ok">Tersimpan • ••••' + esc(s.kunci.akhir) + '</span>' : '<span class="pill wa">Belum diisi</span>') + '</div>';
-  if (!s.aktif) h += '<div class="fstat er" style="margin-top:8px">Fitur belum diaktifkan di server (rahasia penghubung ke n8n belum diisi). Hubungi admin sistem.</div>';
-  h += '<div class="mut" style="font-size:12.5px;margin-top:8px">Terpakai bulan ' + esc(s.bulan) + ': <b>' + Number(s.pakaiBulanIni || 0).toLocaleString("id-ID") + '</b> pengecekan (perkiraan). Satu rekening = satu pengecekan.</div>';
-  if (vrAdmin()) {
-    h += '<div class="form" style="margin-top:12px"><label>' + (ada ? 'Ganti API key' : 'Tempel API key dari dashboard.api.co.id') + '<input type="password" id="vr_key" placeholder="API key api.co.id" autocomplete="off" spellcheck="false"></label>' +
-      '<div class="mut" style="font-size:12px">Kunci diperiksa ke api.co.id, lalu disimpan terenkripsi di server. Kunci tidak akan ditampilkan lagi setelah disimpan.</div>' +
-      '<div class="fstat" id="vr_kst"></div><div class="row"><button class="btn pri" id="vr_simpan">Simpan API key</button>' + (ada ? '<button class="btn dg" id="vr_hapus">Hapus</button>' : '') + '</div></div>';
-  } else if (!ada) h += '<div class="fstat wa" style="margin-top:8px">API key belum diisi. Minta admin mengisinya di halaman ini.</div>';
-  return h;
+  let x = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">Layanan pengecekan</h3>' + (s.aktif ? '<span class="pill ok">Aktif</span>' : '<span class="pill er">Belum aktif</span>') + '</div>';
+  if (!s.aktif) x += '<div class="fstat er" style="margin-top:8px">Fitur belum diaktifkan di server (rahasia penghubung ke n8n belum diisi). Hubungi admin sistem.</div>';
+  x += '<div class="mut" style="font-size:12.5px;margin-top:8px">API key api.co.id tersimpan sebagai kredensial di n8n, tidak diisi di halaman ini. Terpakai bulan ' + esc(s.bulan) + ': <b>' + Number(s.pakaiBulanIni || 0).toLocaleString("id-ID") + '</b> pengecekan (perkiraan). Satu rekening = satu pengecekan.</div>';
+  x += '<div class="mut" style="font-size:12.5px;margin-top:6px">Rekening yang valid biasanya cepat. Rekening yang tidak ditemukan bisa memakan waktu sampai 90 detik per baris, jadi file besar dapat membutuhkan beberapa menit. Beberapa rekening dicek bersamaan; tetap buka halaman ini sampai selesai.</div>';
+  return x;
 }
-function vrKunciGambar() { const el = $("#vr_kunci"); if (!el) return; el.innerHTML = vrKunciHtml(); vrKunciWire(); }
+function vrKunciGambar() { const el = $("#vr_kunci"); if (el) el.innerHTML = vrKunciHtml(); }
 async function vrMuat() { try { VR.st = await api("/api/vr/status"); if (VR.st && VR.st.error) VR.st = null; } catch (e) { VR.st = null; } vrKunciGambar(); }
-function vrKunciWire() {
-  const sm = $("#vr_simpan"), hp = $("#vr_hapus");
-  if (sm) sm.onclick = async () => {
-    const inp = $("#vr_key"), st = $("#vr_kst"), k = inp.value.trim();
-    if (!k) return setStat(st, "Tempel API key dulu.", "er");
-    sm.disabled = true; setStat(st, "Memeriksa ke api.co.id…");
-    try { const j = await api("/api/vr/kunci", { kunci: k }); if (j.error) throw new Error(j.error); inp.value = ""; toast(j.peringatan || "API key tersimpan"); await vrMuat(); }
-    catch (e) { if (e.message !== "login") setStat(st, e.message || "Gagal menyimpan", "er"); }
-    finally { sm.disabled = false; }
-  };
-  if (hp) hp.onclick = () => ask("Hapus API key?", "Pengecekan rekening tidak bisa dipakai sampai API key diisi lagi.", "Hapus", true, async () => { try { const j = await api("/api/vr/kunci/hapus", {}); if (j.error) return toast(j.error); toast("API key dihapus"); await vrMuat(); } catch (e) {} });
-}
 function vrHitung() {
   const c = { cocok: 0, tidak: 0, error: 0, lain: 0, tunggu: 0 };
   for (const r of VR.baris) { if (!r.siap) c.lain++; else if (!r.selesai) c.tunggu++; else if (r.status === "COCOK") c.cocok++; else if (r.status === "TIDAK COCOK") c.tidak++; else c.error++; }
   return c;
 }
-const vrPill = (r) => { if (!r.siap) { const x = VR_NAMA[r.status] || ["mut", r.status || "-"]; return '<span class="pill ' + x[0] + '">' + esc(x[1]) + '</span>'; } if (!r.selesai) return '<span class="pill mut">' + (VR.jalan ? "Memeriksa…" : "Menunggu") + '</span>'; const x = VR_NAMA[r.status] || ["wa", r.status || "Error"]; return '<span class="pill ' + x[0] + '">' + esc(x[1]) + '</span>'; };
+const vrPill = (r) => { if (!r.siap) { const x = VR_NAMA[r.status] || ["mut", r.status || "-"]; return '<span class="pill ' + x[0] + '">' + esc(x[1]) + '</span>'; } if (!r.selesai) return '<span class="pill mut">' + (r.sedang ? "Memeriksa…" : VR.jalan ? "Antre" : "Menunggu") + '</span>'; const x = VR_NAMA[r.status] || ["wa", r.status || "Error"]; return '<span class="pill ' + x[0] + '">' + esc(x[1]) + '</span>'; };
+let vrTunda = null;
+function vrGambarCepat() { if (vrTunda) return; vrTunda = setTimeout(() => { vrTunda = null; vrSegarkan(); }, 400); }
+const vrLolos = (r) => VR.f === "semua" || (VR.f === "LAIN" ? !r.siap : r.siap && r.selesai && (VR.f === "ERROR" ? !["COCOK", "TIDAK COCOK"].includes(r.status) : r.status === VR.f));
+const vrBaris = (r) => '<tr><td>' + esc(r.baris) + '</td><td>' + esc(r.bank) + '</td><td>' + esc(r.no_rek) + '</td><td>' + esc(r.nama) + '</td><td>' + vrPill(r) + '</td><td>' + (r.skor == null ? '' : esc(String(r.skor))) + '</td><td>' + esc(r.nama_terdaftar || '') + '</td><td style="white-space:normal;min-width:220px">' + esc(r.pesan || '') + '</td></tr>';
+function vrAngka() {
+  const c = vrHitung(), total = VR.baris.length, siap = VR.baris.filter((r) => r.siap).length, sel = VR.baris.filter((r) => r.siap && r.selesai).length, pc = siap ? Math.round(sel / siap * 100) : 100;
+  return { c, total, siap, sel, pc };
+}
+// hanya bagian yang berubah selama pengecekan (tombol & chip dibiarkan agar klik tidak meleset)
+function vrSegarkan() {
+  if (!$("#vr_isi")) return;
+  const { c, total, siap, sel, pc } = vrAngka();
+  $("#vr_sum").innerHTML = '<span class="pill ok">Cocok ' + c.cocok + '</span><span class="pill er">Tidak cocok ' + c.tidak + '</span><span class="pill wa">Error ' + c.error + '</span><span class="pill mut">Tidak diproses ' + c.lain + '</span>' + (c.tunggu ? '<span class="pill">Menunggu ' + c.tunggu + '</span>' : '');
+  $("#vr_prog").innerHTML = '<div class="vrbar"><i style="width:' + pc + '%"></i></div><div class="mut" style="font-size:12.5px">' + sel + ' dari ' + siap + ' rekening sudah dicek (' + pc + '%)' + (VR.jalan ? ' — sedang berjalan, jangan tutup halaman ini' : '') + '</div>';
+  const tampil = VR.baris.filter(vrLolos);
+  $("#vr_isi").innerHTML = tampil.length ? tampil.map(vrBaris).join("") : '<tr><td colspan="8" class="mut">Tidak ada baris di kategori ini.</td></tr>';
+  const F = { semua: total, COCOK: c.cocok, "TIDAK COCOK": c.tidak, ERROR: c.error, LAIN: c.lain }, N = { semua: "Semua", COCOK: "Cocok", "TIDAK COCOK": "Tidak cocok", ERROR: "Error", LAIN: "Tidak diproses" };
+  document.querySelectorAll("#vr_hasil [data-f]").forEach((b) => { b.textContent = N[b.dataset.f] + " (" + F[b.dataset.f] + ")"; });
+}
+// gambar penuh: saat mulai, selesai, ganti filter, atau file baru
 function vrGambarHasil() {
   const el = $("#vr_hasil"); if (!el) return;
   if (!VR.baris.length) { el.hidden = true; el.innerHTML = ""; return; }
   el.hidden = false;
-  const c = vrHitung(), total = VR.baris.length, siap = VR.baris.filter((r) => r.siap).length, sel = VR.baris.filter((r) => r.siap && r.selesai).length, pc = siap ? Math.round(sel / siap * 100) : 100;
-  const F = [["semua", "Semua", total], ["COCOK", "Cocok", c.cocok], ["TIDAK COCOK", "Tidak cocok", c.tidak], ["ERROR", "Error", c.error], ["LAIN", "Tidak diproses", c.lain]];
-  const lolos = (r) => VR.f === "semua" || (VR.f === "LAIN" ? !r.siap : r.siap && r.selesai && (VR.f === "ERROR" ? !["COCOK", "TIDAK COCOK"].includes(r.status) : r.status === VR.f));
-  const tampil = VR.baris.filter(lolos);
+  const { c } = vrAngka();
+  const F = [["semua", "Semua"], ["COCOK", "Cocok"], ["TIDAK COCOK", "Tidak cocok"], ["ERROR", "Error"], ["LAIN", "Tidak diproses"]];
   el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0;font-size:16px">Hasil pengecekan</h3><span class="mut" style="font-size:12.5px">' + esc(VR.nama) + '</span></div>' +
-    '<div class="vrsum"><span class="pill ok">Cocok ' + c.cocok + '</span><span class="pill er">Tidak cocok ' + c.tidak + '</span><span class="pill wa">Error ' + c.error + '</span><span class="pill mut">Tidak diproses ' + c.lain + '</span>' + (c.tunggu ? '<span class="pill">Menunggu ' + c.tunggu + '</span>' : '') + '</div>' +
-    '<div class="vrbar"><i style="width:' + pc + '%"></i></div><div class="mut" style="font-size:12.5px">' + sel + ' dari ' + siap + ' rekening sudah dicek (' + pc + '%)' + (VR.jalan ? ' — sedang berjalan, jangan tutup halaman ini' : '') + '</div>' +
+    '<div class="vrsum" id="vr_sum"></div><div id="vr_prog"></div>' +
     '<div class="row" style="margin:10px 0">' + (VR.jalan ? '<button class="btn" id="vr_henti">Hentikan</button>' : (c.tunggu ? '<button class="btn pri" id="vr_lanjut">Lanjutkan (' + c.tunggu + ')</button>' : '')) + (!VR.jalan && c.error ? '<button class="btn" id="vr_ulang">Ulangi yang error (' + c.error + ')</button>' : '') + '<button class="btn" id="vr_unduh">Unduh hasil (Excel)</button></div>' +
-    '<div class="chips">' + F.map(([k, n, x]) => '<button class="chip ' + (VR.f === k ? 'on' : '') + '" data-f="' + k + '">' + n + ' (' + x + ')</button>').join("") + '</div>' +
-    '<div style="overflow-x:auto;max-height:560px"><table class="tbl"><thead><tr><th>No</th><th>Bank</th><th>No Rekening</th><th>Nama pemilik (di file)</th><th>Status</th><th>Skor</th><th>Nama terdaftar</th><th>Keterangan</th></tr></thead><tbody>' +
-    (tampil.length ? tampil.map((r) => '<tr><td>' + esc(r.baris) + '</td><td>' + esc(r.bank) + '</td><td>' + esc(r.no_rek) + '</td><td>' + esc(r.nama) + '</td><td>' + vrPill(r) + '</td><td>' + (r.skor == null ? '' : esc(String(r.skor))) + '</td><td>' + esc(r.nama_terdaftar || '') + '</td><td style="white-space:normal;min-width:220px">' + esc(r.pesan || '') + '</td></tr>').join("") : '<tr><td colspan="8" class="mut">Tidak ada baris di kategori ini.</td></tr>') + '</tbody></table></div>';
+    '<div class="chips">' + F.map(([k, n]) => '<button class="chip ' + (VR.f === k ? 'on' : '') + '" data-f="' + k + '">' + n + '</button>').join("") + '</div>' +
+    '<div style="overflow-x:auto;max-height:560px"><table class="tbl"><thead><tr><th>No</th><th>Bank</th><th>No Rekening</th><th>Nama pemilik (di file)</th><th>Status</th><th>Skor</th><th>Nama terdaftar</th><th>Keterangan</th></tr></thead><tbody id="vr_isi"></tbody></table></div>';
+  vrSegarkan();
   el.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => { VR.f = b.dataset.f; vrGambarHasil(); }));
-  const h = $("#vr_henti"), l = $("#vr_lanjut"), u = $("#vr_ulang"), d = $("#vr_unduh");
-  if (h) h.onclick = () => { VR.henti = true; h.disabled = true; h.textContent = "Menghentikan…"; };
+  const hn = $("#vr_henti"), l = $("#vr_lanjut"), u = $("#vr_ulang"), d = $("#vr_unduh");
+  if (hn) hn.onclick = () => { VR.henti = true; hn.disabled = true; hn.textContent = "Menghentikan…"; };
   if (l) l.onclick = () => vrCek(false);
   if (u) u.onclick = () => vrCek(true);
   if (d) d.onclick = vrUnduh;
@@ -2198,35 +2196,54 @@ function vrUnduh() {
   a.download = "verifikasi-rekening-" + new Date().toISOString().slice(0, 10) + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   toast("File hasil diunduh, buka dengan Excel");
 }
+const vrJeda = (ms) => new Promise((r) => setTimeout(r, ms));
+// satu pekerjaan: kirim, lalu tanya hasilnya tiap 3 detik (api.co.id bisa sampai ~90 detik untuk rekening yang tidak ditemukan)
+async function vrPekerjaan(bag) {
+  const j = await api("/api/vr/cek", { rows: bag.map((r) => ({ bank: r.bank, norek: r.no_rek, nama: r.nama, ref: r.ref })) });
+  if (j.error) throw new Error(j.error);
+  const t0 = Date.now();
+  while (true) {
+    await vrJeda(VR.jeda || 3000);
+    const h = await api("/api/vr/hasil?job=" + encodeURIComponent(j.job));
+    if (h.error) throw new Error(h.error);
+    if (h.selesai) { if (!h.ok) throw new Error(h.galat || "Pengecekan gagal"); return h.hasil || []; }
+    if (Date.now() - t0 > 400000) throw new Error("Hasil belum diterima setelah 6 menit. Coba ulangi baris ini.");
+  }
+}
 async function vrCek(ulangError) {
   if (VR.jalan) return;
-  const maks = (VR.st && VR.st.maksCek) || 15;
+  const ukuran = (VR.st && VR.st.ukuranBagian) || 1, serentak = (VR.st && VR.st.serentak) || 6;
   const target = VR.baris.filter((r) => r.siap && (ulangError ? r.selesai && !["COCOK", "TIDAK COCOK"].includes(r.status) : !r.selesai));
   if (!target.length) return;
   if (ulangError) target.forEach((r) => { r.selesai = false; r.status = ""; r.pesan = ""; r.skor = null; r.nama_terdaftar = null; });
   VR.jalan = true; VR.henti = false; vrGambarHasil();
   { const hh = $("#vr_hasil"); if (hh && hh.scrollIntoView) hh.scrollIntoView({ behavior: "smooth", block: "start" }); }
-  for (let i = 0; i < target.length && !VR.henti; i += maks) {
-    const bag = target.slice(i, i + maks);
-    try {
-      const j = await api("/api/vr/cek", { rows: bag.map((r) => ({ bank: r.bank, norek: r.no_rek, nama: r.nama, ref: r.ref })) });
-      if (j.error) { const e = new Error(j.error); e.perluKunci = !!j.perluKunci; throw e; }
-      (j.hasil || []).forEach((h) => { const r = bag[Number(h.baris) - 1]; if (r) { r.status = h.status; r.skor = h.skor; r.nama_terdaftar = h.nama_terdaftar; r.pesan = h.pesan; r.selesai = true; } });
-      bag.forEach((r) => { if (!r.selesai) { r.status = "ERROR"; r.pesan = "Tidak ada hasil untuk baris ini"; r.selesai = true; } });
-    } catch (e) {
-      if (e.message === "login") { VR.jalan = false; return; }
-      bag.forEach((r) => { r.status = "ERROR"; r.pesan = e.message || "Gagal memeriksa bagian ini"; r.selesai = true; });
-      if (e.perluKunci) VR.henti = true;
+  const bagian = []; for (let i = 0; i < target.length; i += ukuran) bagian.push(target.slice(i, i + ukuran));
+  let idx = 0, keluarLogin = false;
+  const kerja = async () => {
+    while (!VR.henti && !keluarLogin) {
+      const i = idx++; if (i >= bagian.length) return;
+      const bag = bagian[i]; bag.forEach((r) => { r.sedang = true; }); vrGambarCepat();
+      try {
+        const hasil = await vrPekerjaan(bag);
+        hasil.forEach((x) => { const r = bag[Number(x.baris) - 1]; if (r) { r.status = x.status; r.skor = x.skor; r.nama_terdaftar = x.nama_terdaftar; r.pesan = x.pesan; r.selesai = true; } });
+        bag.forEach((r) => { if (!r.selesai) { r.status = "ERROR"; r.pesan = "Tidak ada hasil untuk baris ini"; r.selesai = true; } });
+      } catch (e) {
+        if (e.message === "login") { keluarLogin = true; bag.forEach((r) => { r.sedang = false; }); return; }
+        bag.forEach((r) => { r.status = "ERROR"; r.pesan = e.message || "Gagal memeriksa baris ini"; r.selesai = true; });
+      }
+      bag.forEach((r) => { r.sedang = false; }); vrGambarCepat();
     }
-    vrGambarHasil();
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(serentak, bagian.length) }, kerja));
+  if (keluarLogin) { VR.jalan = false; return; }
   const dihentikan = VR.henti; VR.jalan = false; VR.henti = false; vrGambarHasil(); vrMuat();
   const c = vrHitung(); toast(dihentikan ? "Pengecekan dihentikan" : "Selesai: " + c.cocok + " cocok, " + c.tidak + " tidak cocok, " + c.error + " error");
 }
 async function vrMulai() {
   const f = $("#vr_file").files[0], st = $("#vr_st"), btn = $("#vr_go");
   if (VR.jalan) return setStat(st, "Pengecekan sebelumnya masih berjalan.", "er");
-  if (!VR.st || !(VR.st.kunci && VR.st.kunci.ada)) return setStat(st, "API key api.co.id belum diisi." + (vrAdmin() ? " Isi dulu di kotak di atas." : " Minta admin mengisinya."), "er");
+  if (!VR.st || !VR.st.aktif) return setStat(st, "Layanan pengecekan belum aktif di server. Hubungi admin sistem.", "er");
   if (!f) return setStat(st, "Pilih file dulu.", "er");
   if (!/\.(csv|txt|xlsx|xls)$/i.test(f.name)) return setStat(st, "Format file harus CSV atau Excel (.xlsx).", "er");
   if (f.size > 3.5e6) return setStat(st, "File terlalu besar (maksimal 3,5 MB).", "er");
