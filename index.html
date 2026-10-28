@@ -946,6 +946,80 @@ async function getPil() {
 }
 const optHtml = (a, sel, ph) => (ph ? `<option value="">${esc(ph)}</option>` : "") + (a || []).map((x) => `<option value="${esc(x)}"${x === sel ? " selected" : ""}>${esc(x)}</option>`).join("");
 const NAMA_BLN = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+/* ---------- Slip Gaji MANUAL: isi sendiri bila ada permintaan di luar Rekap Gaji ---------- */
+const SM_IDENT = [["nama", "Nama karyawan"], ["jabatan", "Jabatan"], ["lokasi", "Lokasi / client"], ["periode", "Periode"], ["norek", "No. rekening"], ["tgl_gajian", "Tanggal gajian"]];
+const SM_PEND = [["gaji", "Gaji pokok"], ["hari_kerja", "Hari kerja (jumlah hari)"], ["uang_makan", "Tunjangan uang makan"], ["bbm", "Tunjangan BBM"], ["sewa_motor", "Tunjangan sewa motor"], ["tunj_jabatan", "Tunjangan jabatan"], ["backup", "Dana backup"], ["lembur", "Lembur"], ["overtime", "Overtime"], ["hr_libur", "HR. libur nasional"], ["tunj_lain", "Tunjangan lainnya"]];
+const SM_POT = [["bpjs_tk", "BPJS Ketenagakerjaan"], ["bpjs_kes", "BPJS Kesehatan"], ["adm", "Potongan administrasi"], ["admin_payroll", "Admin payroll"], ["absensi", "Absensi"], ["pinjaman", "Pinjaman"], ["pot_lain", "Potongan lainnya"]];
+const smAngka = (k) => { const el = document.getElementById("sm_" + k); return el ? Number(String(el.value).replace(/[^0-9]/g, "")) || 0 : 0; };
+function smHitung() {
+  const pend = SM_PEND.filter(([k]) => k !== "hari_kerja").reduce((a, [k]) => a + smAngka(k), 0);
+  const pot = SM_POT.reduce((a, [k]) => a + smAngka(k), 0);
+  const el = document.getElementById("sm_tot"); if (!el) return;
+  const f = (n) => "Rp " + n.toLocaleString("id-ID");
+  el.innerHTML = `<div><span class="mut">Total pendapatan</span><b>${f(pend)}</b></div><div><span class="mut">Total potongan</span><b>${f(pot)}</b></div><div><span class="mut">Perkiraan gaji diterima</span><b style="color:${pend - pot < 0 ? "var(--er,#c0392b)" : "inherit"}">${f(pend - pot)}</b></div>`;
+}
+window.slipManual = () => {
+  const now = new Date();
+  let ls = {}; try { ls = JSON.parse(localStorage.getItem("last_slipm") || "{}"); } catch (e) {}
+  const nilaiAwal = { periode: ls.periode || (NAMA_BLN[now.getMonth()] + " " + now.getFullYear()), lokasi: ls.lokasi || "" };
+  const txt = ([k, n]) => `<label>${n}<input type="text" id="sm_${k}" value="${esc(nilaiAwal[k] || "")}" autocomplete="off"></label>`;
+  const num = ([k, n]) => `<label>${n}<input type="text" inputmode="numeric" id="sm_${k}" placeholder="0" autocomplete="off"></label>`;
+  const grid = "display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px";
+  $("#layer").innerHTML = `<div class="modal" id="mdl"><div class="sheet" style="max-width:780px;max-height:92vh;overflow:auto">
+    <h4>Slip gaji manual</h4>
+    <p class="mut" style="margin:0 0 12px;font-size:13px">Untuk permintaan di luar Rekap Gaji. Isi sendiri, hasilnya PDF dengan template slip yang sama. Data tidak masuk ke Rekap Gaji.</p>
+    <div class="form"><div style="${grid}">${SM_IDENT.map(txt).join("")}</div>
+    <h5 style="margin:14px 0 6px">Pendapatan</h5><div style="${grid}">${SM_PEND.map(num).join("")}</div>
+    <h5 style="margin:14px 0 6px">Potongan</h5><div style="${grid}">${SM_POT.map(num).join("")}</div></div>
+    <div id="sm_tot" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:14px 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px"></div>
+    <div class="mut" style="font-size:12px">Hari kerja tidak ikut dijumlahkan. Angka akhir di PDF mengikuti rumus template slip.</div>
+    <div class="fstat" id="sm_st" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="sm_batal">Batal</button><button class="btn pri" id="sm_go">Buat slip PDF</button></div>
+    <details style="margin-top:14px"><summary class="mut" style="cursor:pointer">Slip manual sebelumnya</summary><div id="sm_his" style="margin-top:8px"></div></details>
+  </div></div>`;
+  const tutup = () => { $("#layer").innerHTML = ""; };
+  $("#sm_batal").onclick = tutup; $("#mdl").onclick = (e) => { if (e.target.id === "mdl") tutup(); };
+  [...SM_PEND, ...SM_POT].forEach(([k]) => {
+    const el = $("#sm_" + k);
+    el.addEventListener("input", () => { const d = el.value.replace(/[^0-9]/g, ""); el.value = d ? Number(d).toLocaleString("id-ID") : ""; smHitung(); });
+  });
+  smHitung();
+  $("#sm_nama").focus();
+  $("#sm_go").onclick = async () => {
+    const st = $("#sm_st"), btn = $("#sm_go");
+    const b = { angka: {} };
+    SM_IDENT.forEach(([k]) => { b[k] = ($("#sm_" + k).value || "").trim(); });
+    [...SM_PEND, ...SM_POT].forEach(([k]) => { b.angka[k] = smAngka(k); });
+    if (!b.nama) return setStat(st, "Nama karyawan wajib diisi.", "er");
+    if (!b.lokasi) return setStat(st, "Lokasi / client wajib diisi.", "er");
+    if (!b.periode) return setStat(st, "Periode wajib diisi.", "er");
+    if (!SM_PEND.some(([k]) => k !== "hari_kerja" && b.angka[k] > 0)) return setStat(st, "Isi minimal satu komponen pendapatan.", "er");
+    btn.disabled = true; btn.textContent = "Membuat slip…"; setStat(st, "Menyusun slip, sekitar 10 sampai 30 detik…");
+    try {
+      const j = await api("/api/slip/manual", b);
+      if (j.error) throw new Error(j.error);
+      try { localStorage.setItem("last_slipm", JSON.stringify({ periode: b.periode, lokasi: b.lokasi })); } catch (e) {}
+      tutup(); smBukaPdf(j.image_b64, b.nama + " - " + b.periode, j.nama_file || ("slip-" + slugNama(b.nama) + ".pdf"));
+      toast("Slip manual dibuat");
+    } catch (e) {
+      if (e.message !== "login") setStat(st, e.message || "Gagal membuat slip", "er");
+      btn.disabled = false; btn.textContent = "Buat slip PDF";
+    }
+  };
+  api("/api/hasil?jenis=slip").then((r) => {
+    const el = $("#sm_his"); if (!el) return;
+    const it = (r && r.items) || [];
+    el.innerHTML = it.length ? it.map((o) => `<div class="hrow"><div class="hb"><b>${esc(o.judul)}</b><small>${wib(o.ts)}${PERAN === "admin" && o.oleh ? " · " + esc(o.oleh.split("@")[0]) : ""}</small></div><div class="hact"><button class="btn" onclick="slipManualBuka('${o.id}')">Buka</button></div></div>`).join("") : '<div class="mut">Belum ada slip manual.</div>';
+  }).catch(() => {});
+};
+function smBukaPdf(b64, judul, nama) {
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  window.pratinjau("pdf", URL.createObjectURL(new Blob([u8], { type: "application/pdf" })), judul, nama);
+}
+window.slipManualBuka = async (id) => {
+  try { toast("Membuka slip…"); const r = await api("/api/hasil/" + id); if (r.error) return toast(r.error); smBukaPdf(r.image_b64, r.judul, "slip-" + slugNama(r.judul) + ".pdf"); } catch (e) { if (e.message !== "login") toast("Gagal membuka slip"); }
+};
 window.formSlip = async () => {
   toast("Memuat daftar lokasi…");
   const P = await getPil();
@@ -1412,7 +1486,7 @@ function rqView() {
       ${MENU_REQ.filter((m) => bolehMenu(m.k)).map((m) => `<div class="card item fade click" onclick="bukaSub('${m.k}')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic(m.ikon)}</div><div><div class="nm">${esc(m.nama)}</div><div class="mut">${m.ket(cnt)}</div></div></div></div></div>`).join("")}
     </div>`;
   }
-  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan<span class="dk"> di kiri</span>. Hasilnya muncul di bawah formulir, lalu pindah ke Riwayat<span class="dk"></span> setelah selesai dipakai.</p></div><button class="btn" onclick="tutupSub()">${"← Kembali"}</button></div>
+  return `<div class="top"><div><h1>${rqNama[rqSub]}</h1><p>Isi permintaan<span class="dk"> di kiri</span>. Hasilnya muncul di bawah formulir, lalu pindah ke Riwayat<span class="dk"></span> setelah selesai dipakai.</p></div>${rqSub === "slip" ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" onclick="slipManual()">Slip manual</button><button class="btn" onclick="tutupSub()">← Kembali</button></div>' : '<button class="btn" onclick="tutupSub()">← Kembali</button>'}</div>
   <div class="duo"><div class="main"><div id="formbox"></div><div class="card" id="aktifwrap" style="margin-top:16px"><div class="hh" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px"><h3 style="margin:0;font-size:16px">Hasil terbaru</h3><span class="mut">sedang berjalan atau baru selesai</span></div><div id="aktif" class="grid still"></div></div></div>
   <aside class="aside">${tutHtml(rqSub)}<div class="card his"><div class="hh"><h3>Riwayat hasil</h3><span class="mut">yang sudah selesai dipakai</span></div><div id="hasil" class="grid still hisbody"></div></div></aside></div>`;
 }
