@@ -617,6 +617,59 @@ label{font-size:12.5px}
 <div id="layer"></div>
 
 <script>
+/* PELAPOR_ERROR_V1: kirim laporan eror ke pemantau (lapor.72-61-143-71.sslip.io). Hanya mengirim menu, proses, pesan eror, lokasi kode. */
+(function () {
+  var C = { situs: "staff", url: "https://lapor.72-61-143-71.sslip.io/l", api: /workers\.dev/, menu: function () { var t = TABS_ALL.filter(function (x) { return x[0] === tab; })[0]; return t ? t[1] : tab; }, akun: function () { return ""; } };
+  var KAMUS = { list: "memuat daftar", get: "memuat", simpan: "menyimpan", hapus: "menghapus", tambah: "menambah", ubah: "mengubah", edit: "mengubah", kirim: "mengirim", login: "masuk akun", masuk: "masuk akun", keluar: "keluar akun", bayar: "mencatat pembayaran", unggah: "mengunggah", upload: "mengunggah", cetak: "menyiapkan cetak", impor: "mengimpor", ekspor: "mengekspor", sync: "menyalin data", sinkron: "menyalin data", mulai: "memulai", selesai: "menyelesaikan", submit: "mengirim jawaban", nilai: "menilai", ping: "memeriksa koneksi", overview: "memuat ringkasan", rekap: "memuat rekap", laporan: "memuat laporan" };
+  var fetch0 = window.fetch ? window.fetch.bind(window) : null, terakhir = { t: "", w: 0 }, jumlah = 0, sudah = {};
+  function bersih(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
+  function proses(ep, aksi) {
+    var s = aksi || String(ep || "").replace(/^[A-Z]+ /, "").replace(/^\/api\//, ""), t = s.split(/[./\-_]+/).filter(Boolean), v = "", sisa = [];
+    for (var i = t.length - 1; i >= 0; i--) { if (!v && KAMUS[t[i].toLowerCase()]) v = KAMUS[t[i].toLowerCase()]; else sisa.unshift(t[i]); }
+    return v ? v.charAt(0).toUpperCase() + v.slice(1) + (sisa.length ? " " + sisa.join(" ") : "") : "Memanggil layanan " + s;
+  }
+  function kirim(o) {
+    try {
+      var sig = [o.jenis, o.endpoint || "", o.lokasi || "", String(o.pesan || "").slice(0, 60)].join("|");
+      if ((sudah[sig] && Date.now() - sudah[sig] < 60000) || jumlah >= 10 || !fetch0) return;
+      sudah[sig] = Date.now(); jumlah++;
+      var p = { situs: C.situs, menu: "", halaman: location.pathname + location.hash, aksi: Date.now() - terakhir.w < 15000 ? terakhir.t : "", akun: "" };
+      try { p.menu = bersih(C.menu()).slice(0, 60); } catch (e) {}
+      try { p.akun = bersih(C.akun()).slice(0, 80); } catch (e) {}
+      for (var k in o) p[k] = o[k];
+      if (!p.proses) p.proses = o.endpoint ? proses(o.endpoint, o.aksiApi) : "Menjalankan halaman";
+      fetch0(C.url, { method: "POST", headers: { "content-type": "text/plain" }, body: JSON.stringify(p), keepalive: true }).catch(function () {});
+    } catch (e) {}
+  }
+  document.addEventListener("click", function (e) { try { var b = e.target.closest && e.target.closest("button,a,.btn,[onclick]"); if (b) terakhir = { t: bersih(b.getAttribute("aria-label") || b.title || b.textContent).slice(0, 50), w: Date.now() }; } catch (x) {} }, true);
+  if (fetch0) window.fetch = function (u, o) {
+    var url = typeof u === "string" ? u : (u && u.url) || "", p = fetch0(u, o);
+    try {
+      if (url.indexOf(C.url) === 0 || !C.api.test(url)) return p;
+      var ep = ((o && o.method) || (u && u.method) || "GET").toUpperCase() + " " + url.replace(/^https?:\/\/[^/]+/, "").split("?")[0], aksi = "";
+      try { if (o && typeof o.body === "string" && o.body.charAt(0) === "{") { var b = JSON.parse(o.body); aksi = b.action || b.fn || ""; } } catch (x) {}
+      if (aksi) ep += " (aksi: " + aksi + ")";
+      p.then(function (r) {
+        if (r.status >= 500 || r.status === 404) r.clone().text().then(function (t) { var m = ""; try { var d = JSON.parse(t); m = d.error || d.message || ""; } catch (x) { m = t.slice(0, 120); } kirim({ jenis: "api", endpoint: ep, aksiApi: aksi, status: String(r.status), pesan: m || "Kesalahan " + r.status }); }).catch(function () {});
+      }, function (e) { if (navigator.onLine !== false) kirim({ jenis: "api", endpoint: ep, aksiApi: aksi, status: "jaringan", pesan: "Gagal terhubung ke server: " + ((e && e.message) || e) }); });
+    } catch (x) {}
+    return p;
+  };
+  function ringkas(s) { return String(s || "").split("\n").slice(1, 3).join(" | ").replace(/https?:\/\/[^ )]*\//g, ""); }
+  window.addEventListener("error", function (e) {
+    var m = e.message || "";
+    if ((!e.filename && /^Script error/i.test(m)) || /ResizeObserver/i.test(m)) return;
+    var st = ringkas(e.error && e.error.stack);
+    kirim({ jenis: "js", pesan: m, lokasi: (String(e.filename || "").split("/").pop() || "halaman") + ":" + e.lineno + ":" + e.colno + (st ? " (" + st + ")" : "") });
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e.reason || {}, m = String(r.message || r || "");
+    if (/sesi habis|AbortError|Failed to fetch|Load failed|NetworkError|Koneksi gagal/i.test(m)) return;
+    kirim({ jenis: "js", pesan: "Janji ditolak: " + m, lokasi: ringkas(r.stack) });
+  });
+})();
+</script>
+<script>
 const API = "https://n8nkontrol.sentraless.workers.dev";
 const $ = (s) => document.querySelector(s);
 let tab = "ov", S = null, token = "", filter = "all", botMode = "slip", lastInv = null, busy = false;
