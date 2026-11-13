@@ -2501,7 +2501,70 @@ function idPotong(im) {
   c.getContext("2d").drawImage(im, sx, sy, cw, ch, 0, 0, c.width, c.height);
   return c;
 }
+// ---- Cara utama: MODNet (Apache-2.0, khusus potret orang) lewat transformers.js, tetap berjalan di browser ----
+const TF_JS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1";
+let idModnet = null, idModnetJanji = null;
+async function idSiapkanModnet() {
+  if (idModnet) return idModnet;
+  if (!idModnetJanji) idModnetJanji = (async () => {
+    const T = await import(TF_JS);
+    T.env.allowLocalModels = false;
+    const [model, proc] = await Promise.all([T.AutoModel.from_pretrained("Xenova/modnet", { dtype: "fp32" }), T.AutoProcessor.from_pretrained("Xenova/modnet")]);
+    idModnet = { T, model, proc }; return idModnet;
+  })().catch((e) => { idModnetJanji = null; throw e; });
+  return idModnetJanji;
+}
+// rapikan masker: buang bercak yang terpisah dari badan, tutup lubang kecil di dalam badan
+function idRapikanMasker(a, W, H) {
+  const N = W * H, lab = new Int32Array(N).fill(-1), q = new Int32Array(N);
+  const isi = (mulai, cocok, id) => { let h = 0, t = 0, n = 0, tepi = false; q[t++] = mulai; lab[mulai] = id;
+    while (h < t) { const i = q[h++]; n++; const x = i % W, y = (i - x) / W; if (x === 0 || y === 0 || x === W - 1 || y === H - 1) tepi = true;
+      const tetangga = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1];
+      for (const j of tetangga) if (j >= 0 && lab[j] === -1 && cocok(a[j])) { lab[j] = id; q[t++] = j; } }
+    return { n, tepi }; };
+  // bagian orang (alpha > 0.5)
+  const kompOrang = []; let id = 0;
+  for (let i = 0; i < N; i++) if (lab[i] === -1 && a[i] > 0.5) kompOrang.push({ id, ...isi(i, (v) => v > 0.5, id++) });
+  if (!kompOrang.length) return 0;
+  const terbesar = Math.max(...kompOrang.map((k) => k.n)), simpan = new Set(kompOrang.filter((k) => k.n >= terbesar * 0.15).map((k) => k.id));
+  // bagian latar (alpha <= 0.5): lubang kecil yang tidak menyentuh tepi dianggap bagian badan
+  const kompLatar = new Map();
+  for (let i = 0; i < N; i++) if (lab[i] === -1) { const k = isi(i, (v) => v <= 0.5, id); kompLatar.set(id++, k); }
+  let total = 0;
+  for (let i = 0; i < N; i++) {
+    const L = lab[i];
+    if (a[i] > 0.5) { if (!simpan.has(L)) a[i] = 0; }
+    else { const k = kompLatar.get(L); if (k && !k.tepi && k.n < N * 0.004) a[i] = 1; }
+    total += a[i];
+  }
+  // sisa tepi lembut di sekitar bercak yang dibuang ikut dibersihkan
+  for (let i = 0; i < N; i++) if (a[i] > 0 && a[i] <= 0.5) { const x = i % W; let dekat = false;
+    for (const j of [i - 1, i + 1, i - W, i + W, i - 2, i + 2, i - 2 * W, i + 2 * W]) if (j >= 0 && j < N && Math.abs((j % W) - x) <= 2 && a[j] > 0.5) { dekat = true; break; }
+    if (!dekat) a[i] = 0; }
+  return total / N;
+}
+async function idGantiLatarModnet(kanvas) {
+  const { T, model, proc } = await idSiapkanModnet();
+  const img = await T.RawImage.fromCanvas(kanvas);
+  const { pixel_values } = await proc(img);
+  const { output } = await model({ input: pixel_values });
+  const W = kanvas.width, H = kanvas.height;
+  const m = await T.RawImage.fromTensor(output[0].mul(255).to("uint8")).resize(W, H);
+  const a = new Float32Array(W * H); for (let i = 0; i < a.length; i++) a[i] = m.data[i * m.channels] / 255;
+  if (idRapikanMasker(a, W, H) < 0.03) throw new Error("Wajah/orang tidak terdeteksi");
+  const hasilKanvas = document.createElement("canvas"); hasilKanvas.width = W; hasilKanvas.height = H;
+  const hg = hasilKanvas.getContext("2d"); hg.fillStyle = ID_LATAR; hg.fillRect(0, 0, W, H);
+  const src = kanvas.getContext("2d").getImageData(0, 0, W, H), dst = hg.getImageData(0, 0, W, H);
+  for (let i = 0; i < a.length; i++) { const v = a[i]; for (let k = 0; k < 3; k++) dst.data[i * 4 + k] = src.data[i * 4 + k] * v + dst.data[i * 4 + k] * (1 - v); }
+  hg.putImageData(dst, 0, 0);
+  return hasilKanvas;
+}
+// MODNet dulu; bila gagal dimuat (jaringan/HP lama) pakai MediaPipe
 async function idGantiLatar(kanvas) {
+  try { return await idGantiLatarModnet(kanvas); }
+  catch (e) { if (/tidak terdeteksi/.test(e.message)) throw e; return idGantiLatarMP(kanvas); }
+}
+async function idGantiLatarMP(kanvas) {
   const seg = await idSiapkanSegmenter();
   const hasil = seg.segment(kanvas), masks = hasil.confidenceMasks || [], mask = masks[0];
   if (!mask) throw new Error("Masker kosong");
@@ -2541,7 +2604,7 @@ async function idOlahFoto(f) {
     try {
       const im = await idMuatGambar(f); idFoto.asli = idPotong(im); idTampilPratinjau();
       if (!idFoto.pakaiBiru) { set("Foto asli dipakai."); return; }
-      set("Menghapus latar…");
+      set("Menghapus latar… (pertama kali bisa 10–30 detik)");
       const biru = await idGantiLatar(idFoto.asli);
       if (idFoto.file !== mulai) return;
       idFoto.biru = biru; idTampilPratinjau(); set("Latar sudah biru. Kurang pas? Hilangkan centang.");
