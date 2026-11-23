@@ -1703,9 +1703,10 @@ function bbProg(j) {
   return '<div class="prg"><div class="prg-top"><span class="prg-n">' + p + '%</span><span class="prg-cap">Mengunggah ke Google Drive: ' + a + ' dari ' + b + ' file</span></div><div class="prg-track"><div class="prg-bar" style="width:' + p + '%"></div></div></div>';
 }
 function bbPaintHis() {
-  const el = $("#bb_his"); if (!el || !bbData) return;
-  const r = (bbData.jobs || []).slice(1, 16);
-  setHtml(el, r.length ? r.map((j) => { const [t, c] = bbSt[j.status] || [j.status, "mut"]; return '<div class="hrow"><div class="fic">' + ic("doc") + '</div><div class="hb"><b>' + esc(j.filename) + "</b><small>" + wib(j.created) + " · " + kbs(j.size) + ' · <span class="pill ' + c + '">' + esc(t) + "</span></small></div></div>"; }).join("") : '<div class="mut" style="padding:8px 4px">Belum ada unggahan sebelumnya.</div>');
+  const el = $("#bb_his"); if (!el) return;
+  const srv = bbData ? (bbData.jobs || []).slice(1, 16).map((j) => { const [t, c] = bbSt[j.status] || [j.status, "mut"]; return { w: new Date(j.created).getTime() || 0, h: '<div class="hrow"><div class="fic">' + ic("doc") + '</div><div class="hb"><b>' + esc(j.filename) + "</b><small>" + wib(j.created) + " · " + kbs(j.size) + ' · <span class="pill ' + c + '">' + esc(t) + "</span></small></div></div>" }; }) : [];
+  const semua = srv.concat(typeof kpHisBaris === "function" ? kpHisBaris() : []).sort((a, b) => b.w - a.w).slice(0, 20);
+  setHtml(el, semua.length ? semua.map((x) => x.h).join("") : '<div class="mut" style="padding:8px 4px">Belum ada unggahan sebelumnya.</div>');
 }
 function bbPaintJob() {
   bbPaintHis();
@@ -1816,6 +1817,7 @@ function kpBaca(t) {
   const tot = (t.match(/Total Debit Amount\s+IDR\s+([\d.,]+)/) || t.match(/Total IDR\s+([\d.,]+)/i) || [])[1] || "";
   return { jenis, perusahaan: per.trim(), id, bln, thn, total: tot, angka: parseFloat(tot.replace(/,/g, "")) || 0 };
 }
+const kpJeda = () => new Promise((ok) => setTimeout(ok, 0));
 async function kpPisah(buf, lapor) {
   await kpSiap();
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
@@ -1825,7 +1827,7 @@ async function kpPisah(buf, lapor) {
     const t = tc.items.map((x) => x.str).join(" ").replace(/\s+/g, " ");
     const b = /Nama Perusahaan|No VA/.test(t) ? kpBaca(t) : null;
     if (b) grup.push({ ...b, hal: [i - 1] }); else if (grup.length) grup[grup.length - 1].hal.push(i - 1);
-    if (i % 10 === 0 || i === pdf.numPages) lapor("Membaca halaman " + i + " dari " + pdf.numPages + "…");
+    if (i % 3 === 0 || i === pdf.numPages) { lapor("Membaca halaman " + i + " dari " + pdf.numPages, Math.round(i / pdf.numPages * 50)); await kpJeda(); }
   }
   if (!grup.length) throw new Error("Format tidak dikenali. Menu ini untuk PDF Transaction Report BPJS TK atau KES (bank Kopra). Awal isi halaman 1: " + (pdf.numPages ? ((await (await pdf.getPage(1)).getTextContent()).items.map((x) => x.str).join(" ").replace(/\s+/g, " ").slice(0, 160)) : "(kosong)"));
   const { PDFDocument } = PDFLib, asli = await PDFDocument.load(buf), pakai = new Set(), hasil = [];
@@ -1840,7 +1842,7 @@ async function kpPisah(buf, lapor) {
     const d = await PDFDocument.create();
     (await d.copyPages(asli, g.hal)).forEach((p) => d.addPage(p));
     hasil.push({ nama: nama + ".pdf", lokasi: dasar, perusahaan: g.perusahaan, jenis: g.jenis, npp: g.id, periode, total: g.total, angka: g.angka, hal: g.hal.length, bytes: await d.save() });
-    if (n % 5 === 4 || n === grup.length - 1) lapor("Memisahkan " + (n + 1) + " dari " + grup.length + " lokasi…");
+    if (n % 2 === 1 || n === grup.length - 1) { lapor("Memisahkan lokasi " + (n + 1) + " dari " + grup.length, 50 + Math.round((n + 1) / grup.length * 50)); await kpJeda(); }
   }
   return { hasil, halaman: pdf.numPages, terpakai: grup.reduce((a, g) => a + g.hal.length, 0) };
 }
@@ -1862,23 +1864,41 @@ function kpInit() {
   d.ondragleave = () => d.classList.remove("on");
   d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); kpMulai(e.dataTransfer.files[0]); };
 }
+// Riwayat lokal (browser ini): hasil pemisahan di browser tidak lewat server, jadi dicatat di sini dan ditampilkan di "Riwayat hasil".
+const kpHisBaca = () => { try { return JSON.parse(localStorage.getItem("kpRiwayat") || "[]"); } catch (e) { return []; } };
+function kpHisTambah(e) { try { const a = kpHisBaca(); a.unshift(e); localStorage.setItem("kpRiwayat", JSON.stringify(a.slice(0, 40))); } catch (x) {} }
+function kpHisBaris() {
+  const hal = typeof bbJenis !== "undefined" && $("#bbjob") ? bbJenis : "";
+  return kpHisBaca().filter((e) => (e.hal || "") === hal).map((e) => ({ w: e.w, h: '<div class="hrow"><div class="fic">' + ic("doc") + '</div><div class="hb"><b>' + esc(e.nama) + "</b><small>" + wib(e.w) + " · " + kbs(e.size) + ' · <span class="pill ' + (e.ok ? "ok" : "er") + '">' + (e.ok ? "Selesai" : "Gagal") + "</span>" + (e.ket ? " · " + esc(e.ket) : "") + "</small></div></div>" }));
+}
+const kpKartu = (f, pill, kls, isi) => '<div class="card item fade"><div class="h"><div style="min-width:0"><div class="nm">' + esc(f.name) + '</div><div class="mut">' + wib(Date.now()) + " • " + kbs(f.size) + '</div></div><span class="pill ' + kls + '">' + pill + "</span></div>" + isi + "</div>";
+function kpProg(persen, cap) {
+  const bar = $("#kpbar"), n = $("#kppct"), c = $("#kplap");
+  if (bar) bar.style.width = persen + "%"; if (n) n.textContent = persen + "%"; if (c) c.textContent = cap;
+}
 async function kpMulai(f) {
   if (!f || kpBusy) return;
   if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") return toast("Berkas harus PDF");
   kpBusy = true; kpFile = f; kpHasil = [];
+  const hal = typeof bbJenis !== "undefined" && $("#bbjob") ? bbJenis : "", w = Date.now();
   const kt = $("#kpt"), ks = $("#kps"); if (kt) kt.textContent = f.name; if (ks) ks.textContent = kbs(f.size);
   const job = $("#kpjob"), hs = $("#kphasil"); if (hs) hs.innerHTML = "";
-  if (job) job.innerHTML = '<div class="card fade"><div class="nm">Memproses…</div><div class="mut" id="kplap">Menyiapkan</div></div>';
+  if (job) job.innerHTML = kpKartu(f, "Diproses…", "wa", '<div class="prg"><div class="prg-top"><span class="prg-n" id="kppct">0%</span><span class="prg-cap" id="kplap">Menyiapkan</span></div><div class="prg-track"><div class="prg-bar" id="kpbar" style="width:0%"></div></div></div>');
   try {
-    const r = await kpPisah(await f.arrayBuffer(), (t) => { const e = $("#kplap"); if (e) e.textContent = t; });
+    const r = await kpPisah(await f.arrayBuffer(), (t, p) => kpProg(p || 0, t));
     kpHasil = r.hasil; kpQ = "";
     const jml = r.hasil.reduce((a, x) => a + x.angka, 0), ok = r.halaman === r.terpakai, jn = [...new Set(r.hasil.map((x) => x.jenis))].join("/");
-    if ($("#kpjob")) $("#kpjob").innerHTML = `<div class="card fade"><div class="nm">Selesai: ${r.hasil.length} lokasi (BPJS ${jn})</div><div class="mut">${r.halaman} halaman, total Rp ${jml.toLocaleString("id-ID")}${ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi"}</div><div class="row" style="margin-top:10px"><button class="btn pri" id="kpzip" onclick="kpZip()">Unduh semua (ZIP)</button><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div></div>`;
+    const ket = r.hasil.length + " lokasi • Rp " + jml.toLocaleString("id-ID");
+    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Selesai", "ok", '<div class="mut">' + r.hasil.length + " lokasi BPJS " + jn + " dari " + r.halaman + " halaman, total Rp " + jml.toLocaleString("id-ID") + (ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi") + '</div><div class="row" style="margin-top:10px"><button class="btn pri" id="kpzip" onclick="kpZip()">Unduh semua (ZIP)</button><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div>');
+    kpHisTambah({ nama: f.name, w, size: f.size, ok: true, ket, hal });
     kpDaftar();
   } catch (e) {
-    if ($("#kpjob")) $("#kpjob").innerHTML = `<div class="card fade"><div class="nm">Gagal</div><div class="mut">${esc(e.message || "Tidak bisa membaca PDF")}</div></div>`;
+    const pesan = e.message || "Tidak bisa membaca PDF";
+    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Gagal", "er", '<div class="err">' + esc(pesan) + "</div>");
+    kpHisTambah({ nama: f.name, w, size: f.size, ok: false, ket: "", hal });
   }
   kpBusy = false;
+  if (typeof bbPaintHis === "function") { try { bbPaintHis(); } catch (e) {} }
 }
 function kpDaftar() {
   const hs = $("#kphasil"); if (!hs) return;
