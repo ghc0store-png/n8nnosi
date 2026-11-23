@@ -1296,7 +1296,7 @@ function chatItems() {
 }
 /*sub-halaman*/
 let rqSub = "";
-const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS", rkesM: "BPJS KES - Data Mentah", rkesH: "BPJS KES - Data Hasil", rtkM: "BPJS TK - Data Mentah", rtkH: "BPJS TK - Data Hasil", rabM: "Rekap RAB - Data Mentah", rabH: "Rekap RAB - Data Hasil", gajiM: "Rekap Gaji - Data Mentah", gajiH: "Rekap Gaji - Data Hasil" };
+const rqNama = { slip: "Slip Gaji", inv: "Invoice", bpjs: "BPJS", bb: "Bukti Bayar BPJS", bbtk: "Bukti Bayar BPJS TK", bbkp: "Bukti Bayar BPJS TK - Pisah Otomatis", bbkes: "Bukti Bayar BPJS KES", rb: "Rincian Bukti Bayar BPJS", rkes: "Rincian Bukti Bayar BPJS KES", rtk: "Rincian Bukti Bayar BPJS TK", rab: "Rekap RAB BPJS", gaji: "Rekap Gaji BPJS", hasil: "Hasil BPJS", rkesM: "BPJS KES - Data Mentah", rkesH: "BPJS KES - Data Hasil", rtkM: "BPJS TK - Data Mentah", rtkH: "BPJS TK - Data Hasil", rabM: "Rekap RAB - Data Mentah", rabH: "Rekap RAB - Data Hasil", gajiM: "Rekap Gaji - Data Mentah", gajiH: "Rekap Gaji - Data Hasil" };
 // tentukan jenis tiap pesan (slip/invoice); pesan netral (SETUJU, BATAL, dll) ikut jenis pesan sebelumnya
 function jenisPesan(items) {
   let cur = "";
@@ -1411,6 +1411,12 @@ const TUT = {
     "Daftar <b>Berkas per lokasi</b> muncul. Tiap lokasi bisa di-<b>Review</b> atau di-<b>Unduh</b>."
   ], c: { isi: [["Jenis", "Bukti Bayar BPJS TK"], ["Berkas", "BULK Bill Payment BPJS TK 30 SEPTEMBER.pdf"]], hasil: "Muncul <b>99 PDF</b> terpisah per lokasi (BAPENDA KALTENG, BPS BLORA, dan seterusnya)." },
   t: "Unggahan sebelumnya tersimpan di Riwayat hasil, lengkap dengan status Selesai atau Gagal." },
+  bbkp: { j: "Cara memakai Pisah Otomatis", u: "Memisahkan PDF Transaction Report BPJS TK (bank Kopra) menjadi satu PDF per lokasi, langsung di browser.", s: [
+    "Tarik PDF bulk ke kotak <b>Unggah PDF bulk</b>, atau ketuk untuk memilih.",
+    "Begitu dipilih, berkas <b>langsung dipisah sendiri</b> per lokasi. Tidak perlu menekan tombol lain.",
+    "Tiap lokasi bisa di-<b>Lihat</b> atau di-<b>Unduh</b>. Tombol <b>Unduh semua (ZIP)</b> mengambil seluruhnya.",
+    "Hasil tidak disimpan di server. Unduh sebelum menutup halaman."
+  ], t: "Nama berkas mengikuti nama lokasi di PDF, misalnya ATR BPN KENDAL - BPJS TK FEBRUARI 2026.pdf." },
   bbup: { j: "Cara mengunggah PDF bulk", u: "Mengunggah PDF bulk, lalu melihat dan mengunduh hasil per lokasi.", s: [
     "Tarik PDF ke kotak <b>Unggah PDF bulk</b>, atau ketuk untuk memilih berkas (maks. sekitar 17 MB).",
     "Tekan <b>Proses PDF</b>, lalu tunggu status <b>Selesai</b>.",
@@ -1531,6 +1537,7 @@ function rqView() {
   if (rqSub === "rkes" || rqSub === "rtk" || rqSub === "rab" || rqSub === "gaji") return rdMenuView();
   if (BP[rqSub]) return bpView();
   if (rqSub === "bbtk" || rqSub === "bbkes") return bbView();
+  if (rqSub === "bbkp") return kpView();
   if (!rqSub) {
     const { items } = chatItems(); const jn = jenisPesan(items);
     const cnt = (k) => items.filter((o, i) => jn[i] === k && o.kind === "file").length;
@@ -1551,7 +1558,7 @@ window.bukaSub = async (k) => {
   try { await (k === "slip" ? formSlip() : formInv()); } finally { window._inline = null; }
   paintChat();
 };
-const BALIK = { bbtk: "bb", bbkes: "bb", rkesH: "rb", rtkH: "rb", rabH: "bpjs", gajiH: "bpjs", rkesM: "rkesH", rtkM: "rtkH", rabM: "rabH", gajiM: "gajiH", rkes: "rb", rtk: "rb", rab: "bpjs", gaji: "bpjs", bb: "bpjs", rb: "bpjs", hasil: "bpjs" };
+const BALIK = { bbkp: "bb", bbtk: "bb", bbkes: "bb", rkesH: "rb", rtkH: "rb", rabH: "bpjs", gajiH: "bpjs", rkesM: "rkesH", rtkM: "rtkH", rabM: "rabH", gajiM: "gajiH", rkes: "rb", rtk: "rb", rab: "bpjs", gaji: "bpjs", bb: "bpjs", rb: "bpjs", hasil: "bpjs" };
 window.tutupSub = () => { rqSub = BALIK[rqSub] || rqSub; chatBuilt = false; render(); };
 
 /* ---------- Permintaan > BPJS > Bukti Bayar (pisah PDF bulk KES/TK) ---------- */
@@ -1621,6 +1628,7 @@ function bbMenuView() {
   <div class="duo"><div class="main"><div class="grid two" style="grid-template-columns:minmax(0,1fr)">
     <div class="card item fade click" onclick="bukaSub('bbtk')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS TK</div><div class="mut">BPJS Ketenagakerjaan</div></div></div></div></div>
     <div class="card item fade click" onclick="bukaSub('bbkes')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Bukti Bayar BPJS KES</div><div class="mut">BPJS Kesehatan</div></div></div></div></div>
+    <div class="card item fade click" onclick="bukaSub('bbkp')"><div class="h"><div style="display:flex;gap:12px;align-items:center"><div class="fic">${ic("doc")}</div><div><div class="nm">Pisah Otomatis BPJS TK (Kopra)</div><div class="mut">PDF Transaction Report, langsung terpisah per lokasi di browser</div></div></div></div></div>
   </div></div><aside class="aside">${tutHtml("bbmenu")}</aside></div>`;
 }
 let bbJenis = "kes", bbBulan = "", bbQ = "", bbData = null, bbFiles = [], bbPick = null, bbTimer = null, bbLoaded = "", bbBusy = false, bbMonSig = "";
@@ -1767,6 +1775,119 @@ async function bbZip() {
   } catch (e) { toast("Gagal membuat ZIP. Coba lagi."); }
   b.disabled = false; b.textContent = t0;
 }
+
+/* ---------- Bukti Bayar BPJS TK > Pisah Otomatis (format Transaction Report Kopra) ----------
+   TAMBAHAN: diproses langsung di browser, tidak lewat Worker/agen/n8n, tidak mengubah menu TK/KES yang lama. */
+const KP_BLN = ["", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+let kpFile = null, kpHasil = [], kpBusy = false, kpQ = "";
+const kpLib = {};
+const kpSkrip = (u) => kpLib[u] || (kpLib[u] = new Promise((ok, no) => { const s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = () => { delete kpLib[u]; no(new Error("Gagal memuat pustaka PDF (periksa internet)")); }; document.head.appendChild(s); }));
+async function kpSiap() {
+  await Promise.all([kpSkrip("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"), kpSkrip("https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js")]);
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+const kpBersih = (s) => s.replace(/[\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").trim();
+function kpLokasi(p) {
+  let n = p.replace(/\s+/g, " ").trim().replace(/^RAY MITRA PERKASA\s*[-–]?\s*/i, "");
+  n = n.replace(/^\((.*)\)$/, "$1").replace(/^(UNIT|-)\s*/i, "").replace(/^UNIT\s+/i, "").trim();
+  return n || p.trim();
+}
+function kpBaca(t) {
+  const m = t.match(/Nama Perusahaan\s+(.+?)\s+NPP\s+(\S+)\s+Bulan Iuran\s+(\d{2})\/(\d{4})/);
+  if (!m) return null;
+  const tot = (t.match(/Total Debit Amount\s+IDR\s+([\d.,]+)/) || t.match(/TOTAL IDR\s+([\d.,]+)/) || [])[1] || "";
+  return { perusahaan: m[1].trim(), npp: m[2], bln: +m[3], thn: m[4], total: tot, angka: parseFloat(tot.replace(/,/g, "")) || 0 };
+}
+async function kpPisah(buf, lapor) {
+  await kpSiap();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
+  const grup = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const tc = await (await pdf.getPage(i)).getTextContent();
+    const t = tc.items.map((x) => x.str).join(" ").replace(/\s+/g, " ");
+    const b = /Nama Perusahaan/.test(t) ? kpBaca(t) : null;
+    if (b) grup.push({ ...b, hal: [i - 1] }); else if (grup.length) grup[grup.length - 1].hal.push(i - 1);
+    if (i % 10 === 0 || i === pdf.numPages) lapor("Membaca halaman " + i + " dari " + pdf.numPages + "…");
+  }
+  if (!grup.length) throw new Error("Format tidak dikenali. Menu ini untuk PDF Transaction Report BPJS TK (Kopra). Untuk format lain pakai menu Bukti Bayar BPJS TK atau KES.");
+  const { PDFDocument } = PDFLib, asli = await PDFDocument.load(buf), pakai = new Set(), hasil = [];
+  for (let n = 0; n < grup.length; n++) {
+    const g = grup[n];
+    let dasar = kpBersih(kpLokasi(g.perusahaan));
+    if (/^(RAY MITRA PERKASA|CAKRA ADIDAYA PERKASA)$/i.test(dasar)) dasar += " (NPP " + g.npp + ")";
+    const periode = KP_BLN[g.bln] ? KP_BLN[g.bln] + " " + g.thn : g.bln + "-" + g.thn;
+    let nama = dasar + " - BPJS TK " + periode;
+    if (pakai.has(nama)) nama += " (" + g.npp + ")";
+    pakai.add(nama);
+    const d = await PDFDocument.create();
+    (await d.copyPages(asli, g.hal)).forEach((p) => d.addPage(p));
+    hasil.push({ nama: nama + ".pdf", lokasi: dasar, perusahaan: g.perusahaan, npp: g.npp, periode, total: g.total, angka: g.angka, hal: g.hal.length, bytes: await d.save() });
+    if (n % 5 === 4 || n === grup.length - 1) lapor("Memisahkan " + (n + 1) + " dari " + grup.length + " lokasi…");
+  }
+  return { hasil, halaman: pdf.numPages, terpakai: grup.reduce((a, g) => a + g.hal.length, 0) };
+}
+function kpView() {
+  return `<div class="top"><div><h1>${rqNama.bbkp}</h1><p>Unggah PDF bulk Transaction Report BPJS TK. Langsung terpisah sendiri per lokasi, sesuai nama lokasinya.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
+  <div class="duo"><div class="main"><div class="card item fade"><div class="nm">Unggah PDF bulk</div>
+    <div class="bbdrop" id="kpdrop" tabindex="0" role="button" aria-label="Pilih berkas PDF">${ic("doc")}<b id="kpt">Tarik PDF ke sini atau ketuk untuk memilih</b><small id="kps">Langsung diproses begitu berkas dipilih. Tidak diunggah ke server.</small></div>
+    <input type="file" id="kpfile" accept="application/pdf,.pdf" hidden></div>
+  <div id="kpjob"></div>
+  <div id="kphasil"></div></div><aside class="aside">${tutHtml("bbkp")}</aside></div>`;
+}
+function kpInit() {
+  kpFile = null; kpHasil = []; kpQ = ""; kpBusy = false;
+  const d = $("#kpdrop"), f = $("#kpfile"); if (!d || !f) return;
+  d.onclick = () => f.click();
+  d.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f.click(); } };
+  f.onchange = () => { kpMulai(f.files[0]); f.value = ""; };
+  d.ondragover = (e) => { e.preventDefault(); d.classList.add("on"); };
+  d.ondragleave = () => d.classList.remove("on");
+  d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); kpMulai(e.dataTransfer.files[0]); };
+}
+async function kpMulai(f) {
+  if (!f || kpBusy) return;
+  if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") return toast("Berkas harus PDF");
+  kpBusy = true; kpFile = f; kpHasil = [];
+  $("#kpt").textContent = f.name; $("#kps").textContent = kbs(f.size);
+  const job = $("#kpjob"), hs = $("#kphasil"); hs.innerHTML = "";
+  job.innerHTML = '<div class="card fade"><div class="nm">Memproses…</div><div class="mut" id="kplap">Menyiapkan</div></div>';
+  try {
+    const r = await kpPisah(await f.arrayBuffer(), (t) => { const e = $("#kplap"); if (e) e.textContent = t; });
+    kpHasil = r.hasil; kpQ = "";
+    const jml = r.hasil.reduce((a, x) => a + x.angka, 0), ok = r.halaman === r.terpakai;
+    job.innerHTML = `<div class="card fade"><div class="nm">Selesai: ${r.hasil.length} lokasi</div><div class="mut">${r.halaman} halaman, total Rp ${jml.toLocaleString("id-ID")}${ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi"}</div><div class="row" style="margin-top:10px"><button class="btn pri" id="kpzip" onclick="kpZip()">Unduh semua (ZIP)</button><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div></div>`;
+    kpDaftar();
+  } catch (e) {
+    job.innerHTML = `<div class="card fade"><div class="nm">Gagal</div><div class="mut">${esc(e.message || "Tidak bisa membaca PDF")}</div></div>`;
+  }
+  kpBusy = false;
+}
+function kpDaftar() {
+  const hs = $("#kphasil"); if (!hs) return;
+  const q = kpQ.trim().toLowerCase(), ada = kpHasil.map((x, i) => [x, i]).filter(([x]) => !q || (x.nama + " " + x.npp).toLowerCase().includes(q));
+  hs.innerHTML = `<div class="sec"><h3>Berkas per lokasi</h3></div><div class="card fade"><input id="kpq" type="search" placeholder="Cari lokasi atau NPP" value="${esc(kpQ)}" style="width:100%;margin-bottom:10px" aria-label="Cari">` +
+    (ada.length ? ada.map(([x, i]) => `<div class="row" style="justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)"><div style="min-width:0"><div class="nm" style="overflow-wrap:anywhere">${esc(x.lokasi)}</div><div class="mut">${esc(x.periode)} • NPP ${esc(x.npp)} • Rp ${esc(x.total)}</div></div><div class="row" style="flex:none"><button class="btn" onclick="kpLihat(${i})">Lihat</button><button class="btn" onclick="kpUnduh(${i})">Unduh</button></div></div>`).join("") : '<div class="mut">Tidak ada yang cocok</div>') + "</div>";
+  const q2 = $("#kpq"); if (q2) { q2.oninput = () => { kpQ = q2.value; const p = q2.selectionStart; kpDaftar(); const n = $("#kpq"); if (n) { n.focus(); n.setSelectionRange(p, p); } }; }
+}
+const kpBlob = (x) => new Blob([x.bytes], { type: "application/pdf" });
+window.kpUnduh = (i) => bbSave(kpBlob(kpHasil[i]), kpHasil[i].nama);
+window.kpLihat = (i) => { const u = URL.createObjectURL(kpBlob(kpHasil[i])); window.open(u, "_blank"); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+window.kpZip = async () => {
+  const b = $("#kpzip"); if (!b || b.disabled || !kpHasil.length) return;
+  b.disabled = true; const t0 = b.textContent;
+  try {
+    await bbJSZip(); b.textContent = "Menyusun ZIP…";
+    const zip = new JSZip(); kpHasil.forEach((x) => zip.file(x.nama, x.bytes));
+    bbSave(await zip.generateAsync({ type: "blob" }), "Bukti-TK-" + (kpHasil[0].periode || "").replace(/\s+/g, "-") + "-per-lokasi.zip");
+    toast("ZIP selesai: " + kpHasil.length + " berkas");
+  } catch (e) { toast("Gagal membuat ZIP. Coba lagi."); }
+  b.disabled = false; b.textContent = t0;
+};
+window.kpCsv = () => {
+  const c = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+  const s = "﻿Lokasi,NPP,Periode,Total,Halaman,Berkas\r\n" + kpHasil.map((x) => [x.perusahaan, x.npp, x.periode, x.total, x.hal, x.nama].map(c).join(",")).join("\r\n");
+  bbSave(new Blob([s], { type: "text/csv;charset=utf-8" }), "Ringkasan-BPJS-TK-per-lokasi.csv");
+};
 
 /* ---------- Permintaan > BPJS > Rincian KES/TK, Rekap RAB, Rekap Gaji, Hasil (menjalankan workflow n8n yang sama dengan perintah Telegram) ---------- */
 const BP = {
@@ -2168,7 +2289,7 @@ function render() {
   if (pendingTop === "__first") { const f = (tabsBoleh()[0] || [])[0]; if (!f) return; pendingTop = f; }
   if (pendingTop) { const k = pendingTop; pendingTop = ""; go(k); return; }
   if (tab === "rq") {
-    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (BP[rqSub]) bpInit(); else if (rqSub === "bpjs") pjInit(); }
+    if (!chatBuilt) { $("#view").innerHTML = rqView(); chatBuilt = true; if (rqSub === "bbtk" || rqSub === "bbkes") bbInit(); else if (rqSub === "bbkp") kpInit(); else if (BP[rqSub]) bpInit(); else if (rqSub === "bpjs") pjInit(); }
     if (!BP[rqSub]) paintChat();
     if (REQ_TOP.includes(rqSub)) document.querySelectorAll('#view button[onclick="tutupSub()"]').forEach((b) => (b.hidden = true));
     return;
