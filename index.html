@@ -1665,8 +1665,8 @@ function bbSet(f) {
   if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") return toast("Berkas harus PDF");
   if (f.size > 17 * 1048576) return toast("PDF terlalu besar (maksimal sekitar 17 MB)");
   bbPick = f; $("#bbt").textContent = f.name; $("#bbs").textContent = kbs(f.size) + " • siap diproses sebagai " + (bbJenis === "kes" ? "BPJS Kesehatan" : "BPJS Ketenagakerjaan");
-  kpOtomatis(f);
   $("#bbgo").disabled = bbAktif();
+  kpOtomatis(f);
 }
 async function bbKirim() {
   if (!bbPick || bbAktif()) return;
@@ -1909,17 +1909,23 @@ window.kpCsv = () => {
 // Dipanggil dari halaman unggah lama (TK/KES): bila berkasnya format Transaction Report Kopra, langsung dipisah di browser.
 // Format lain tidak disentuh, alur lama berjalan seperti biasa.
 async function kpOtomatis(f) {
+  const info = (t) => { const e = $("#bbs"); if (e) e.textContent = t; }, tombol = (x) => { const g = $("#bbgo"); if (g) g.disabled = x; };
+  const ket0 = $("#bbs") ? $("#bbs").textContent : "";
+  bbPick = null; tombol(true); info(kbs(f.size) + " • memeriksa format PDF…");   // tombol Proses tetap mati selama diperiksa
+  let kopra = false;
   try {
     await kpSiap();
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
     const t = (await (await pdf.getPage(1)).getTextContent()).items.map((x) => x.str).join(" ");
-    if (!/Transaction Report/.test(t)) return;
-  } catch (e) { return; }
-  if (bbPick !== f) return;
+    kopra = /Transaction Report/.test(t);
+  } catch (e) {
+    bbPick = f; tombol(bbAktif()); info("Pemeriksaan di browser gagal (" + (e && e.message ? e.message : e) + "). Berkas diproses lewat alur lama bila Anda menekan Proses PDF.");
+    return;
+  }
+  if (!kopra) { bbPick = f; tombol(bbAktif()); info(ket0); return; }
   const jb = $("#bbjob"); if (!jb) return;
   if (!$("#kpjob")) jb.insertAdjacentHTML("afterend", '<div id="kpjob"></div><div id="kphasil"></div>');
-  bbPick = null; const g = $("#bbgo"); if (g) g.disabled = true;
-  const s = $("#bbs"); if (s) s.textContent = "Format Transaction Report (Kopra) terdeteksi. Dipisah otomatis di browser, tanpa lewat server.";
+  info("Format Transaction Report (Kopra) terdeteksi. Dipisah otomatis di browser, tanpa lewat server.");
   kpMulai(f);
 }
 
