@@ -1796,8 +1796,15 @@ function kpLokasi(p) {
 // Baca satu halaman: transaksi BPJS TK ("Nama Perusahaan / NPP / Bulan Iuran") atau BPJS KES ("No VA / Nama / Cabang").
 function kpBaca(t) {
   let jenis = "TK", per, id, bln, thn;
-  let m = t.match(/Nama Perusahaan\s+(.+?)\s+NPP\s+(\S+)\s+Bulan Iuran\s+(\d{2})\/(\d{4})/);
-  if (m) { per = m[1]; id = m[2]; bln = +m[3]; thn = m[4]; }
+  let m = t.match(/Nama Perusahaan\s+(.+?)\s+(?:NPP|Kode Iuran)\s+(\S+)/);
+  if (m) {
+    per = m[1]; id = m[2];
+    const nn = t.match(/NPP\s+(\S+)/); if (nn) id = nn[1];
+    const bi = t.match(/Bulan Iuran\s+(\d{2})\/(\d{4})/), rm = t.match(/BULAN\s+([A-Za-z]+)\s+(\d{4})/i);
+    if (bi) { bln = +bi[1]; thn = bi[2]; }
+    else if (rm) { bln = KP_BLN.indexOf(rm[1].toUpperCase()); thn = rm[2]; }
+    else { const g = t.match(/Transaction Date\s+\d+\s+([A-Za-z]{3})\s+(\d{4})/); bln = g ? KP_BLN3.indexOf(g[1].toUpperCase()) : 0; thn = g ? g[2] : ""; }
+  }
   else {
     m = t.match(/No VA\s+(\d+)\s+Nama\s+(.+?)\s+Cabang\s+/);
     if (!m) return null;
@@ -1820,7 +1827,7 @@ async function kpPisah(buf, lapor) {
     if (b) grup.push({ ...b, hal: [i - 1] }); else if (grup.length) grup[grup.length - 1].hal.push(i - 1);
     if (i % 10 === 0 || i === pdf.numPages) lapor("Membaca halaman " + i + " dari " + pdf.numPages + "…");
   }
-  if (!grup.length) throw new Error("Format tidak dikenali. Menu ini untuk PDF Transaction Report BPJS TK atau KES (bank Kopra).");
+  if (!grup.length) throw new Error("Format tidak dikenali. Menu ini untuk PDF Transaction Report BPJS TK atau KES (bank Kopra). Awal isi halaman 1: " + (pdf.numPages ? ((await (await pdf.getPage(1)).getTextContent()).items.map((x) => x.str).join(" ").replace(/\s+/g, " ").slice(0, 160)) : "(kosong)"));
   const { PDFDocument } = PDFLib, asli = await PDFDocument.load(buf), pakai = new Set(), hasil = [];
   for (let n = 0; n < grup.length; n++) {
     const g = grup[n];
@@ -1906,7 +1913,7 @@ async function kpOtomatis(f) {
     await kpSiap();
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
     const t = (await (await pdf.getPage(1)).getTextContent()).items.map((x) => x.str).join(" ");
-    if (!(/Transaction Report/.test(t) && /Nama Perusahaan|No VA/.test(t))) return;
+    if (!/Transaction Report/.test(t)) return;
   } catch (e) { return; }
   if (bbPick !== f) return;
   const jb = $("#bbjob"); if (!jb) return;
