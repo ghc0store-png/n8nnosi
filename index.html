@@ -1656,6 +1656,7 @@ function bbInit() {
   d.ondragleave = () => d.classList.remove("on");
   d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); bbSet(e.dataTransfer.files[0]); };
   $("#bbgo").onclick = bbKirim;
+  kpMuat();
   bbLoad();
   clearInterval(bbTimer);
   bbTimer = setInterval(() => { if (tab !== "rq" || (rqSub !== "bbtk" && rqSub !== "bbkes")) return clearInterval(bbTimer); if (!document.hidden) bbLoad(); }, 4000);
@@ -1685,8 +1686,9 @@ async function bbLoad() {
     const r = await api("/api/bukti?jenis=" + j);
     if (j !== bbJenis || r.error) return;
     bbData = r;
-    if (!bbBulan || !r.bulan.some((x) => x.bulan === bbBulan)) bbBulan = r.bulan[0] ? r.bulan[0].bulan : "";
+    if (!bbBulan || (!r.bulan.some((x) => x.bulan === bbBulan) && !kpEsLokal(bbBulan))) bbBulan = r.bulan[0] ? r.bulan[0].bulan : (kpBulanLokal()[0] || {}).bulan || "";
     bbPaintJob(); bbPaintToolbar();
+    if (kpEsLokal(bbBulan)) { bbFiles = kpFilesBulan(bbBulan); bbPaintList(); return; }
     const cur = r.bulan.find((x) => x.bulan === bbBulan);
     const sig = j + "|" + bbBulan + "|" + (cur ? cur.n : 0) + "|" + (r.jobs[0] ? r.jobs[0].updated : 0);
     if (cur && sig !== bbLoaded) {
@@ -1723,11 +1725,11 @@ function bbPaintJob() {
 }
 function bbPaintToolbar() {
   const box = $("#bbfiles"); if (!box || !bbData) return;
-  const bl = bbData.bulan, sig = bbJenis + "|" + bl.map((x) => x.bulan).join(",");
+  const bl = bbData.bulan.concat(typeof kpBulanLokal === "function" ? kpBulanLokal() : []), sig = bbJenis + "|" + bl.map((x) => x.bulan).join(",");
   if (sig === bbMonSig && $("#bbmon")) { $("#bbmon").value = bbBulan; return; }
   bbMonSig = sig;
   if (!bl.length) { box.innerHTML = empty("doc", "Belum ada berkas. Unggah PDF bulk di atas."); return; }
-  box.innerHTML = `<div class="bbtools"><select id="bbmon" aria-label="Pilih bulan">${bl.map((x) => `<option value="${esc(x.bulan)}">${esc(x.bulan)} (${x.n} lokasi)</option>`).join("")}</select>
+  box.innerHTML = `<div class="bbtools"><select id="bbmon" aria-label="Pilih bulan">${bl.map((x) => `<option value="${esc(x.bulan)}">${esc(x.tampil || x.bulan)} (${x.n} lokasi)</option>`).join("")}</select>
     <input id="bbq" type="search" placeholder="Cari nama lokasi" aria-label="Cari nama lokasi"><button class="btn pri" id="bbzip">Unduh semua (ZIP)</button>
     <a class="btn" id="bbdrv" target="_blank" rel="noopener" hidden>Buka folder di Drive</a></div><div id="bbl"></div>`;
   $("#bbmon").value = bbBulan; $("#bbq").value = bbQ;
@@ -1742,9 +1744,10 @@ function bbPaintList() {
   const cur = bbData.bulan.find((x) => x.bulan === bbBulan), a = $("#bbdrv");
   if (a) { if (cur && cur.folder) { a.href = "https://drive.google.com/drive/folders/" + cur.folder; a.hidden = false; } else a.hidden = true; }
   setHtml(box, `<div class="mut" style="margin:10px 0 4px">${rows.length} dari ${bbFiles.length} lokasi</div>` +
-    (rows.map((f) => `<div class="row" style="justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><div style="min-width:0;display:flex;gap:10px;align-items:center"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(f.lokasi)}</div><div class="mut">${kbs(f.size)}${f.drive_id ? " • ada di Drive" : ""}</div></div></div><div class="row"><button class="btn" onclick="bbLihat(${f.id})">Review</button><button class="btn ok" onclick="bbUnduh(${f.id})">Unduh</button></div></div>`).join("") || `<div class="mut" style="padding:14px 0">Tidak ada lokasi yang cocok.</div>`));
+    (rows.map((f) => `<div class="row" style="justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><div style="min-width:0;display:flex;gap:10px;align-items:center"><div class="fic">${ic("doc")}</div><div style="min-width:0"><div class="nm">${esc(f.lokasi)}</div><div class="mut">${kbs(f.size)}${f.drive_id ? " • ada di Drive" : f.lokal ? " • tersimpan di browser" : ""}</div></div></div><div class="row"><button class="btn" onclick="bbLihat(${f.id})">Review</button><button class="btn ok" onclick="bbUnduh(${f.id})">Unduh</button></div></div>`).join("") || `<div class="mut" style="padding:14px 0">Tidak ada lokasi yang cocok.</div>`));
 }
 async function bbGet(id) {
+  if (id < 0) { const x = kpAktifList[-id - 1]; if (!x) throw new Error("kosong"); return { nama: x.nama, blob: new Blob([x.bytes], { type: "application/pdf" }) }; }
   const r = await api("/api/bukti/file?id=" + id);
   if (r.error || !r.data) throw new Error(r.error || "kosong");
   const bin = atob(r.data), u8 = new Uint8Array(bin.length);
@@ -1764,7 +1767,7 @@ window.bbUnduh = async (id) => { try { const g = await bbGet(id); bbSave(g.blob,
 const bbJSZip = () => window.JSZip ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload = ok; s.onerror = () => no(new Error("JSZip")); document.head.appendChild(s); });
 async function bbZip() {
   const b = $("#bbzip"); if (!b || b.disabled || !bbFiles.length) return;
-  b.disabled = true; const t0 = b.textContent, nama = "Bukti-" + bbJenis.toUpperCase() + "-" + bbBulan.replace(/\s+/g, "-") + ".zip";
+  b.disabled = true; const t0 = b.textContent, nama = "Bukti-" + bbJenis.toUpperCase() + "-" + bbBulan.replace(/^kp:/, "").replace(/\s+/g, "-") + ".zip";
   try {
     await bbJSZip();
     const zip = new JSZip(), list = bbFiles.slice(), total = list.length; let n = 0;
@@ -1864,6 +1867,35 @@ function kpInit() {
   d.ondragleave = () => d.classList.remove("on");
   d.ondrop = (e) => { e.preventDefault(); d.classList.remove("on"); kpMulai(e.dataTransfer.files[0]); };
 }
+// ---- Penyimpanan lokal (IndexedDB) agar hasil muncul di "Berkas per lokasi" dan tetap ada setelah muat ulang ----
+let kpLok = [], kpAktifList = [];
+const kpEsLokal = (b) => typeof b === "string" && b.indexOf("kp:") === 0;
+const kpJudul = (p) => p.toLowerCase().replace(/(^| )([a-z])/g, (m, a, c) => a + c.toUpperCase());
+const kpDb = () => new Promise((ok, no) => { try { const r = indexedDB.open("kpBerkas", 1); r.onupgradeneeded = () => r.result.createObjectStore("f", { keyPath: "k" }); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } });
+const kpTx = (db, mode, fn) => new Promise((ok, no) => { const t = db.transaction("f", mode), s = t.objectStore("f"); const r = fn(s); t.oncomplete = () => ok(r && r.result); t.onerror = () => no(t.error); });
+async function kpMuat() {
+  try {
+    const hal = typeof bbJenis !== "undefined" ? bbJenis : "", db = await kpDb();
+    kpLok = ((await kpTx(db, "readonly", (s) => s.getAll())) || []).filter((x) => x.hal === hal).sort((a, b) => b.w - a.w || a.lokasi.localeCompare(b.lokasi));
+    db.close();
+  } catch (e) { kpLok = []; }
+  if (typeof bbData !== "undefined" && bbData && $("#bbfiles")) { bbMonSig = ""; bbPaintToolbar(); if (kpEsLokal(bbBulan)) { bbFiles = kpFilesBulan(bbBulan); bbPaintList(); } }
+}
+async function kpSimpan(hal, hasil, w) {
+  const db = await kpDb(), bulanBaru = new Set();
+  await kpTx(db, "readwrite", (s) => { hasil.forEach((x) => { const bulan = kpJudul(x.periode); bulanBaru.add(bulan); s.put({ k: hal + "|" + bulan + "|" + x.nama, hal, bulan, nama: x.nama, lokasi: x.lokasi, jenis: x.jenis, size: x.bytes.length, bytes: x.bytes, w }); }); });
+  // simpan paling banyak 6 bulan terbaru per halaman (hemat ruang browser)
+  const semua = ((await kpTx(db, "readonly", (s) => s.getAll())) || []).filter((x) => x.hal === hal);
+  const urut = [...new Set(semua.sort((a, b) => b.w - a.w).map((x) => x.bulan))], buang = new Set(urut.slice(6));
+  if (buang.size) await kpTx(db, "readwrite", (s) => { semua.filter((x) => buang.has(x.bulan)).forEach((x) => s.delete(x.k)); });
+  db.close();
+  return [...bulanBaru][0];
+}
+const kpBulanLokal = () => { const m = new Map(); kpLok.forEach((x) => { if (!m.has(x.bulan)) m.set(x.bulan, { bulan: "kp:" + x.bulan, tampil: x.bulan + " • di browser", n: 0 }); m.get(x.bulan).n++; }); return [...m.values()]; };
+function kpFilesBulan(b) {
+  kpAktifList = kpLok.filter((x) => "kp:" + x.bulan === b);
+  return kpAktifList.map((x, i) => ({ id: -(i + 1), lokasi: x.lokasi, filename: x.nama, size: x.size, lokal: true }));
+}
 // Riwayat lokal (browser ini): hasil pemisahan di browser tidak lewat server, jadi dicatat di sini dan ditampilkan di "Riwayat hasil".
 const kpHisBaca = () => { try { return JSON.parse(localStorage.getItem("kpRiwayat") || "[]"); } catch (e) { return []; } };
 function kpHisTambah(e) { try { const a = kpHisBaca(); a.unshift(e); localStorage.setItem("kpRiwayat", JSON.stringify(a.slice(0, 40))); } catch (x) {} }
@@ -1889,9 +1921,12 @@ async function kpMulai(f) {
     kpHasil = r.hasil; kpQ = "";
     const jml = r.hasil.reduce((a, x) => a + x.angka, 0), ok = r.halaman === r.terpakai, jn = [...new Set(r.hasil.map((x) => x.jenis))].join("/");
     const ket = r.hasil.length + " lokasi • Rp " + jml.toLocaleString("id-ID");
-    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Selesai", "ok", '<div class="mut">' + r.hasil.length + " lokasi BPJS " + jn + " dari " + r.halaman + " halaman, total Rp " + jml.toLocaleString("id-ID") + (ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi") + '</div><div class="row" style="margin-top:10px"><button class="btn pri" id="kpzip" onclick="kpZip()">Unduh semua (ZIP)</button><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div>');
+    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Selesai", "ok", '<div class="mut">' + r.hasil.length + " blok pembayaran BPJS " + jn + " dipisah menjadi " + r.hasil.length + " PDF (" + kpJudul(r.hasil[0].periode) + "); tersimpan di browser ini. Total Rp " + jml.toLocaleString("id-ID") + (ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi") + '</div><div class="row" style="margin-top:10px"><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div>');
     kpHisTambah({ nama: f.name, w, size: f.size, ok: true, ket, hal });
-    kpDaftar();
+    if (hal && $("#bbfiles")) {
+      try { const bulan = await kpSimpan(hal, r.hasil, w); await kpMuat(); bbBulan = "kp:" + bulan; bbMonSig = ""; bbFiles = kpFilesBulan(bbBulan); bbPaintToolbar(); bbPaintList(); }
+      catch (e) { toast("Hasil tidak tersimpan di browser: " + (e.message || e)); kpDaftar(); }
+    } else kpDaftar();
   } catch (e) {
     const pesan = e.message || "Tidak bisa membaca PDF";
     if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Gagal", "er", '<div class="err">' + esc(pesan) + "</div>");
