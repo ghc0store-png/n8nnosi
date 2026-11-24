@@ -1830,9 +1830,16 @@ async function kpPisah(buf, lapor) {
     const tc = await (await pdf.getPage(i)).getTextContent();
     const t = tc.items.map((x) => x.str).join(" ").replace(/\s+/g, " ");
     const b = /Nama Perusahaan|No VA/.test(t) ? kpBaca(t) : null;
-    if (b) grup.push({ ...b, hal: [i - 1] }); else if (grup.length) grup[grup.length - 1].hal.push(i - 1);
+    // Halaman pertama transaksi lain (mis. transfer gaji/BI-FAST) punya "Transaction ID" + "Document Number" tapi bukan BPJS:
+    // jadikan blok terpisah yang dilewati, supaya tidak menempel ke lokasi sebelumnya.
+    const awal = /Transaction ID/.test(t) && /Document Number/.test(t);
+    if (b) grup.push({ ...b, hal: [i - 1] });
+    else if (awal) grup.push({ lewati: true, hal: [i - 1], ket: ((t.match(/Beneficiary Bank Informations+S+s+(.+?)s+Transfer Method/) || [])[1] || (t.match(/Transaction References+(.+?)s/) || [])[1] || "") });
+    else if (grup.length) grup[grup.length - 1].hal.push(i - 1);
     if (i % 3 === 0 || i === pdf.numPages) { lapor("Membaca halaman " + i + " dari " + pdf.numPages, Math.round(i / pdf.numPages * 50)); await kpJeda(); }
   }
+  const dilewati = grup.filter((g) => g.lewati).reduce((a, g) => a + g.hal.length, 0);
+  for (let k = grup.length - 1; k >= 0; k--) if (grup[k].lewati) grup.splice(k, 1);
   if (!grup.length) throw new Error("Format tidak dikenali. Menu ini untuk PDF Transaction Report BPJS TK atau KES (bank Kopra). Awal isi halaman 1: " + (pdf.numPages ? ((await (await pdf.getPage(1)).getTextContent()).items.map((x) => x.str).join(" ").replace(/\s+/g, " ").slice(0, 160)) : "(kosong)"));
   const { PDFDocument } = PDFLib, asli = await PDFDocument.load(buf), pakai = new Set(), hasil = [];
   for (let n = 0; n < grup.length; n++) {
@@ -1848,7 +1855,7 @@ async function kpPisah(buf, lapor) {
     hasil.push({ nama: nama + ".pdf", lokasi: dasar, perusahaan: g.perusahaan, jenis: g.jenis, npp: g.id, periode, total: g.total, angka: g.angka, hal: g.hal.length, bytes: await d.save() });
     if (n % 2 === 1 || n === grup.length - 1) { lapor("Memisahkan lokasi " + (n + 1) + " dari " + grup.length, 50 + Math.round((n + 1) / grup.length * 50)); await kpJeda(); }
   }
-  return { hasil, halaman: pdf.numPages, terpakai: grup.reduce((a, g) => a + g.hal.length, 0) };
+  return { hasil, halaman: pdf.numPages, terpakai: grup.reduce((a, g) => a + g.hal.length, 0), dilewati };
 }
 function kpView() {
   return `<div class="top"><div><h1>${rqNama.bbkp}</h1><p>Unggah PDF bulk Transaction Report BPJS TK atau KES (bank Kopra). Langsung terpisah sendiri per lokasi, sesuai nama lokasinya.</p></div><button class="btn" onclick="tutupSub()">← Kembali</button></div>
@@ -1921,9 +1928,9 @@ async function kpMulai(f) {
   try {
     const r = await kpPisah(await f.arrayBuffer(), (t, p) => kpProg(p || 0, t));
     kpHasil = r.hasil; kpQ = "";
-    const jml = r.hasil.reduce((a, x) => a + x.angka, 0), ok = r.halaman === r.terpakai, jn = [...new Set(r.hasil.map((x) => x.jenis))].join("/");
+    const jml = r.hasil.reduce((a, x) => a + x.angka, 0), ok = r.halaman === r.terpakai + r.dilewati, jn = [...new Set(r.hasil.map((x) => x.jenis))].join("/");
     const ket = r.hasil.length + " lokasi • Rp " + jml.toLocaleString("id-ID");
-    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Selesai", "ok", '<div class="mut">' + r.hasil.length + " blok pembayaran BPJS " + jn + " dipisah menjadi " + r.hasil.length + " PDF (" + kpJudul(r.hasil[0].periode) + "); tersimpan di browser ini. Total Rp " + jml.toLocaleString("id-ID") + (ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi") + '</div><div class="row" style="margin-top:10px"><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div>');
+    if ($("#kpjob")) $("#kpjob").innerHTML = kpKartu(f, "Selesai", "ok", '<div class="mut">' + r.hasil.length + " blok pembayaran BPJS " + jn + " dipisah menjadi " + r.hasil.length + " PDF (" + kpJudul(r.hasil[0].periode) + "); tersimpan di browser ini. Total Rp " + jml.toLocaleString("id-ID") + (r.dilewati ? " • " + r.dilewati + " halaman transaksi non-BPJS (mis. transfer gaji) dilewati, tidak ikut dipisah" : "") + (ok ? "" : " • perhatian: " + (r.halaman - r.terpakai) + " halaman di depan tidak termasuk transaksi") + '</div><div class="row" style="margin-top:10px"><button class="btn" onclick="kpCsv()">Unduh ringkasan (CSV)</button></div>');
     kpHisTambah({ nama: f.name, w, size: f.size, ok: true, ket, hal });
     if (hal && $("#bbfiles")) {
       try { const bulan = await kpSimpan(hal, r.hasil, w); await kpMuat(); bbBulan = "kp:" + bulan; bbMonSig = ""; bbFiles = kpFilesBulan(bbBulan); bbPaintToolbar(); bbPaintList(); }
